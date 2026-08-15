@@ -1,0 +1,3 @@
+'use client';
+import useScanner from '../scanner/useScanner';
+export default function SpokenMessageOverlay({ message, urgent, onDismiss, blinkSelect }) { const {active,select}=useScanner([{label:'I got help'}],onDismiss); blinkSelect.current=select; return <section className={`overlay ${urgent?'alert':''}`} role="dialog" aria-modal="true"><div className="overlay-content"><div className="dots">•••••</div><h1 className="spoken">{message}</h1><button className={`button dark ${active===0?'active':''}`} onClick={()=>select(0)}>✓&nbsp; I got help</button><p>This will keep playing until you long-blink again — or choose <b>I got help.</b></p></div></section>; }
