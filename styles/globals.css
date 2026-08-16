@@ -281,71 +281,7 @@ a:focus-visible {
 }
 
 
-/* Animated SVG Scan Ring & Selection Confirmation Feedback */
-.scan-ring-container {
-  position: absolute;
-  inset: -3px;
-  width: calc(100% + 6px);
-  height: calc(100% + 6px);
-  pointer-events: none;
-  z-index: 5;
-  border-radius: inherit;
-  overflow: visible;
-}
 
-.scan-ring-svg {
-  width: 100%;
-  height: 100%;
-  display: block;
-  overflow: visible;
-}
-
-.scan-ring-rect {
-  fill: none;
-  stroke: var(--orange);
-  stroke-width: 3.5;
-  stroke-dasharray: 100;
-  stroke-dashoffset: 100;
-  stroke-linecap: round;
-}
-
-.scan-ring-container.active .scan-ring-rect {
-  animation: scanRingDraw var(--scan-duration, 1800ms) linear forwards;
-}
-
-@keyframes scanRingDraw {
-  from {
-    stroke-dashoffset: 100;
-  }
-  to {
-    stroke-dashoffset: 0;
-  }
-}
-
-.scan-ring-container.selected {
-  animation: selectRingPulse 0.38s var(--ease-spring) forwards;
-}
-
-.scan-ring-container.selected .scan-ring-rect {
-  stroke: var(--orange-dark);
-  stroke-dashoffset: 0;
-  stroke-width: 4.5;
-}
-
-@keyframes selectRingPulse {
-  0% {
-    transform: scale(0.97);
-    filter: drop-shadow(0 0 0px transparent);
-  }
-  50% {
-    transform: scale(1.03);
-    filter: drop-shadow(0 0 10px rgba(207, 87, 0, 0.6));
-  }
-  100% {
-    transform: scale(1);
-    filter: drop-shadow(0 0 2px rgba(207, 87, 0, 0.2));
-  }
-}
 
 /* FIX 1: Active Scan-Highlight Ring (Matching Reference Images 3, 4, 5) */
 
