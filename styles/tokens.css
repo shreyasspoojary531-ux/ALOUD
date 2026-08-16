@@ -1,1 +1,89 @@
-:root{--cream:#f7f1e6;--paper:#fffaf1;--ink:#28221b;--muted:#81776a;--line:#e5dccd;--orange:#cf5700;--orange-dark:#a54200;--orange-pale:#f8e2d5;--rose:#f8e2d9;--rose-deep:#c95c2a;--gold:#f4e5b9;--gold-deep:#9b7100;--sage:#e2eddf;--sage-deep:#51865e;--blue:#e1e9ef;--blue-deep:#497ea0;--alert:#f9d7cb;--alert-ink:#b83b00;--dark:#31442b;--serif:Georgia,'Times New Roman',serif;--sans:Arial,Helvetica,sans-serif;--sp1:4px;--sp2:8px;--sp3:12px;--sp4:16px;--sp5:24px;--sp6:32px;--sp7:48px;--sp8:72px;--r-sm:12px;--r:20px;--r-pill:999px;--shadow:0 14px 22px rgba(52,40,23,.13);--focus:3px;--top:30px;--content:720px;--key-content:1040px;--camera-w:188px;--camera-h:142px;--scan-ms:1800ms}
+:root {
+  --cream: #f7f1e6;
+  --paper: #fffaf1;
+  --ink: #28221b;
+  --muted: #81776a;
+  --line: #e5dccd;
+  --orange: #cf5700;
+  --orange-dark: #a54200;
+  --orange-pale: #f8e2d5;
+  --rose: #f8e2d9;
+  --rose-deep: #c95c2a;
+  --gold: #f4e5b9;
+  --gold-deep: #9b7100;
+  --sage: #e2eddf;
+  --sage-deep: #51865e;
+  --blue: #e1e9ef;
+  --blue-deep: #497ea0;
+  --alert: #f9d7cb;
+  --alert-ink: #b83b00;
+  --dark: #31442b;
+  --serif: Georgia, "Times New Roman", serif;
+  --sans: Arial, Helvetica, sans-serif;
+  --sp1: 4px;
+  --sp2: 8px;
+  --sp3: 12px;
+  --sp4: 16px;
+  --sp5: 24px;
+  --sp6: 32px;
+  --sp7: 48px;
+  --sp8: 72px;
+  --r-sm: 12px;
+  --r: 20px;
+  --r-pill: 999px;
+  --shadow: 0 14px 22px rgba(52, 40, 23, 0.13);
+  --focus: 3.5px;
+  --top: 30px;
+  --content: 720px;
+  --key-content: 1040px;
+  --camera-w: 188px;
+  --camera-h: 142px;
+  --scan-ms: 1800ms;
+
+  /* Ring & Border Thickness Tokens (Noticeably Thick & Confident) */
+  --ring-width: 3.5px;
+  --ring-width-thick: 4.5px;
+  --ring-width-key: 3.5px;
+
+  /* Card Depth & Layered Elevation Tokens */
+  --elevation-card: 0 2px 4px rgba(52, 40, 23, 0.04), 0 10px 24px rgba(52, 40, 23, 0.08), inset 0 1px 0.5px rgba(255, 255, 255, 0.9);
+  --elevation-card-hover: 0 4px 10px rgba(52, 40, 23, 0.07), 0 14px 28px rgba(52, 40, 23, 0.12), inset 0 1px 1px #ffffff;
+  --elevation-card-active: 0 10px 24px rgba(52, 40, 23, 0.12), 0 20px 40px rgba(207, 87, 0, 0.16), inset 0 1px 1px #ffffff;
+  --elevation-card-selected: 0 22px 48px rgba(52, 40, 23, 0.24), 0 36px 72px rgba(207, 87, 0, 0.35), inset 0 1px 1px #ffffff;
+  --elevation-pill: 0 4px 12px rgba(52, 40, 23, 0.07), inset 0 1px 0.5px rgba(255, 255, 255, 0.8);
+
+  /* Spring Easing & Motion Tokens */
+  --ease-spring: cubic-bezier(0.22, 1.25, 0.36, 1);
+  --ease-out-smooth: cubic-bezier(0.16, 1, 0.3, 1);
+  --dur-suggest: 220ms;
+  --say-it-full-h: 92px;
+  --say-it-compact-h: 92px;
+
+  /* Card & Key Padding Tokens */
+  --card-padding: clamp(16px, 1rem + 1vw, 24px);
+  --sp-fluid-card-pad: var(--card-padding);
+  --key-padding: clamp(10px, 1vw + 6px, 16px) var(--sp4);
+
+  /* Continuous Fluid Scaling Clamp Tokens */
+  --font-fluid-splash: clamp(5rem, 3.5rem + 6.5vw, 10.5rem);
+  --font-fluid-tagline: clamp(1.25rem, 1.05rem + 1vw, 1.75rem);
+  --font-fluid-spoken: clamp(3.25rem, 2.2rem + 4.5vw, 7.75rem);
+  --font-fluid-card-title: clamp(1.35rem, 1.15rem + 1.1vw, 1.95rem);
+  --font-fluid-eyebrow: clamp(0.7rem, 0.65rem + 0.2vw, 0.85rem);
+  --font-fluid-body: clamp(0.85rem, 0.8rem + 0.3vw, 1.05rem);
+  --sp-fluid-home-top: clamp(3vh, 2vh + 5vw, 19vh);
+  --sp-fluid-app-pad: clamp(1rem, 0.5rem + 2vw, 3rem);
+  --card-fluid-min-h: clamp(120px, 90px + 6vw, 157px);
+  --icon-fluid-size: clamp(48px, 38px + 1.6vw, 66px);
+  --icon-fluid-font: clamp(20px, 16px + 1vw, 29px);
+  --camera-fluid-w: clamp(136px, 110px + 5vw, 188px);
+  --camera-fluid-h: clamp(102px, 82px + 4vw, 142px);
+  /* Key Layout System & Spacing Tokens */
+  --key-grid-max-w: 1160px;
+  --row-label-w: 84px;
+  --row-label-gap: var(--sp4);
+  --key-gap: var(--sp3);
+  --key-min-height: 88px;
+  --key-radius: 18px;
+}
+

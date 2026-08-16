@@ -1,12 +1,96 @@
 'use client';
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { useEyeControl } from '../shared/EyeControlContext';
+
+/**
+ * Screen-agnostic scanning engine hook.
+ * Auto-advances active item index on a timer, handles selection via click/blink/spacebar,
+ * and pauses briefly during transitions to prevent accidental double-selections.
+ */
 export default function useScanner(items, onSelect, interval = 1800, enabled = true) {
-  const [active, setActive] = useState(0), activeRef = useRef(0), selectRef = useRef(onSelect);
-  useEffect(() => { selectRef.current = onSelect; }, [onSelect]);
-  useEffect(() => { activeRef.current = active; }, [active]);
-  useEffect(() => { setActive(0); }, [items.length]);
-  useEffect(() => { if (!items.length || !enabled) return; const id = setInterval(() => setActive(i => (i + 1) % items.length), interval); return () => clearInterval(id); }, [items.length, interval, enabled]);
-  const select = useCallback((index = activeRef.current) => { const item = items[index]; if (item) selectRef.current(item, index); }, [items]);
-  useEffect(() => { if (!enabled) return; const key = e => { if (e.code === 'Space' && !e.repeat) { e.preventDefault(); select(); } }; window.addEventListener('keydown', key); return () => window.removeEventListener('keydown', key); }, [select,enabled]);
-  return { active, select };
+  const { eyeOn } = useEyeControl();
+  const [active, setActive] = useState(0);
+  const [isPaused, setIsPaused] = useState(false);
+  const [selectedIndex, setSelectedIndex] = useState(null);
+  const activeRef = useRef(0);
+  const selectRef = useRef(onSelect);
+  const isPausedRef = useRef(false);
+
+  useEffect(() => {
+    selectRef.current = onSelect;
+  }, [onSelect]);
+
+  useEffect(() => {
+    activeRef.current = active;
+  }, [active]);
+
+  // Reset active index when item set changes
+  const itemsKey = items.map((x) => x.label || x).join(',');
+  useEffect(() => {
+    setActive(0);
+    activeRef.current = 0;
+  }, [itemsKey]);
+
+  // Auto-advance timer
+  useEffect(() => {
+    if (!items.length || !enabled || isPaused) return;
+
+    const id = setInterval(() => {
+      setActive((i) => (i + 1) % items.length);
+    }, interval);
+
+    return () => clearInterval(id);
+  }, [items.length, interval, enabled, isPaused, itemsKey]);
+
+  // Selection function with mode validation options
+  const select = useCallback(
+    (index = activeRef.current, options = {}) => {
+      if (isPausedRef.current) return;
+      const { isPointer = false, isBlink = false } = options;
+
+      // Exclusive Input Mode:
+      // When Eye Control is ON, mouse clicks on scan targets must NOT select.
+      if (eyeOn && isPointer) return;
+      // When Eye Control is OFF, blink detection must NOT trigger select.
+      if (!eyeOn && isBlink) return;
+
+      const targetIndex = typeof index === 'number' ? index : activeRef.current;
+      const item = items[targetIndex];
+
+      if (item) {
+        setSelectedIndex(targetIndex);
+        setTimeout(() => setSelectedIndex(null), 400);
+
+        // Pause scanning briefly to prevent transition multi-triggers
+        isPausedRef.current = true;
+        setIsPaused(true);
+        selectRef.current(item, targetIndex);
+
+        setTimeout(() => {
+          isPausedRef.current = false;
+          setIsPaused(false);
+        }, 400);
+      }
+    },
+    [items, eyeOn]
+  );
+
+  // Spacebar fallback listener (works in both modes for testing)
+  useEffect(() => {
+    if (!enabled) return;
+
+    const handleKeyDown = (e) => {
+      if (e.code === 'Space' && !e.repeat) {
+        if (['INPUT', 'TEXTAREA'].includes(document.activeElement?.tagName)) return;
+        e.preventDefault();
+        select(activeRef.current, { isSpace: true });
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [select, enabled]);
+
+  return { active, select, isPaused, selectedIndex };
 }
+
