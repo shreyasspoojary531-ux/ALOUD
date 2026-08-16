@@ -9,6 +9,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 export default function useScanner(items, onSelect, interval = 1800, enabled = true) {
   const [active, setActive] = useState(0);
   const [isPaused, setIsPaused] = useState(false);
+  const [selectedIndex, setSelectedIndex] = useState(null);
   const activeRef = useRef(0);
   const selectRef = useRef(onSelect);
   const isPausedRef = useRef(false);
@@ -47,6 +48,9 @@ export default function useScanner(items, onSelect, interval = 1800, enabled = t
       const item = items[targetIndex];
 
       if (item) {
+        setSelectedIndex(targetIndex);
+        setTimeout(() => setSelectedIndex(null), 400);
+
         // Pause scanning briefly to prevent transition multi-triggers
         isPausedRef.current = true;
         setIsPaused(true);
@@ -78,5 +82,5 @@ export default function useScanner(items, onSelect, interval = 1800, enabled = t
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [select, enabled]);
 
-  return { active, select, isPaused };
+  return { active, select, isPaused, selectedIndex };
 }

@@ -2,18 +2,20 @@
 import { useState } from "react";
 import Icon from "../shared/Icon";
 
-export default function CategoryCard({ item, active, onSelect }) {
-  const [selected, setSelected] = useState(false);
+export default function CategoryCard({ item, active, selected, onSelect }) {
+  const [localSelected, setLocalSelected] = useState(false);
 
   const handleClick = (e) => {
-    setSelected(true);
-    setTimeout(() => setSelected(false), 300);
+    setLocalSelected(true);
+    setTimeout(() => setLocalSelected(false), 380);
     onSelect?.(e);
   };
 
+  const isSelected = selected || localSelected;
+
   return (
     <button
-      className={`category-card ${item.wide ? "wide" : ""} ${active ? "active" : ""} ${selected ? "selected-pulse" : ""}`}
+      className={`category-card ${item.wide ? "wide" : ""} ${active ? "active" : ""} ${isSelected ? "selected-lift" : ""}`}
       style={{
         "--tint": `var(--${item.tint})`,
         "--tint-deep": `var(--${item.tint}-deep)`,

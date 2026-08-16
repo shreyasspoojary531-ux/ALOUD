@@ -10,7 +10,7 @@ export default function CategoryGrid({
   blinkSelect,
   enabled = true,
 }) {
-  const { active, select } = useScanner(items, onChoose, 1800, enabled);
+  const { active, select, selectedIndex } = useScanner(items, onChoose, 1800, enabled);
 
   useEffect(() => {
     if (enabled && blinkSelect) {
@@ -25,6 +25,7 @@ export default function CategoryGrid({
           key={item.label}
           item={item}
           active={enabled && i === active}
+          selected={enabled && i === selectedIndex}
           onSelect={() => select(i)}
         />
       ))}
