@@ -6,6 +6,7 @@ import CameraPill from "../../components/camera/CameraPill";
 import CategoryGrid from "../../components/home/CategoryGrid";
 import SpokenMessageOverlay from "../../components/overlay/SpokenMessageOverlay";
 import { say } from "../../lib/speech";
+
 const root = [
   { label: "I feel", icon: "♡", tint: "rose" },
   { label: "I need", icon: "☞", tint: "gold" },
@@ -19,6 +20,7 @@ const root = [
     wide: true,
   },
 ];
+
 const groups = {
   "I feel": [
     "I’m in pain.",
@@ -42,32 +44,47 @@ const groups = {
     "Please call someone.",
     "I want company.",
   ],
+  Answers: [
+    "Yes.",
+    "No.",
+    "Maybe.",
+    "I don’t know.",
+    "Thank you.",
+    "Please.",
+  ],
 };
+
 export default function Home() {
   const router = useRouter(),
     [eye, setEye] = useState(true),
     [help, setHelp] = useState(false),
     [group, setGroup] = useState(null),
     [spoken, setSpoken] = useState(null);
+
   const blink = useRef(() => {});
   const onBlink = useCallback(() => blink.current(), []);
+
   const choose = (item) => {
+    if (!item) return;
     if (item.label === "Back") return setGroup(null);
     if (item.label === "Spell it out") return router.push("/spell");
-    if (root.some((x) => x.label === item.label)) return setGroup(item.label);
+    if (groups[item.label]) return setGroup(item.label);
+
     say(item.label);
     setSpoken(item.label);
   };
-  const items = group
+
+  const items = group && groups[group]
     ? [
         ...groups[group].map((label, i) => ({
           label,
-          icon: ["⌁", "≋", "♨", "☀", "❄", "⌁"][i],
-          tint: group === "I need" ? "gold" : "rose",
+          icon: ["⌁", "≋", "♨", "☀", "❄", "✓"][i % 6],
+          tint: group === "I need" ? "gold" : group === "Answers" ? "blue" : "rose",
         })),
         { label: "Back", icon: "‹", tint: "blue" },
       ]
     : root;
+
   return (
     <main className="app">
       <TopBar
@@ -84,6 +101,7 @@ export default function Home() {
           onChoose={choose}
           sub={!!group}
           blinkSelect={blink}
+          enabled={!spoken}
         />
       </section>
       <p className="caption">
