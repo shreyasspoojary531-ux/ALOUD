@@ -1,5 +1,5 @@
 "use client";
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import TopBar from "../../components/shared/TopBar";
 import CameraPill from "../../components/camera/CameraPill";
 import Keyboard from "../../components/keyboard/Keyboard";
@@ -7,12 +7,33 @@ import SpokenMessageOverlay from "../../components/overlay/SpokenMessageOverlay"
 import { say } from "../../lib/speech";
 
 export default function Spell() {
-  const [eye, setEye] = useState(true),
-    [message, setMessage] = useState(""),
-    [spoken, setSpoken] = useState(null);
+  const [eye, setEye] = useState(true);
+  const [message, setMessage] = useState("");
+  const [spoken, setSpoken] = useState(null);
+  const [suggestions, setSuggestions] = useState([]);
 
   const blink = useRef(() => {});
   const onBlink = useCallback(() => blink.current(), []);
+
+  // Fetch AI suggestions whenever message changes; silently fail on error.
+  useEffect(() => {
+    if (!message.trim()) {
+      setSuggestions([]);
+      return;
+    }
+    let cancelled = false;
+    fetch("/api/suggest", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ message }),
+    })
+      .then((r) => r.json())
+      .then(({ suggestions: s }) => {
+        if (!cancelled) setSuggestions(s ?? []);
+      })
+      .catch(() => {}); // never block typing on a failed AI call
+    return () => { cancelled = true; };
+  }, [message]);
 
   const speak = (text, urgent = false) => {
     if (!text) return;
@@ -36,6 +57,7 @@ export default function Spell() {
           speak={speak}
           blinkSelect={blink}
           enabled={!spoken}
+          suggestions={suggestions}
         />
       </section>
       <p className="caption">

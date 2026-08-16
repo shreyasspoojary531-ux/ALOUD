@@ -55,6 +55,9 @@
   /* Spring Easing & Motion Tokens */
   --ease-spring: cubic-bezier(0.22, 1.25, 0.36, 1);
   --ease-out-smooth: cubic-bezier(0.16, 1, 0.3, 1);
+  --dur-suggest: 220ms;
+  --say-it-full-h: 80px;
+  --say-it-compact-h: 80px;
 
   /* Continuous Fluid Scaling Clamp Tokens */
   --font-fluid-splash: clamp(5rem, 3.5rem + 6.5vw, 10.5rem);

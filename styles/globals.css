@@ -459,6 +459,10 @@ a:focus-visible {
 .spell {
   max-width: var(--key-content);
   padding-top: var(--sp4);
+  /* Prevent spellbar from ever overlapping keyboard rows below it */
+  display: flex;
+  flex-direction: column;
+  gap: 0;
 }
 
 .spellbar {
@@ -498,7 +502,8 @@ a:focus-visible {
 
 .keyboard-row {
   display: grid;
-  grid-template-columns: 62px 1fr;
+  /* 56px row-label column — fits 7-char labels like "SUGGEST" without overflow */
+  grid-template-columns: 56px 1fr;
   gap: var(--sp2);
   align-items: stretch;
   margin-bottom: var(--sp3);
@@ -509,9 +514,12 @@ a:focus-visible {
   align-self: center;
   text-align: right;
   color: #a89b89;
-  font-size: 10px;
+  font-size: 9px;
   font-weight: 800;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.06em;
+  /* Prevent label from overflowing into the keyboard row area */
+  overflow: hidden;
+  word-break: break-all;
 }
 
 .row-cells {
@@ -562,6 +570,82 @@ a:focus-visible {
   border-color: var(--orange);
   outline: none;
   box-shadow: 0 0 0 2px var(--orange-pale);
+}
+
+/* Say it — FULL state: message is empty, button fills the row */
+.key.say-it-full {
+  background: var(--orange);
+  color: #fff;
+  border-color: transparent;
+  border-radius: 16px;
+  min-height: var(--say-it-full-h);
+  font-size: 18px;
+  font-weight: 800;
+  box-shadow: 0 8px 20px rgba(207, 87, 0, 0.28);
+  /* Smooth expand ↔ compact transition */
+  transition:
+    min-height var(--dur-suggest) var(--ease-out-smooth),
+    font-size var(--dur-suggest) var(--ease-out-smooth),
+    background var(--dur-suggest) ease,
+    border-radius var(--dur-suggest) ease;
+}
+
+.key.say-it-full:hover,
+.key.say-it-full.active {
+  background: var(--orange-dark);
+  border-color: transparent;
+  box-shadow: 0 12px 28px rgba(207, 87, 0, 0.38);
+}
+
+/* Say it — COMPACT state: message exists, button shrinks to first column slot */
+.key.say-it-compact {
+  background: var(--orange);
+  color: #fff;
+  border-color: transparent;
+  border-radius: 14px;
+  min-height: var(--say-it-compact-h);
+  font-size: 13px;
+  font-weight: 800;
+  box-shadow: 0 4px 12px rgba(207, 87, 0, 0.22);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  transition:
+    min-height var(--dur-suggest) var(--ease-out-smooth),
+    font-size var(--dur-suggest) var(--ease-out-smooth),
+    background var(--dur-suggest) ease;
+}
+
+.key.say-it-compact:hover,
+.key.say-it-compact.active {
+  background: var(--orange-dark);
+  border-color: transparent;
+  box-shadow: 0 6px 16px rgba(207, 87, 0, 0.32);
+}
+
+/* Suggestion completion slots */
+.key.suggest {
+  background: rgba(244, 229, 185, 0.45);
+  border-color: transparent;
+  border-radius: 14px;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--gold-deep);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  line-height: 1.3;
+  padding: var(--sp2) var(--sp3);
+  transition: background var(--dur-suggest) ease, border-color 0.15s ease;
+}
+
+.key.suggest:hover,
+.key.suggest.active {
+  background: var(--gold);
+  border-color: var(--gold-deep);
 }
 
 .overlay {
@@ -647,6 +731,16 @@ a:focus-visible {
 
   .key.wide {
     font-size: 10px;
+  }
+
+  .key.say-it-full {
+    min-height: 60px;
+    font-size: 15px;
+  }
+
+  .key.say-it-compact {
+    min-height: 60px;
+    font-size: 11px;
   }
 }
 

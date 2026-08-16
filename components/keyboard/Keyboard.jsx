@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import useScanner from "../scanner/useScanner";
 import KeyRow from "./KeyRow";
 
@@ -15,16 +15,32 @@ const actions = [
   back,
 ];
 
-export default function Keyboard({ message, setMessage, speak, blinkSelect, enabled = true }) {
+export default function Keyboard({
+  message,
+  setMessage,
+  speak,
+  blinkSelect,
+  enabled = true,
+  suggestions = [],
+}) {
   const [opened, setOpened] = useState(null);
+  const hasMessage = message.trim().length > 0;
 
-  const rows = [
-    {
-      label: "SUGGESTIONS",
-      keys: ["I need help.", "I’m in pain.", "Yes", "No"]
-        .map((label) => ({ label, kind: "wide" }))
-        .concat(back),
-    },
+  // SUGGESTIONS row is rebuilt whenever message or suggestions change,
+  // so useScanner always sees the correct item list — no stale references.
+  const suggestRow = useMemo(() => {
+    const sayIt = {
+      label: "📢 Say it",
+      kind: hasMessage ? "say-it-compact" : "say-it-full",
+    };
+    const keys = hasMessage && suggestions.length > 0
+      ? [sayIt, ...suggestions.map((t) => ({ label: t, kind: "suggest" })), back]
+      : [sayIt, back];
+    return { label: "SUGGEST", kind: "suggest-row", keys };
+  }, [hasMessage, suggestions]);
+
+  const rows = useMemo(() => [
+    suggestRow,
     { label: "A–I", keys: letters("ABCDEFGHI").concat(back) },
     { label: "J–R", keys: letters("JKLMNOPQR").concat(back) },
     {
@@ -48,7 +64,7 @@ export default function Keyboard({ message, setMessage, speak, blinkSelect, enab
       ],
     },
     { label: "ACTIONS", keys: actions },
-  ];
+  ], [suggestRow]);
 
   const { active, select } = useScanner(
     rows,
@@ -64,9 +80,10 @@ export default function Keyboard({ message, setMessage, speak, blinkSelect, enab
   }, [enabled, opened, blinkSelect, select]);
 
   const useKey = (key) => {
-    if (!key || !key.label) return;
+    if (!key?.label) return;
     if (key.label.includes("back")) return setOpened(null);
-    if (key.label.includes("speak")) return speak(message);
+    if (key.label.includes("Say it") || key.label.includes("speak"))
+      return speak(message);
     if (key.label.includes("home")) return location.assign("/home");
     if (key.label.includes("help")) return speak("I need help.", true);
     if (key.label.includes("clear")) return setMessage("");
@@ -76,10 +93,9 @@ export default function Keyboard({ message, setMessage, speak, blinkSelect, enab
     if (key.label === "⌴ space") return setMessage((m) => m + " ");
     if (/^[A-Z]$/.test(key.label))
       return setMessage((m) => m + key.label.toLowerCase());
-    if ([".", " ", ",", "?"].includes(key.label))
+    if ([".", ",", "?"].includes(key.label))
       return setMessage((m) => m + key.label);
-    if (["I need help.", "I’m in pain.", "Yes", "No"].includes(key.label))
-      setMessage(key.label);
+    if (key.kind === "suggest") return setMessage(key.label);
   };
 
   return (
