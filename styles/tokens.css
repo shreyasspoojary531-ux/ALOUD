@@ -32,7 +32,7 @@
   --r: 20px;
   --r-pill: 999px;
   --shadow: 0 14px 22px rgba(52, 40, 23, 0.13);
-  --focus: 3px;
+  --focus: 4.5px;
   --top: 30px;
   --content: 720px;
   --key-content: 1040px;
@@ -40,11 +40,21 @@
   --camera-h: 142px;
   --scan-ms: 1800ms;
 
+  /* Ring & Border Thickness Tokens (Noticeably Thick & Confident) */
+  --ring-width: 4.5px;
+  --ring-width-thick: 5.5px;
+  --ring-width-key: 4.5px;
+
   /* Card Depth & Layered Elevation Tokens */
   --elevation-card: 0 2px 4px rgba(52, 40, 23, 0.04), 0 10px 24px rgba(52, 40, 23, 0.08), inset 0 1px 0.5px rgba(255, 255, 255, 0.9);
-  --elevation-card-hover: 0 4px 8px rgba(52, 40, 23, 0.06), 0 14px 28px rgba(52, 40, 23, 0.12), inset 0 1px 1px #ffffff;
-  --elevation-card-active: 0 0 0 3.5px var(--tint-deep), 0 8px 18px rgba(52, 40, 23, 0.1), 0 18px 36px rgba(207, 87, 0, 0.18), inset 0 1px 1px #ffffff;
+  --elevation-card-hover: 0 4px 10px rgba(52, 40, 23, 0.07), 0 14px 28px rgba(52, 40, 23, 0.12), inset 0 1px 1px #ffffff;
+  --elevation-card-active: 0 0 0 var(--ring-width) var(--tint-deep), 0 10px 22px rgba(52, 40, 23, 0.12), 0 20px 40px rgba(207, 87, 0, 0.18), inset 0 1px 1px #ffffff;
+  --elevation-card-selected: 0 0 0 var(--ring-width-thick) var(--tint-deep), 0 20px 44px rgba(52, 40, 23, 0.24), 0 34px 68px rgba(207, 87, 0, 0.38), inset 0 1px 1px #ffffff;
   --elevation-pill: 0 4px 12px rgba(52, 40, 23, 0.07), inset 0 1px 0.5px rgba(255, 255, 255, 0.8);
+
+  /* Spring Easing & Motion Tokens */
+  --ease-spring: cubic-bezier(0.22, 1.25, 0.36, 1);
+  --ease-out-smooth: cubic-bezier(0.16, 1, 0.3, 1);
 
   /* Continuous Fluid Scaling Clamp Tokens */
   --font-fluid-splash: clamp(5rem, 3.5rem + 6.5vw, 10.5rem);

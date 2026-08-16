@@ -28,7 +28,7 @@ button {
 
 button:focus-visible,
 a:focus-visible {
-  outline: var(--focus) solid var(--orange);
+  outline: var(--ring-width) solid var(--orange);
   outline-offset: 3px;
 }
 
@@ -144,7 +144,7 @@ a:focus-visible {
   font: var(--font-fluid-splash)/0.9 var(--serif);
   letter-spacing: -0.08em;
   margin: 0;
-  animation: splashRise 0.65s cubic-bezier(0.16, 1, 0.3, 1) both;
+  animation: splashRise 0.65s var(--ease-out-smooth) both;
 }
 
 .dot {
@@ -156,11 +156,11 @@ a:focus-visible {
   max-width: 420px;
   font: italic var(--font-fluid-tagline)/1.35 var(--serif);
   color: var(--muted);
-  animation: splashRise 0.65s cubic-bezier(0.16, 1, 0.3, 1) 0.2s both;
+  animation: splashRise 0.65s var(--ease-out-smooth) 0.2s both;
 }
 
 .splash-cta-container {
-  animation: splashRise 0.65s cubic-bezier(0.16, 1, 0.3, 1) 0.4s both;
+  animation: splashRise 0.65s var(--ease-out-smooth) 0.4s both;
 }
 
 .button.primary.splash-btn {
@@ -252,7 +252,7 @@ a:focus-visible {
   gap: var(--sp3);
   cursor: pointer;
   color: var(--ink);
-  transition: transform 0.22s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.25s ease, border-color 0.2s ease;
+  transition: transform 0.22s var(--ease-out-smooth), box-shadow 0.25s ease, border-color 0.2s ease;
 }
 
 .category-card.wide {
@@ -262,15 +262,17 @@ a:focus-visible {
   padding-left: clamp(80px, 60px + 4vw, 112px);
 }
 
-/* Active Ring Entrance Animation */
+/* Active Scan-Highlight Ring Animation (Thick, Confident Ring) */
 @keyframes activeRingIn {
   0% {
-    transform: scale(0.98);
+    box-shadow: 0 0 0 0px var(--tint-deep), var(--elevation-card);
+    transform: scale(0.985);
   }
-  50% {
-    transform: scale(1.015);
+  60% {
+    transform: translateY(-3px) scale(1.01);
   }
   100% {
+    box-shadow: var(--elevation-card-active);
     transform: translateY(-2px) scale(1);
   }
 }
@@ -280,26 +282,33 @@ a:focus-visible {
   border-color: var(--tint-deep);
   box-shadow: var(--elevation-card-active);
   transform: translateY(-2px);
-  animation: activeRingIn 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  animation: activeRingIn 0.22s var(--ease-spring);
 }
 
-/* Selection Confirmation Punchy Pulse */
-@keyframes selectConfirmation {
+/* FIX 2: Selected State (Lift and Settle Motion) */
+@keyframes selectLiftAndSettle {
   0% {
-    transform: scale(1);
+    transform: translateY(-2px) scale(1);
+    box-shadow: var(--elevation-card-active);
   }
-  45% {
-    transform: scale(0.95);
-    box-shadow: 0 0 0 6px var(--tint-deep), 0 20px 40px rgba(207, 87, 0, 0.35);
+  40% {
+    transform: translateY(-9px) scale(1.025);
+    box-shadow: var(--elevation-card-selected);
+  }
+  75% {
+    transform: translateY(-3px) scale(1);
+    box-shadow: var(--elevation-card-active);
   }
   100% {
-    transform: scale(1);
+    transform: translateY(-2px) scale(1);
+    box-shadow: var(--elevation-card-active);
   }
 }
 
-.category-card.selected-pulse,
-.key.selected-pulse {
-  animation: selectConfirmation 0.28s cubic-bezier(0.175, 0.885, 0.32, 1.275) !important;
+.category-card.selected-lift,
+.key.selected-lift {
+  animation: selectLiftAndSettle 0.38s var(--ease-spring) !important;
+  z-index: 2;
 }
 
 .card-icon {
@@ -311,7 +320,7 @@ a:focus-visible {
   display: grid;
   place-items: center;
   font-size: var(--icon-fluid-font);
-  transition: transform 0.2s ease;
+  transition: transform 0.2s var(--ease-out-smooth);
 }
 
 .category-card.active .card-icon {
@@ -508,7 +517,7 @@ a:focus-visible {
 }
 
 .keyboard-row.active .row-cells {
-  outline: var(--focus) solid var(--orange-pale);
+  outline: var(--ring-width) solid var(--orange-pale);
   outline-offset: 5px;
   background: rgba(248, 226, 213, 0.65);
   border-radius: 15px;
@@ -545,7 +554,7 @@ a:focus-visible {
 }
 
 .key.active {
-  outline: var(--focus) solid var(--orange);
+  outline: var(--ring-width-key) solid var(--orange);
   outline-offset: 2px;
 }
 
@@ -659,13 +668,14 @@ a:focus-visible {
 
   .category-card.active,
   .key.active {
-    box-shadow: 0 0 0 4px var(--tint-deep) !important;
+    box-shadow: 0 0 0 var(--ring-width) var(--tint-deep) !important;
     transform: none !important;
   }
 
-  .category-card.selected-pulse,
-  .key.selected-pulse {
+  .category-card.selected-lift,
+  .key.selected-lift {
     animation: none !important;
-    box-shadow: 0 0 0 5px var(--tint-deep) !important;
+    box-shadow: 0 0 0 var(--ring-width-thick) var(--tint-deep) !important;
+    transform: none !important;
   }
 }
