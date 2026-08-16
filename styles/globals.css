@@ -244,7 +244,8 @@ a:focus-visible {
   background: linear-gradient(165deg, #ffffff 0%, #fdf8ee 60%, #f7ebd9 100%);
   box-shadow: var(--elevation-card);
   min-height: var(--card-fluid-min-h);
-  padding: var(--sp-fluid-card-pad);
+  padding: var(--card-padding);
+  box-sizing: border-box;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -252,17 +253,102 @@ a:focus-visible {
   gap: var(--sp3);
   cursor: pointer;
   color: var(--ink);
+  overflow-wrap: break-word;
+  word-break: break-word;
+  text-align: center;
   transition: transform 0.22s var(--ease-out-smooth), box-shadow 0.25s ease, border-color 0.2s ease;
 }
 
 .category-card.wide {
   grid-column: 1 / -1;
-  min-height: clamp(90px, 70px + 3vw, 110px);
+  min-height: clamp(80px, 60px + 3vw, 100px);
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: flex-start;
+  gap: var(--sp4);
+  padding: var(--sp4) var(--sp5);
+  text-align: left;
+}
+
+.card-text-block {
+  display: flex;
+  flex-direction: column;
   align-items: flex-start;
-  padding-left: clamp(80px, 60px + 4vw, 112px);
+  justify-content: center;
+  gap: var(--sp1);
+  text-align: left;
+}
+
+
+/* Animated SVG Scan Ring & Selection Confirmation Feedback */
+.scan-ring-container {
+  position: absolute;
+  inset: -3px;
+  width: calc(100% + 6px);
+  height: calc(100% + 6px);
+  pointer-events: none;
+  z-index: 5;
+  border-radius: inherit;
+  overflow: visible;
+}
+
+.scan-ring-svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+  overflow: visible;
+}
+
+.scan-ring-rect {
+  fill: none;
+  stroke: var(--orange);
+  stroke-width: 3.5;
+  stroke-dasharray: 100;
+  stroke-dashoffset: 100;
+  stroke-linecap: round;
+}
+
+.scan-ring-container.active .scan-ring-rect {
+  animation: scanRingDraw var(--scan-duration, 1800ms) linear forwards;
+}
+
+@keyframes scanRingDraw {
+  from {
+    stroke-dashoffset: 100;
+  }
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+.scan-ring-container.selected {
+  animation: selectRingPulse 0.38s var(--ease-spring) forwards;
+}
+
+.scan-ring-container.selected .scan-ring-rect {
+  stroke: var(--orange-dark);
+  stroke-dashoffset: 0;
+  stroke-width: 4.5;
+}
+
+@keyframes selectRingPulse {
+  0% {
+    transform: scale(0.97);
+    filter: drop-shadow(0 0 0px transparent);
+  }
+  50% {
+    transform: scale(1.03);
+    filter: drop-shadow(0 0 10px rgba(207, 87, 0, 0.6));
+  }
+  100% {
+    transform: scale(1);
+    filter: drop-shadow(0 0 2px rgba(207, 87, 0, 0.2));
+  }
 }
 
 /* FIX 1: Active Scan-Highlight Ring (Matching Reference Images 3, 4, 5) */
+
 @keyframes activeRingIn {
   0% {
     border-color: transparent;
@@ -334,6 +420,10 @@ a:focus-visible {
 
 .category-card strong {
   font: var(--font-fluid-card-title) var(--serif);
+  line-height: 1.3;
+  overflow-wrap: break-word;
+  word-break: break-word;
+  max-width: 100%;
 }
 
 .category-card.wide strong {
@@ -342,6 +432,11 @@ a:focus-visible {
 
 .category-card small {
   color: var(--muted);
+  font-size: var(--font-fluid-body);
+  line-height: 1.35;
+  overflow-wrap: break-word;
+  word-break: break-word;
+  max-width: 100%;
 }
 
 .caption {
@@ -457,9 +552,10 @@ a:focus-visible {
 }
 
 .spell {
-  max-width: var(--key-content);
+  max-width: var(--key-grid-max-w);
+  width: 100%;
+  margin: 0 auto;
   padding-top: var(--sp4);
-  /* Prevent spellbar from ever overlapping keyboard rows below it */
   display: flex;
   flex-direction: column;
   gap: 0;
@@ -469,15 +565,26 @@ a:focus-visible {
   display: grid;
   grid-template-columns: 1fr auto 1fr;
   align-items: center;
+  width: 100%;
+}
+
+.spellbar > :nth-child(1) {
+  justify-self: start;
+  align-self: center;
 }
 
 .spellbar h1 {
   font: 26px var(--serif);
   margin: 0;
+  justify-self: center;
+  align-self: center;
+  text-align: center;
 }
 
-.spellbar .pill {
+.spellbar > :nth-child(3),
+.spellbar .pill:last-child {
   justify-self: end;
+  align-self: center;
 }
 
 .spell-message {
@@ -502,67 +609,145 @@ a:focus-visible {
 
 .keyboard-row {
   display: grid;
-  /* 56px row-label column — fits 7-char labels like "SUGGEST" without overflow */
-  grid-template-columns: 56px 1fr;
-  gap: var(--sp2);
-  align-items: stretch;
+  grid-template-columns: var(--row-label-w) 1fr;
+  gap: var(--row-label-gap);
+  align-items: center;
   margin-bottom: var(--sp3);
-  border-radius: 18px;
+  position: relative;
+  border-radius: var(--key-radius);
 }
 
 .row-label {
   align-self: center;
   text-align: right;
   color: #a89b89;
-  font-size: 9px;
+  font-size: 10px;
   font-weight: 800;
-  letter-spacing: 0.06em;
-  /* Prevent label from overflowing into the keyboard row area */
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  font-family: var(--sans);
   overflow: hidden;
-  word-break: break-all;
 }
 
 .row-cells {
   display: grid;
-  gap: var(--sp2);
-  grid-auto-flow: column;
-  grid-auto-columns: 1fr;
+  grid-template-columns: repeat(10, 1fr);
+  gap: var(--key-gap);
+  width: 100%;
 }
 
 .keyboard-row.active .row-cells {
   outline: var(--ring-width) solid var(--orange-pale);
-  outline-offset: 5px;
-  background: rgba(248, 226, 213, 0.65);
-  border-radius: 15px;
+  outline-offset: 4px;
+  background: rgba(248, 226, 213, 0.4);
+  border-radius: var(--key-radius);
 }
 
 .key {
-  min-height: 92px;
+  min-height: var(--key-min-height);
   border: var(--ring-width) solid transparent;
-  border-radius: 13px;
-  background: linear-gradient(165deg, #ffffff 0%, #fff6e6 100%);
-  box-shadow: 0 3px 7px rgba(52, 40, 23, 0.08), inset 0 1px 0 #ffffff;
+  border-radius: var(--key-radius);
+  background: linear-gradient(165deg, #ffffff 0%, #fff7eb 100%);
+  box-shadow: 0 3px 8px rgba(52, 40, 23, 0.08), inset 0 1px 0 #ffffff;
   font-weight: 800;
-  font-size: 17px;
+  font-size: 20px;
   cursor: pointer;
   color: var(--ink);
+  padding: var(--sp2) var(--sp2);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  position: relative;
+  box-sizing: border-box;
+  overflow: hidden;
+  text-align: center;
   transition: transform 0.15s ease, box-shadow 0.2s ease;
 }
 
-.key.wide {
-  font-size: 14px;
+.key-label {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  line-height: 1.1;
+}
+
+.key-icon {
+  font-size: 18px;
+  color: var(--orange-dark);
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .key.back {
   background: #fffdf8;
-  border-style: dashed;
+  border: 2px dashed var(--line);
   color: var(--muted);
   font-size: 12px;
+  font-weight: 700;
+}
+
+.key.back .key-icon {
+  color: var(--orange);
+  font-size: 16px;
+}
+
+.key.back .key-label {
+  white-space: nowrap;
+  font-size: 12px;
+}
+
+.key.say-it-full {
+  background: linear-gradient(135deg, #df630c 0%, #b84600 100%);
+  color: #ffffff;
+  border-color: transparent;
+  border-radius: var(--key-radius);
+  min-height: var(--key-min-height);
+  font-size: 18px;
+  font-weight: 800;
+  box-shadow: 0 8px 20px rgba(207, 87, 0, 0.28);
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+  gap: var(--sp2);
+  padding: var(--sp2) var(--sp4);
+}
+
+.key.say-it-full .key-icon {
+  color: #ffffff;
+}
+
+.key.say-it-compact {
+  background: var(--orange);
+  color: #ffffff;
+  border-color: transparent;
+  border-radius: var(--key-radius);
+  min-height: var(--key-min-height);
+  font-size: 13px;
+  font-weight: 800;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+  gap: var(--sp1);
+  padding: var(--sp2);
+}
+
+.key.say-it-compact .key-icon {
+  color: #ffffff;
 }
 
 .key.alert {
   background: var(--alert);
   border-color: #e9a797;
+  color: var(--alert-ink);
+}
+
+.key.alert .key-icon {
   color: var(--alert-ink);
 }
 
@@ -572,58 +757,6 @@ a:focus-visible {
   box-shadow: 0 0 0 2px var(--orange-pale);
 }
 
-/* Say it — FULL state: message is empty, button fills the row */
-.key.say-it-full {
-  background: var(--orange);
-  color: #fff;
-  border-color: transparent;
-  border-radius: 16px;
-  min-height: var(--say-it-full-h);
-  font-size: 18px;
-  font-weight: 800;
-  box-shadow: 0 8px 20px rgba(207, 87, 0, 0.28);
-  /* Smooth expand ↔ compact transition */
-  transition:
-    min-height var(--dur-suggest) var(--ease-out-smooth),
-    font-size var(--dur-suggest) var(--ease-out-smooth),
-    background var(--dur-suggest) ease,
-    border-radius var(--dur-suggest) ease;
-}
-
-.key.say-it-full:hover,
-.key.say-it-full.active {
-  background: var(--orange-dark);
-  border-color: transparent;
-  box-shadow: 0 12px 28px rgba(207, 87, 0, 0.38);
-}
-
-/* Say it — COMPACT state: message exists, button shrinks to first column slot */
-.key.say-it-compact {
-  background: var(--orange);
-  color: #fff;
-  border-color: transparent;
-  border-radius: 14px;
-  min-height: var(--say-it-compact-h);
-  font-size: 13px;
-  font-weight: 800;
-  box-shadow: 0 4px 12px rgba(207, 87, 0, 0.22);
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 4px;
-  transition:
-    min-height var(--dur-suggest) var(--ease-out-smooth),
-    font-size var(--dur-suggest) var(--ease-out-smooth),
-    background var(--dur-suggest) ease;
-}
-
-.key.say-it-compact:hover,
-.key.say-it-compact.active {
-  background: var(--orange-dark);
-  border-color: transparent;
-  box-shadow: 0 6px 16px rgba(207, 87, 0, 0.32);
-}
 
 /* Suggestion completion slots */
 .key.suggest {
@@ -716,33 +849,51 @@ a:focus-visible {
     padding-top: 20px;
   }
 
+  .keyboard-row {
+    grid-template-columns: 52px 1fr;
+    gap: var(--sp2);
+  }
+
+  .row-label {
+    font-size: 8px;
+  }
+
+  .row-cells {
+    gap: 5px;
+  }
+
   .key {
+    min-height: 56px;
+    font-size: 15px;
+    border-radius: 12px;
+    padding: 2px 2px;
+  }
+
+  .key-label {
+    font-size: 11px;
+    white-space: nowrap;
+  }
+
+  .key-icon {
+    font-size: 14px;
+  }
+
+  .key.back .key-label {
+    font-size: 10px;
+    white-space: nowrap;
+  }
+
+  .key.say-it-full {
     min-height: 56px;
     font-size: 14px;
   }
 
-  .keyboard-row {
-    grid-template-columns: 36px 1fr;
-  }
-
-  .row-cells {
-    gap: 4px;
-  }
-
-  .key.wide {
+  .key.say-it-compact {
+    min-height: 56px;
     font-size: 10px;
   }
-
-  .key.say-it-full {
-    min-height: 60px;
-    font-size: 15px;
-  }
-
-  .key.say-it-compact {
-    min-height: 60px;
-    font-size: 11px;
-  }
 }
+
 
 /* Reduced Motion Accessibility Handling */
 @media (prefers-reduced-motion: reduce) {

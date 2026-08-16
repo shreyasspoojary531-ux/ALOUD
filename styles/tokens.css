@@ -56,8 +56,13 @@
   --ease-spring: cubic-bezier(0.22, 1.25, 0.36, 1);
   --ease-out-smooth: cubic-bezier(0.16, 1, 0.3, 1);
   --dur-suggest: 220ms;
-  --say-it-full-h: 80px;
-  --say-it-compact-h: 80px;
+  --say-it-full-h: 92px;
+  --say-it-compact-h: 92px;
+
+  /* Card & Key Padding Tokens */
+  --card-padding: clamp(16px, 1rem + 1vw, 24px);
+  --sp-fluid-card-pad: var(--card-padding);
+  --key-padding: clamp(10px, 1vw + 6px, 16px) var(--sp4);
 
   /* Continuous Fluid Scaling Clamp Tokens */
   --font-fluid-splash: clamp(5rem, 3.5rem + 6.5vw, 10.5rem);
@@ -73,4 +78,12 @@
   --icon-fluid-font: clamp(20px, 16px + 1vw, 29px);
   --camera-fluid-w: clamp(136px, 110px + 5vw, 188px);
   --camera-fluid-h: clamp(102px, 82px + 4vw, 142px);
+  /* Key Layout System & Spacing Tokens */
+  --key-grid-max-w: 1160px;
+  --row-label-w: 84px;
+  --row-label-gap: var(--sp4);
+  --key-gap: var(--sp3);
+  --key-min-height: 88px;
+  --key-radius: 18px;
 }
+

@@ -4,14 +4,15 @@ import useScanner from "../scanner/useScanner";
 import KeyRow from "./KeyRow";
 
 const letters = (s) => s.split("").map((label) => ({ label }));
-const back = { label: "↵ back", kind: "back" };
+const back = { label: "back", icon: "back", kind: "back" };
+
 const actions = [
-  { label: "⌂ home" },
-  { label: "◖ speak" },
-  { label: "◯ rest" },
-  { label: "↶ recent" },
-  { label: "◔ speed" },
-  { label: "♨ call for help", kind: "alert" },
+  { label: "home", icon: "heart", kind: "action-key" },
+  { label: "speak", icon: "message", kind: "action-key" },
+  { label: "rest", icon: "rest", kind: "action-key" },
+  { label: "recent", icon: "keyboard", kind: "action-key" },
+  { label: "speed", icon: "sun", kind: "action-key" },
+  { label: "call for help", icon: "help", kind: "alert", colSpan: 4 },
   back,
 ];
 
@@ -26,17 +27,18 @@ export default function Keyboard({
   const [opened, setOpened] = useState(null);
   const hasMessage = message.trim().length > 0;
 
-  // SUGGESTIONS row is rebuilt whenever message or suggestions change,
-  // so useScanner always sees the correct item list — no stale references.
+  // SUGGESTION row: when no AI suggestions exist, "Say it" button spans columns 1-9
   const suggestRow = useMemo(() => {
     const sayIt = {
-      label: "📢 Say it",
+      label: "Say it",
+      icon: "message",
       kind: hasMessage ? "say-it-compact" : "say-it-full",
+      colSpan: hasMessage && suggestions.length > 0 ? 1 : 9,
     };
     const keys = hasMessage && suggestions.length > 0
       ? [sayIt, ...suggestions.map((t) => ({ label: t, kind: "suggest" })), back]
       : [sayIt, back];
-    return { label: "SUGGEST", kind: "suggest-row", keys };
+    return { label: "SUGGESTION", kind: "suggest-row", keys };
   }, [hasMessage, suggestions]);
 
   const rows = useMemo(() => [
@@ -46,20 +48,20 @@ export default function Keyboard({
     {
       label: "S–Z",
       keys: letters("STUVWXYZ").concat([
-        { label: "⌴ space", kind: "wide" },
+        { label: "space", kind: "space" },
         back,
       ]),
     },
     {
       label: "EDIT",
       keys: [
-        { label: "⌫ letter", kind: "wide" },
-        { label: "◇ word", kind: "wide" },
-        { label: "↶ undo", kind: "wide" },
-        { label: "▱ clear", kind: "wide" },
+        { label: "letter", icon: "no", kind: "action-key" },
+        { label: "word", icon: "message", kind: "action-key" },
+        { label: "undo", icon: "back", kind: "action-key" },
+        { label: "clear", icon: "x-mark", kind: "action-key" },
         { label: "." },
         { label: "," },
-        { label: "?" },
+        { label: "?", kind: "question-key", colSpan: 3 },
         back,
       ],
     },
@@ -81,20 +83,17 @@ export default function Keyboard({
 
   const useKey = (key) => {
     if (!key?.label) return;
-    if (key.label.includes("back")) return setOpened(null);
-    if (key.label.includes("Say it") || key.label.includes("speak"))
-      return speak(message);
-    if (key.label.includes("home")) return location.assign("/home");
-    if (key.label.includes("help")) return speak("I need help.", true);
-    if (key.label.includes("clear")) return setMessage("");
-    if (key.label.includes("letter")) return setMessage((m) => m.slice(0, -1));
-    if (key.label.includes("word"))
-      return setMessage((m) => m.trimEnd().replace(/\S+$/, ""));
-    if (key.label === "⌴ space") return setMessage((m) => m + " ");
-    if (/^[A-Z]$/.test(key.label))
-      return setMessage((m) => m + key.label.toLowerCase());
-    if ([".", ",", "?"].includes(key.label))
-      return setMessage((m) => m + key.label);
+    const l = key.label.toLowerCase();
+    if (l === "back" || key.kind === "back") return setOpened(null);
+    if (l.includes("say it") || l === "speak") return speak(message);
+    if (l === "home") return location.assign("/home");
+    if (l.includes("help") || l.includes("call for help")) return speak("I need help.", true);
+    if (l === "clear") return setMessage("");
+    if (l === "letter") return setMessage((m) => m.slice(0, -1));
+    if (l === "word") return setMessage((m) => m.trimEnd().replace(/\S+$/, ""));
+    if (l === "space") return setMessage((m) => m + " ");
+    if (/^[A-Z]$/.test(key.label)) return setMessage((m) => m + key.label.toLowerCase());
+    if ([".", ",", "?"].includes(key.label)) return setMessage((m) => m + key.label);
     if (key.kind === "suggest") return setMessage(key.label);
   };
 
@@ -115,3 +114,4 @@ export default function Keyboard({
     </>
   );
 }
+
