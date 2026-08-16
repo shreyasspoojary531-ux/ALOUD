@@ -6,6 +6,7 @@ import Button from "../../components/shared/Button";
 import ProgressBar from "../../components/shared/ProgressBar";
 import CameraPill from "../../components/camera/CameraPill";
 import useScanner from "../../components/scanner/useScanner";
+import { useEyeControl } from "../../components/shared/EyeControlContext";
 import { calibratedThresholds } from "../../components/camera/useBlinkSelect";
 
 const steps = [
@@ -42,9 +43,9 @@ const steps = [
 ];
 
 export default function Setup() {
-  const router = useRouter(),
-    [step, setStep] = useState(0),
-    [eye, setEye] = useState(true);
+  const router = useRouter();
+  const { eyeOn, toggleEye } = useEyeControl();
+  const [step, setStep] = useState(0);
 
   const openSamples = useRef([]);
   const closedSamples = useRef([]);
@@ -85,7 +86,7 @@ export default function Setup() {
   );
   const blink = useRef(select);
   blink.current = select;
-  const onBlink = useCallback(() => blink.current(), []);
+  const onBlink = useCallback(() => blink.current(undefined, { isBlink: true }), []);
 
   useEffect(() => {
     if (step && step < steps.length) {
@@ -99,8 +100,8 @@ export default function Setup() {
   return (
     <main className="app">
       <TopBar
-        eyeOn={eye}
-        toggleEye={() => setEye((x) => !x)}
+        eyeOn={eyeOn}
+        toggleEye={toggleEye}
         onHelp={() => router.push("/")}
       />
       <div className="screen-center">
@@ -110,7 +111,7 @@ export default function Setup() {
           <p>{current.text}</p>
           {current.intro ? (
             <div className="button-row">
-              <Button className="primary" onSelect={() => select(0)}>
+              <Button className="primary" onSelect={(e) => select(0, { isPointer: !!e })}>
                 Start
               </Button>
               <Button onSelect={() => router.push("/home")}>
@@ -122,7 +123,8 @@ export default function Setup() {
           )}
         </section>
       </div>
-      <CameraPill enabled={eye} onLongBlink={onBlink} onBlendshape={handleBlendshape} />
+      <CameraPill enabled={eyeOn} onLongBlink={onBlink} onBlendshape={handleBlendshape} />
     </main>
   );
 }
+

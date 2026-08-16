@@ -5,6 +5,7 @@ import TopBar from "../../components/shared/TopBar";
 import CameraPill from "../../components/camera/CameraPill";
 import CategoryGrid from "../../components/home/CategoryGrid";
 import SpokenMessageOverlay from "../../components/overlay/SpokenMessageOverlay";
+import { useEyeControl } from "../../components/shared/EyeControlContext";
 import { say } from "../../lib/speech";
 
 const root = [
@@ -82,14 +83,14 @@ const groups = {
 };
 
 export default function Home() {
-  const router = useRouter(),
-    [eye, setEye] = useState(true),
-    [help, setHelp] = useState(false),
-    [group, setGroup] = useState(null),
-    [spoken, setSpoken] = useState(null);
+  const router = useRouter();
+  const { eyeOn, toggleEye } = useEyeControl();
+  const [help, setHelp] = useState(false);
+  const [group, setGroup] = useState(null);
+  const [spoken, setSpoken] = useState(null);
 
   const blink = useRef(() => {});
-  const onBlink = useCallback(() => blink.current(), []);
+  const onBlink = useCallback(() => blink.current(undefined, { isBlink: true }), []);
 
   const choose = (item) => {
     if (!item) return;
@@ -115,8 +116,8 @@ export default function Home() {
   return (
     <main className="app">
       <TopBar
-        eyeOn={eye}
-        toggleEye={() => setEye((x) => !x)}
+        eyeOn={eyeOn}
+        toggleEye={toggleEye}
         onHelp={() => setHelp(true)}
       />
       <section className="home center">
@@ -135,7 +136,7 @@ export default function Home() {
         <span className="pulse-dot" />
         The highlight moves on its own · take a long blink to select
       </p>
-      <CameraPill enabled={eye} onLongBlink={onBlink} />
+      <CameraPill enabled={eyeOn} onLongBlink={onBlink} />
       {spoken && (
         <SpokenMessageOverlay
           message={spoken}
@@ -164,3 +165,4 @@ export default function Home() {
     </main>
   );
 }
+

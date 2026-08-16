@@ -1,5 +1,6 @@
 'use client';
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { useEyeControl } from '../shared/EyeControlContext';
 
 /**
  * Screen-agnostic scanning engine hook.
@@ -7,6 +8,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
  * and pauses briefly during transitions to prevent accidental double-selections.
  */
 export default function useScanner(items, onSelect, interval = 1800, enabled = true) {
+  const { eyeOn } = useEyeControl();
   const [active, setActive] = useState(0);
   const [isPaused, setIsPaused] = useState(false);
   const [selectedIndex, setSelectedIndex] = useState(null);
@@ -40,10 +42,18 @@ export default function useScanner(items, onSelect, interval = 1800, enabled = t
     return () => clearInterval(id);
   }, [items.length, interval, enabled, isPaused, itemsKey]);
 
-  // Selection function called identically by click, spacebar, or blink
+  // Selection function with mode validation options
   const select = useCallback(
-    (index = activeRef.current) => {
+    (index = activeRef.current, options = {}) => {
       if (isPausedRef.current) return;
+      const { isPointer = false, isBlink = false } = options;
+
+      // Exclusive Input Mode:
+      // When Eye Control is ON, mouse clicks on scan targets must NOT select.
+      if (eyeOn && isPointer) return;
+      // When Eye Control is OFF, blink detection must NOT trigger select.
+      if (!eyeOn && isBlink) return;
+
       const targetIndex = typeof index === 'number' ? index : activeRef.current;
       const item = items[targetIndex];
 
@@ -62,19 +72,18 @@ export default function useScanner(items, onSelect, interval = 1800, enabled = t
         }, 400);
       }
     },
-    [items]
+    [items, eyeOn]
   );
 
-  // Spacebar fallback listener
+  // Spacebar fallback listener (works in both modes for testing)
   useEffect(() => {
     if (!enabled) return;
 
     const handleKeyDown = (e) => {
       if (e.code === 'Space' && !e.repeat) {
-        // Avoid intercepting spacebar when typing in an input field
         if (['INPUT', 'TEXTAREA'].includes(document.activeElement?.tagName)) return;
         e.preventDefault();
-        select();
+        select(activeRef.current, { isSpace: true });
       }
     };
 
@@ -84,3 +93,4 @@ export default function useScanner(items, onSelect, interval = 1800, enabled = t
 
   return { active, select, isPaused, selectedIndex };
 }
+
