@@ -236,11 +236,11 @@ a:focus-visible {
   gap: var(--sp4);
 }
 
-/* Depth & Layered Elevation on Cards */
+/* Depth & Layered Elevation on Cards with Solid Thick Ring Border */
 .category-card {
   position: relative;
-  border: 1px solid rgba(229, 220, 205, 0.75);
-  border-radius: 26px;
+  border: var(--ring-width) solid transparent;
+  border-radius: 28px;
   background: linear-gradient(165deg, #ffffff 0%, #fdf8ee 60%, #f7ebd9 100%);
   box-shadow: var(--elevation-card);
   min-height: var(--card-fluid-min-h);
@@ -262,17 +262,18 @@ a:focus-visible {
   padding-left: clamp(80px, 60px + 4vw, 112px);
 }
 
-/* Active Scan-Highlight Ring Animation (Thick, Confident Ring) */
+/* FIX 1: Active Scan-Highlight Ring (Matching Reference Images 3, 4, 5) */
 @keyframes activeRingIn {
   0% {
-    box-shadow: 0 0 0 0px var(--tint-deep), var(--elevation-card);
+    border-color: transparent;
     transform: scale(0.985);
   }
   60% {
+    border-color: var(--tint-deep);
     transform: translateY(-3px) scale(1.01);
   }
   100% {
-    box-shadow: var(--elevation-card-active);
+    border-color: var(--tint-deep);
     transform: translateY(-2px) scale(1);
   }
 }
@@ -289,18 +290,22 @@ a:focus-visible {
 @keyframes selectLiftAndSettle {
   0% {
     transform: translateY(-2px) scale(1);
+    border-color: var(--tint-deep);
     box-shadow: var(--elevation-card-active);
   }
   40% {
     transform: translateY(-9px) scale(1.025);
+    border-color: var(--tint-deep);
     box-shadow: var(--elevation-card-selected);
   }
   75% {
     transform: translateY(-3px) scale(1);
+    border-color: var(--tint-deep);
     box-shadow: var(--elevation-card-active);
   }
   100% {
     transform: translateY(-2px) scale(1);
+    border-color: var(--tint-deep);
     box-shadow: var(--elevation-card-active);
   }
 }
@@ -525,7 +530,7 @@ a:focus-visible {
 
 .key {
   min-height: 92px;
-  border: 1px solid var(--line);
+  border: var(--ring-width) solid transparent;
   border-radius: 13px;
   background: linear-gradient(165deg, #ffffff 0%, #fff6e6 100%);
   box-shadow: 0 3px 7px rgba(52, 40, 23, 0.08), inset 0 1px 0 #ffffff;
@@ -554,8 +559,9 @@ a:focus-visible {
 }
 
 .key.active {
-  outline: var(--ring-width-key) solid var(--orange);
-  outline-offset: 2px;
+  border-color: var(--orange);
+  outline: none;
+  box-shadow: 0 0 0 2px var(--orange-pale);
 }
 
 .overlay {
@@ -668,14 +674,14 @@ a:focus-visible {
 
   .category-card.active,
   .key.active {
-    box-shadow: 0 0 0 var(--ring-width) var(--tint-deep) !important;
+    border-color: var(--tint-deep) !important;
     transform: none !important;
   }
 
   .category-card.selected-lift,
   .key.selected-lift {
     animation: none !important;
-    box-shadow: 0 0 0 var(--ring-width-thick) var(--tint-deep) !important;
+    border-color: var(--tint-deep) !important;
     transform: none !important;
   }
 }
