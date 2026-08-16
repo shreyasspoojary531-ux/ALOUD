@@ -1,5 +1,7 @@
 "use client";
+import { useEffect } from "react";
 import useScanner from "../scanner/useScanner";
+
 export default function KeyRow({
   row,
   active,
@@ -7,15 +9,21 @@ export default function KeyRow({
   onKey,
   blinkSelect,
   opened,
+  enabled = true,
 }) {
   const { active: keyActive, select } = useScanner(
     row.keys,
     onKey,
     1800,
-    active && opened,
+    enabled && active && opened
   );
-  const trigger = () => (opened ? select() : onOpen());
-  if (active) blinkSelect.current = trigger;
+
+  useEffect(() => {
+    if (enabled && active && blinkSelect) {
+      blinkSelect.current = () => (opened ? select() : onOpen());
+    }
+  }, [enabled, active, opened, blinkSelect, select, onOpen]);
+
   return (
     <div className={`keyboard-row ${active ? "active" : ""}`}>
       <div className="row-label">{row.label}</div>

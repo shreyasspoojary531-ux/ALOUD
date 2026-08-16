@@ -1,4 +1,5 @@
 "use client";
+import { useEffect } from "react";
 import useScanner from "../scanner/useScanner";
 import { cancelSpeech, isSpeechSupported } from "../../lib/speech";
 
@@ -15,9 +16,17 @@ export default function SpokenMessageOverlay({
 
   const { active, select } = useScanner([{ label: "I got help" }], handleDismiss);
 
-  if (blinkSelect) {
-    blinkSelect.current = select;
-  }
+  useEffect(() => {
+    if (blinkSelect) {
+      const prev = blinkSelect.current;
+      blinkSelect.current = select;
+      return () => {
+        if (blinkSelect.current === select) {
+          blinkSelect.current = prev;
+        }
+      };
+    }
+  }, [blinkSelect, select]);
 
   const speechAvailable = isSpeechSupported();
 

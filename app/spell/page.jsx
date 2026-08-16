@@ -5,17 +5,21 @@ import CameraPill from "../../components/camera/CameraPill";
 import Keyboard from "../../components/keyboard/Keyboard";
 import SpokenMessageOverlay from "../../components/overlay/SpokenMessageOverlay";
 import { say } from "../../lib/speech";
+
 export default function Spell() {
   const [eye, setEye] = useState(true),
     [message, setMessage] = useState(""),
     [spoken, setSpoken] = useState(null);
+
   const blink = useRef(() => {});
   const onBlink = useCallback(() => blink.current(), []);
+
   const speak = (text, urgent = false) => {
     if (!text) return;
     say(text);
     setSpoken({ text, urgent });
   };
+
   return (
     <main className="app">
       <section className="spell center">
@@ -31,6 +35,7 @@ export default function Spell() {
           setMessage={setMessage}
           speak={speak}
           blinkSelect={blink}
+          enabled={!spoken}
         />
       </section>
       <p className="caption">

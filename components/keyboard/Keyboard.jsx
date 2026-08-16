@@ -1,20 +1,23 @@
 "use client";
-import { useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import useScanner from "../scanner/useScanner";
 import KeyRow from "./KeyRow";
+
 const letters = (s) => s.split("").map((label) => ({ label }));
-const back = { label: "↵ back", kind: "back" },
-  actions = [
-    { label: "⌂ home" },
-    { label: "◖ speak" },
-    { label: "◯ rest" },
-    { label: "↶ recent" },
-    { label: "◔ speed" },
-    { label: "♨ call for help", kind: "alert" },
-    back,
-  ];
-export default function Keyboard({ message, setMessage, speak, blinkSelect }) {
+const back = { label: "↵ back", kind: "back" };
+const actions = [
+  { label: "⌂ home" },
+  { label: "◖ speak" },
+  { label: "◯ rest" },
+  { label: "↶ recent" },
+  { label: "◔ speed" },
+  { label: "♨ call for help", kind: "alert" },
+  back,
+];
+
+export default function Keyboard({ message, setMessage, speak, blinkSelect, enabled = true }) {
   const [opened, setOpened] = useState(null);
+
   const rows = [
     {
       label: "SUGGESTIONS",
@@ -46,15 +49,22 @@ export default function Keyboard({ message, setMessage, speak, blinkSelect }) {
     },
     { label: "ACTIONS", keys: actions },
   ];
+
   const { active, select } = useScanner(
     rows,
     (_, i) => setOpened(i),
     1800,
-    opened === null,
+    enabled && opened === null
   );
-  const scanRef = useRef(select);
-  blinkSelect.current = scanRef.current;
+
+  useEffect(() => {
+    if (enabled && opened === null && blinkSelect) {
+      blinkSelect.current = select;
+    }
+  }, [enabled, opened, blinkSelect, select]);
+
   const useKey = (key) => {
+    if (!key || !key.label) return;
     if (key.label.includes("back")) return setOpened(null);
     if (key.label.includes("speak")) return speak(message);
     if (key.label.includes("home")) return location.assign("/home");
@@ -62,7 +72,7 @@ export default function Keyboard({ message, setMessage, speak, blinkSelect }) {
     if (key.label.includes("clear")) return setMessage("");
     if (key.label.includes("letter")) return setMessage((m) => m.slice(0, -1));
     if (key.label.includes("word"))
-      return setMessage((m) => m.trimEnd().replace(/\\S+$/, ""));
+      return setMessage((m) => m.trimEnd().replace(/\S+$/, ""));
     if (key.label === "⌴ space") return setMessage((m) => m + " ");
     if (/^[A-Z]$/.test(key.label))
       return setMessage((m) => m + key.label.toLowerCase());
@@ -71,17 +81,19 @@ export default function Keyboard({ message, setMessage, speak, blinkSelect }) {
     if (["I need help.", "I’m in pain.", "Yes", "No"].includes(key.label))
       setMessage(key.label);
   };
+
   return (
     <>
       {rows.map((row, i) => (
         <KeyRow
           key={row.label}
           row={row}
-          active={i === active}
+          active={enabled && i === active}
           opened={opened === i}
           onOpen={() => setOpened(i)}
           onKey={useKey}
           blinkSelect={blinkSelect}
+          enabled={enabled}
         />
       ))}
     </>
