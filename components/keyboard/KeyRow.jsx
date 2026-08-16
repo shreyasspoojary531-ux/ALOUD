@@ -1,3 +1,36 @@
-'use client';
-import useScanner from '../scanner/useScanner';
-export default function KeyRow({ row, active, onOpen, onKey, blinkSelect, opened }) { const {active:keyActive,select}=useScanner(row.keys,onKey,1800,active&&opened); const trigger=()=>opened?select():onOpen(); if(active) blinkSelect.current=trigger; return <div className={`keyboard-row ${active?'active':''}`}><div className="row-label">{row.label}</div><div className="row-cells">{row.keys.map((key,i)=><button key={key.label} className={`key ${key.kind||''} ${opened&&i===keyActive?'active':''}`} onClick={()=>opened?select(i):onOpen()} aria-label={key.label}>{key.label}</button>)}</div></div>; }
+"use client";
+import useScanner from "../scanner/useScanner";
+export default function KeyRow({
+  row,
+  active,
+  onOpen,
+  onKey,
+  blinkSelect,
+  opened,
+}) {
+  const { active: keyActive, select } = useScanner(
+    row.keys,
+    onKey,
+    1800,
+    active && opened,
+  );
+  const trigger = () => (opened ? select() : onOpen());
+  if (active) blinkSelect.current = trigger;
+  return (
+    <div className={`keyboard-row ${active ? "active" : ""}`}>
+      <div className="row-label">{row.label}</div>
+      <div className="row-cells">
+        {row.keys.map((key, i) => (
+          <button
+            key={key.label}
+            className={`key ${key.kind || ""} ${opened && i === keyActive ? "active" : ""}`}
+            onClick={() => (opened ? select(i) : onOpen())}
+            aria-label={key.label}
+          >
+            {key.label}
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}

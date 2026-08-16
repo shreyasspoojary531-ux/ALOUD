@@ -1,9 +1,89 @@
-'use client';
-import { useRef, useState } from 'react';
-import useScanner from '../scanner/useScanner';
-import KeyRow from './KeyRow';
-const letters=s=>s.split('').map(label=>({label}));
-const back={label:'↵ back',kind:'back'}, actions=[{label:'⌂ home'},{label:'◖ speak'},{label:'◯ rest'},{label:'↶ recent'},{label:'◔ speed'},{label:'♨ call for help',kind:'alert'},back];
-export default function Keyboard({ message, setMessage, speak, blinkSelect }) { const [opened,setOpened]=useState(null); const rows=[{label:'SUGGESTIONS',keys:['I need help.','I’m in pain.','Yes','No'].map(label=>({label,kind:'wide'})).concat(back)},{label:'A–I',keys:letters('ABCDEFGHI').concat(back)},{label:'J–R',keys:letters('JKLMNOPQR').concat(back)},{label:'S–Z',keys:letters('STUVWXYZ').concat([{label:'⌴ space',kind:'wide'},back])},{label:'EDIT',keys:[{label:'⌫ letter',kind:'wide'},{label:'◇ word',kind:'wide'},{label:'↶ undo',kind:'wide'},{label:'▱ clear',kind:'wide'},{label:'.'},{label:','},{label:'?'},back]},{label:'ACTIONS',keys:actions}]; const {active,select}=useScanner(rows,(_,i)=>setOpened(i),1800,opened===null); const scanRef=useRef(select); blinkSelect.current=scanRef.current;
- const useKey=key=>{if(key.label.includes('back'))return setOpened(null);if(key.label.includes('speak'))return speak(message);if(key.label.includes('home'))return location.assign('/home');if(key.label.includes('help'))return speak("I need help.",true);if(key.label.includes('clear'))return setMessage('');if(key.label.includes('letter'))return setMessage(m=>m.slice(0,-1));if(key.label.includes('word'))return setMessage(m=>m.trimEnd().replace(/\\S+$/,''));if(key.label==='⌴ space')return setMessage(m=>m+' ');if(/^[A-Z]$/.test(key.label))return setMessage(m=>m+key.label.toLowerCase());if(['.',' ',',','?'].includes(key.label))return setMessage(m=>m+key.label);if(['I need help.','I’m in pain.','Yes','No'].includes(key.label))setMessage(key.label)};
- return <>{rows.map((row,i)=><KeyRow key={row.label} row={row} active={i===active} opened={opened===i} onOpen={()=>setOpened(i)} onKey={useKey} blinkSelect={blinkSelect}/>)}</>; }
+"use client";
+import { useRef, useState } from "react";
+import useScanner from "../scanner/useScanner";
+import KeyRow from "./KeyRow";
+const letters = (s) => s.split("").map((label) => ({ label }));
+const back = { label: "↵ back", kind: "back" },
+  actions = [
+    { label: "⌂ home" },
+    { label: "◖ speak" },
+    { label: "◯ rest" },
+    { label: "↶ recent" },
+    { label: "◔ speed" },
+    { label: "♨ call for help", kind: "alert" },
+    back,
+  ];
+export default function Keyboard({ message, setMessage, speak, blinkSelect }) {
+  const [opened, setOpened] = useState(null);
+  const rows = [
+    {
+      label: "SUGGESTIONS",
+      keys: ["I need help.", "I’m in pain.", "Yes", "No"]
+        .map((label) => ({ label, kind: "wide" }))
+        .concat(back),
+    },
+    { label: "A–I", keys: letters("ABCDEFGHI").concat(back) },
+    { label: "J–R", keys: letters("JKLMNOPQR").concat(back) },
+    {
+      label: "S–Z",
+      keys: letters("STUVWXYZ").concat([
+        { label: "⌴ space", kind: "wide" },
+        back,
+      ]),
+    },
+    {
+      label: "EDIT",
+      keys: [
+        { label: "⌫ letter", kind: "wide" },
+        { label: "◇ word", kind: "wide" },
+        { label: "↶ undo", kind: "wide" },
+        { label: "▱ clear", kind: "wide" },
+        { label: "." },
+        { label: "," },
+        { label: "?" },
+        back,
+      ],
+    },
+    { label: "ACTIONS", keys: actions },
+  ];
+  const { active, select } = useScanner(
+    rows,
+    (_, i) => setOpened(i),
+    1800,
+    opened === null,
+  );
+  const scanRef = useRef(select);
+  blinkSelect.current = scanRef.current;
+  const useKey = (key) => {
+    if (key.label.includes("back")) return setOpened(null);
+    if (key.label.includes("speak")) return speak(message);
+    if (key.label.includes("home")) return location.assign("/home");
+    if (key.label.includes("help")) return speak("I need help.", true);
+    if (key.label.includes("clear")) return setMessage("");
+    if (key.label.includes("letter")) return setMessage((m) => m.slice(0, -1));
+    if (key.label.includes("word"))
+      return setMessage((m) => m.trimEnd().replace(/\\S+$/, ""));
+    if (key.label === "⌴ space") return setMessage((m) => m + " ");
+    if (/^[A-Z]$/.test(key.label))
+      return setMessage((m) => m + key.label.toLowerCase());
+    if ([".", " ", ",", "?"].includes(key.label))
+      return setMessage((m) => m + key.label);
+    if (["I need help.", "I’m in pain.", "Yes", "No"].includes(key.label))
+      setMessage(key.label);
+  };
+  return (
+    <>
+      {rows.map((row, i) => (
+        <KeyRow
+          key={row.label}
+          row={row}
+          active={i === active}
+          opened={opened === i}
+          onOpen={() => setOpened(i)}
+          onKey={useKey}
+          blinkSelect={blinkSelect}
+        />
+      ))}
+    </>
+  );
+}
