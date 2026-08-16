@@ -8,18 +8,45 @@ import SpokenMessageOverlay from "../../components/overlay/SpokenMessageOverlay"
 import { say } from "../../lib/speech";
 
 const root = [
-  { label: "I feel", icon: "♡", tint: "rose" },
-  { label: "I need", icon: "☞", tint: "gold" },
-  { label: "People", icon: "♧", tint: "sage" },
-  { label: "Answers", icon: "◯", tint: "blue" },
+  { label: "I feel", icon: "I feel", tint: "rose" },
+  { label: "I need", icon: "I need", tint: "gold" },
+  { label: "People", icon: "People", tint: "sage" },
+  { label: "Answers", icon: "Answers", tint: "blue" },
   {
     label: "Spell it out",
     note: "Build any message, letter by letter",
-    icon: "⌨",
+    icon: "Spell it out",
     tint: "rose",
     wide: true,
   },
 ];
+
+const subIcons = {
+  "I’m in pain.": "pain",
+  "I can’t breathe.": "breathe",
+  "I feel sick.": "sick",
+  "I’m too hot.": "hot",
+  "I’m too cold.": "cold",
+  "I’m itchy.": "sick",
+
+  "I need some water.": "droplet",
+  "I need help.": "help",
+  "I need the bathroom.": "help",
+  "I need to rest.": "rest",
+  "I need medicine.": "medicine",
+  "I need my family.": "users",
+
+  "I need my carer.": "users",
+  "Please call someone.": "message",
+  "I want company.": "users",
+
+  "Yes.": "yes",
+  "No.": "no",
+  "Maybe.": "question",
+  "I don’t know.": "question",
+  "Thank you.": "heart",
+  "Please.": "hand",
+};
 
 const groups = {
   "I feel": [
@@ -76,12 +103,12 @@ export default function Home() {
 
   const items = group && groups[group]
     ? [
-        ...groups[group].map((label, i) => ({
+        ...groups[group].map((label) => ({
           label,
-          icon: ["⌁", "≋", "♨", "☀", "❄", "✓"][i % 6],
+          icon: subIcons[label] || "heart",
           tint: group === "I need" ? "gold" : group === "Answers" ? "blue" : "rose",
         })),
-        { label: "Back", icon: "‹", tint: "blue" },
+        { label: "Back", icon: "Back", tint: "blue" },
       ]
     : root;
 
