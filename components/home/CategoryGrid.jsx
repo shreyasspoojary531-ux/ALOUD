@@ -26,9 +26,10 @@ export default function CategoryGrid({
           item={item}
           active={enabled && i === active}
           selected={enabled && i === selectedIndex}
-          onSelect={() => select(i)}
+          onSelect={() => select(i, { isPointer: true })}
         />
       ))}
     </div>
+
   );
 }
