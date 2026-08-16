@@ -39,4 +39,25 @@
   --camera-w: 188px;
   --camera-h: 142px;
   --scan-ms: 1800ms;
+
+  /* Card Depth & Layered Elevation Tokens */
+  --elevation-card: 0 2px 4px rgba(52, 40, 23, 0.04), 0 10px 24px rgba(52, 40, 23, 0.08), inset 0 1px 0.5px rgba(255, 255, 255, 0.9);
+  --elevation-card-hover: 0 4px 8px rgba(52, 40, 23, 0.06), 0 14px 28px rgba(52, 40, 23, 0.12), inset 0 1px 1px #ffffff;
+  --elevation-card-active: 0 0 0 3.5px var(--tint-deep), 0 8px 18px rgba(52, 40, 23, 0.1), 0 18px 36px rgba(207, 87, 0, 0.18), inset 0 1px 1px #ffffff;
+  --elevation-pill: 0 4px 12px rgba(52, 40, 23, 0.07), inset 0 1px 0.5px rgba(255, 255, 255, 0.8);
+
+  /* Continuous Fluid Scaling Clamp Tokens */
+  --font-fluid-splash: clamp(5rem, 3.5rem + 6.5vw, 10.5rem);
+  --font-fluid-tagline: clamp(1.25rem, 1.05rem + 1vw, 1.75rem);
+  --font-fluid-spoken: clamp(3.25rem, 2.2rem + 4.5vw, 7.75rem);
+  --font-fluid-card-title: clamp(1.35rem, 1.15rem + 1.1vw, 1.95rem);
+  --font-fluid-eyebrow: clamp(0.7rem, 0.65rem + 0.2vw, 0.85rem);
+  --font-fluid-body: clamp(0.85rem, 0.8rem + 0.3vw, 1.05rem);
+  --sp-fluid-home-top: clamp(3vh, 2vh + 5vw, 19vh);
+  --sp-fluid-app-pad: clamp(1rem, 0.5rem + 2vw, 3rem);
+  --card-fluid-min-h: clamp(120px, 90px + 6vw, 157px);
+  --icon-fluid-size: clamp(48px, 38px + 1.6vw, 66px);
+  --icon-fluid-font: clamp(20px, 16px + 1vw, 29px);
+  --camera-fluid-w: clamp(136px, 110px + 5vw, 188px);
+  --camera-fluid-h: clamp(102px, 82px + 4vw, 142px);
 }

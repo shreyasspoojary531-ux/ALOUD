@@ -5,16 +5,20 @@ import TopBar from "../components/shared/TopBar";
 import Button from "../components/shared/Button";
 import CameraPill from "../components/camera/CameraPill";
 import useScanner from "../components/scanner/useScanner";
+
 export default function Splash() {
   const router = useRouter(),
     [eye, setEye] = useState(true),
     [help, setHelp] = useState(false);
+
   const { select } = useScanner([{ label: "Begin with eye control" }], () =>
     router.push("/setup"),
   );
+
   const blink = useRef(select);
   blink.current = select;
   const onBlink = useCallback(() => blink.current(), []);
+
   return (
     <main className="app">
       <TopBar
@@ -32,9 +36,11 @@ export default function Splash() {
             <br />
             only with their eyes.
           </p>
-          <Button className="primary" onSelect={() => select(0)}>
-            Begin with eye control
-          </Button>
+          <div className="splash-cta-container">
+            <Button className="primary splash-btn" onSelect={() => select(0)}>
+              Begin with eye control
+            </Button>
+          </div>
         </div>
       </div>
       {help && (
