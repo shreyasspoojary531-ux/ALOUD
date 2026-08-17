@@ -78,6 +78,7 @@
   --icon-fluid-font: clamp(20px, 16px + 1vw, 29px);
   --camera-fluid-w: clamp(136px, 110px + 5vw, 188px);
   --camera-fluid-h: clamp(102px, 82px + 4vw, 142px);
+
   /* Key Layout System & Spacing Tokens */
   --key-grid-max-w: 1160px;
   --row-label-w: 84px;
@@ -85,5 +86,9 @@
   --key-gap: var(--sp3);
   --key-min-height: 88px;
   --key-radius: 18px;
-}
 
+  /* Landing Page Design Tokens */
+  --landing-content: 1040px;
+  --font-fluid-section-title: clamp(2rem, 1.6rem + 1.8vw, 3rem);
+  --sp-landing-section-gap: clamp(48px, 6vh + 2vw, 96px);
+}

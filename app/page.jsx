@@ -6,14 +6,16 @@ import Button from "../components/shared/Button";
 import CameraPill from "../components/camera/CameraPill";
 import useScanner from "../components/scanner/useScanner";
 import { useEyeControl } from "../components/shared/EyeControlContext";
+import LandingSections from "../components/landing/LandingSections";
 
 export default function Splash() {
   const router = useRouter();
   const { eyeOn, toggleEye } = useEyeControl();
   const [help, setHelp] = useState(false);
 
-  const { select } = useScanner([{ label: "Begin with eye control" }], () =>
-    router.push("/setup"),
+  const { select } = useScanner(
+    [{ label: "Begin with eye control" }],
+    () => router.push("/setup"),
   );
 
   const blink = useRef(select);
@@ -27,23 +29,54 @@ export default function Splash() {
         toggleEye={toggleEye}
         onHelp={() => setHelp(true)}
       />
-      <div className="screen-center">
-        <div>
-          <h1 className="splash-word">
-            Aloud<span className="dot">.</span>
-          </h1>
-          <p className="tagline">
-            A voice for anyone who can speak
-            <br />
-            only with their eyes.
-          </p>
-          <div className="splash-cta-container">
-            <Button className="primary splash-btn" onSelect={() => select(0, { isPointer: true })}>
-              Begin with eye control
-            </Button>
+
+      {/* Hero Splash View */}
+      <section className="hero-splash">
+        <div className="screen-center">
+          <div>
+            <h1 className="splash-word">
+              Aloud<span className="dot">.</span>
+            </h1>
+            <p className="tagline">
+              A voice for anyone who can speak
+              <br />
+              only with their eyes.
+            </p>
+            <div className="splash-cta-container">
+              <Button
+                className="primary splash-btn"
+                onSelect={() => select(0, { isPointer: true })}
+              >
+                Begin with eye control
+              </Button>
+            </div>
           </div>
         </div>
-      </div>
+
+        {/* Down Chevron Scroll Indicator */}
+        <a
+          href="#how-it-works"
+          className="scroll-indicator"
+          aria-label="Scroll to learn more"
+        >
+          <span>LEARN MORE</span>
+          <svg
+            className="scroll-chevron-svg"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2.5"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
+            <path d="M6 9l6 6 6-6" />
+          </svg>
+        </a>
+      </section>
+
+      {/* Scrollable Landing Sections */}
+      <LandingSections onSelectCTA={() => select(0, { isPointer: true })} />
+
       {help && (
         <div className="help">
           <div className="help-card">
@@ -58,8 +91,8 @@ export default function Splash() {
           </div>
         </div>
       )}
+
       <CameraPill enabled={eyeOn} onLongBlink={onBlink} />
     </main>
   );
 }
-

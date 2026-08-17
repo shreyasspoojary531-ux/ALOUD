@@ -93,4 +93,3 @@ export default function useScanner(items, onSelect, interval = 1800, enabled = t
 
   return { active, select, isPaused, selectedIndex };
 }
-
