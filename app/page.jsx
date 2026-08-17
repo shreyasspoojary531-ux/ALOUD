@@ -13,9 +13,13 @@ export default function Splash() {
   const { eyeOn, toggleEye } = useEyeControl();
   const [help, setHelp] = useState(false);
 
+  const handleBegin = useCallback(() => {
+    router.push("/setup");
+  }, [router]);
+
   const { select } = useScanner(
     [{ label: "Begin with eye control" }],
-    () => router.push("/setup"),
+    handleBegin,
   );
 
   const blink = useRef(select);
@@ -45,7 +49,7 @@ export default function Splash() {
             <div className="splash-cta-container">
               <Button
                 className="primary splash-btn"
-                onSelect={() => select(0, { isPointer: true })}
+                onSelect={handleBegin}
               >
                 Begin with eye control
               </Button>
@@ -75,7 +79,7 @@ export default function Splash() {
       </section>
 
       {/* Scrollable Landing Sections */}
-      <LandingSections onSelectCTA={() => select(0, { isPointer: true })} />
+      <LandingSections onSelectCTA={handleBegin} />
 
       {help && (
         <div className="help">

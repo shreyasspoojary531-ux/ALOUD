@@ -51,7 +51,6 @@ export default function KeyRow({
         }
       }}
     >
-      <ScanRing active={enabled && active && !opened} duration={1800} />
       <div className="row-label">{row.label}</div>
       <div className="row-cells">
         {row.keys.map((key, i) => {
@@ -81,4 +80,3 @@ export default function KeyRow({
     </div>
   );
 }
-

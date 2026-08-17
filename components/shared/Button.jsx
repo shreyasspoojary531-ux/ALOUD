@@ -1,5 +1,4 @@
 "use client";
-import { useEyeControl } from "./EyeControlContext";
 
 export default function Button({
   children,
@@ -7,13 +6,7 @@ export default function Button({
   className = "",
   ariaLabel,
 }) {
-  const { eyeOn } = useEyeControl();
-
   const handleClick = (e) => {
-    if (eyeOn) {
-      e.preventDefault();
-      return;
-    }
     onSelect?.(e);
   };
 
@@ -28,4 +21,3 @@ export default function Button({
     </button>
   );
 }
-

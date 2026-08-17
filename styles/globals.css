@@ -671,6 +671,14 @@ a:focus-visible {
   box-shadow: 0 0 0 2px var(--orange-pale);
 }
 
+.scan-ring {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  border-radius: inherit;
+  z-index: 1;
+}
+
 .key.suggest {
   background: rgba(244, 229, 185, 0.45);
   border-color: transparent;
