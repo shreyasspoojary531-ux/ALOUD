@@ -235,7 +235,6 @@ a:focus-visible {
   gap: var(--sp4);
 }
 
-/* Category Card with Solid 3.5px Colored Border Rings & Lift-and-Settle Selection */
 .category-card {
   --tint: var(--orange-pale);
   --tint-deep: var(--orange-dark);
@@ -285,8 +284,6 @@ a:focus-visible {
   border-color: var(--tint-deep);
   box-shadow: var(--elevation-card-active);
   transform: translateY(-3px);
-
-  /* Subtle pulsing ring animation when active */
   animation: activeCardPulse 1.8s infinite cubic-bezier(0.4, 0, 0.6, 1);
 }
 
@@ -299,7 +296,6 @@ a:focus-visible {
   }
 }
 
-/* Lift-and-Settle Selection Feedback Animation */
 .category-card.selected-lift,
 .key.selected-lift {
   animation: liftAndSettle 0.4s var(--ease-spring) forwards !important;
