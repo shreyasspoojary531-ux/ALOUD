@@ -2,7 +2,7 @@
 import ScrollObserver from "./ScrollObserver";
 import BentoGrid from "./BentoGrid";
 import GlassCTACard from "./GlassCTACard";
-import { StaggeredHeading, BlurHighlightText } from "./TextEffects";
+import { BlurHighlightText } from "./TextEffects";
 
 const MISSION_P1 = [
   { text: "Aloud was built to answer one question: " },
@@ -34,11 +34,6 @@ export default function LandingSections({ onSelectCTA }) {
               <span className="landing-eyebrow">OUR PURPOSE</span>
               <span className="placeholder-tag">[PLACEHOLDER COPY — Replace with final story text]</span>
             </div>
-
-            <StaggeredHeading
-              text="Giving a voice when words are hard to reach"
-              className="landing-title mission-stagger-title"
-            />
 
             <div className="mission-body">
               <BlurHighlightText segments={MISSION_P1} />

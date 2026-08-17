@@ -28,7 +28,7 @@ export default function GlassCTACard({ onSelect }) {
               }}
             />
           ))}
-          {/* Orange dot mark */}
+          {/* Orange dot mark (Aloud brand) */}
           <div className="glass-mark" aria-hidden="true">
             <span />
           </div>

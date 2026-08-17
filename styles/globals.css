@@ -1244,10 +1244,11 @@ a:focus-visible {
   width: 100%;
   height: 100%;
   border-radius: 46px;
-  background: linear-gradient(135deg, #1c1c1e 0%, #0a0a0a 100%);
+  /* Warm parchment gradient matching site background */
+  background: linear-gradient(145deg, var(--paper) 0%, #f0e8d8 60%, var(--orange-pale) 100%);
   box-shadow:
-    0 40px 60px rgba(0, 0, 0, 0.35),
-    0 0 0 1px rgba(255, 255, 255, 0.06);
+    0 32px 56px rgba(207, 87, 0, 0.15),
+    0 0 0 1px var(--line);
   transform-style: preserve-3d;
   transition:
     transform 0.45s cubic-bezier(0.16, 1, 0.3, 1),
@@ -1258,8 +1259,8 @@ a:focus-visible {
 .glass-card-scene:hover .glass-card {
   transform: rotate3d(1, 1, 0, 28deg);
   box-shadow:
-    rgba(0, 0, 0, 0.4) 28px 48px 24px -38px,
-    rgba(0, 0, 0, 0.12) 0 20px 28px 0;
+    rgba(207, 87, 0, 0.25) 28px 48px 24px -38px,
+    rgba(207, 87, 0, 0.08) 0 20px 28px 0;
 }
 
 /* Inner frosted inset panel */
@@ -1268,6 +1269,7 @@ a:focus-visible {
   position: absolute;
   inset: 8px;
   border-radius: 50px;
+<<<<<<< HEAD
 <<<<<<< HEAD
   border-bottom: 1px solid rgba(255, 255, 255, 0.7);
   border-left: 1px solid rgba(255, 255, 255, 0.7);
@@ -1280,13 +1282,21 @@ a:focus-visible {
 =======
   border-bottom: 1px solid rgba(255, 255, 255, 0.18);
   border-left: 1px solid rgba(255, 255, 255, 0.18);
+=======
+  border-bottom: 1px solid rgba(255, 255, 255, 0.7);
+  border-left: 1px solid rgba(255, 255, 255, 0.7);
+>>>>>>> f2684c1 (Remove staggered heading; recolor glass CTA card to site warm palette)
   background: linear-gradient(
     to bottom,
-    rgba(255, 255, 255, 0.22) 0%,
-    rgba(255, 255, 255, 0.08) 100%
+    rgba(255, 255, 255, 0.55) 0%,
+    rgba(255, 255, 255, 0.2) 100%
   );
+<<<<<<< HEAD
   backdrop-filter: blur(4px);
 >>>>>>> 3e9fd7b (Add GlassCard CTA, StaggeredHeading, BlurHighlight; remove Key Capabilities section)
+=======
+  backdrop-filter: blur(6px);
+>>>>>>> f2684c1 (Remove staggered heading; recolor glass CTA card to site warm palette)
   transform: translate3d(0, 0, 25px);
   transform-style: preserve-3d;
   pointer-events: none;
@@ -1308,6 +1318,7 @@ a:focus-visible {
   position: absolute;
   border-radius: 50%;
 <<<<<<< HEAD
+<<<<<<< HEAD
   background: rgba(207, 87, 0, 0.07);
   box-shadow: rgba(207, 87, 0, 0.08) -8px 8px 16px 0;
   top: 10px;
@@ -1317,6 +1328,11 @@ a:focus-visible {
 =======
   background: rgba(255, 255, 255, 0.08);
   box-shadow: rgba(100, 100, 111, 0.15) -8px 8px 16px 0;
+=======
+  /* Warm orange tint circles */
+  background: rgba(207, 87, 0, 0.07);
+  box-shadow: rgba(207, 87, 0, 0.08) -8px 8px 16px 0;
+>>>>>>> f2684c1 (Remove staggered heading; recolor glass CTA card to site warm palette)
   top: 10px;
   right: 10px;
   transform: translate3d(0, 0, var(--circle-z, 20px));
@@ -1341,6 +1357,7 @@ a:focus-visible {
   height: 50px;
   border-radius: 50%;
 <<<<<<< HEAD
+<<<<<<< HEAD
   background: var(--cream);
   border: 1px solid var(--line);
   box-shadow: rgba(207, 87, 0, 0.12) -6px 8px 14px 0;
@@ -1351,6 +1368,11 @@ a:focus-visible {
 =======
   background: white;
   box-shadow: rgba(100, 100, 111, 0.2) -8px 8px 16px 0;
+=======
+  background: var(--cream);
+  border: 1px solid var(--line);
+  box-shadow: rgba(207, 87, 0, 0.12) -6px 8px 14px 0;
+>>>>>>> f2684c1 (Remove staggered heading; recolor glass CTA card to site warm palette)
   display: grid;
   place-items: center;
   transform: translate3d(0, 0, 100px);
@@ -1396,10 +1418,14 @@ a:focus-visible {
 .glass-title {
   font: 700 22px / 1.2 var(--serif);
 <<<<<<< HEAD
+<<<<<<< HEAD
   color: var(--ink);
 =======
   color: #fff;
 >>>>>>> 3e9fd7b (Add GlassCard CTA, StaggeredHeading, BlurHighlight; remove Key Capabilities section)
+=======
+  color: var(--ink);
+>>>>>>> f2684c1 (Remove staggered heading; recolor glass CTA card to site warm palette)
   margin: 0 0 10px;
   letter-spacing: -0.02em;
 }
@@ -1408,12 +1434,16 @@ a:focus-visible {
   font-size: 14px;
   line-height: 1.45;
 <<<<<<< HEAD
+<<<<<<< HEAD
   color: var(--muted);
   margin: 0;
 }
 
 =======
   color: rgba(255, 255, 255, 0.65);
+=======
+  color: var(--muted);
+>>>>>>> f2684c1 (Remove staggered heading; recolor glass CTA card to site warm palette)
   margin: 0;
 }
 
@@ -1441,6 +1471,7 @@ a:focus-visible {
   height: 32px;
   border-radius: 50%;
 <<<<<<< HEAD
+<<<<<<< HEAD
   border: 1px solid var(--line);
   background: var(--orange-pale);
   color: var(--orange-dark);
@@ -1457,6 +1488,15 @@ a:focus-visible {
   cursor: default;
   box-shadow: rgba(0, 0, 0, 0.45) 0 5px 5px -4px;
 >>>>>>> 3e9fd7b (Add GlassCard CTA, StaggeredHeading, BlurHighlight; remove Key Capabilities section)
+=======
+  border: 1px solid var(--line);
+  background: var(--orange-pale);
+  color: var(--orange-dark);
+  display: grid;
+  place-items: center;
+  cursor: default;
+  box-shadow: rgba(207, 87, 0, 0.12) 0 4px 6px -3px;
+>>>>>>> f2684c1 (Remove staggered heading; recolor glass CTA card to site warm palette)
   transition:
     transform 0.2s ease,
     box-shadow 0.2s ease;
@@ -1466,10 +1506,14 @@ a:focus-visible {
 .glass-card-scene:hover .glass-action-btn {
   transform: translate3d(0, 0, 48px);
 <<<<<<< HEAD
+<<<<<<< HEAD
   box-shadow: rgba(207, 87, 0, 0.15) -4px 16px 10px 0;
 =======
   box-shadow: rgba(0, 0, 0, 0.2) -4px 18px 10px 0;
 >>>>>>> 3e9fd7b (Add GlassCard CTA, StaggeredHeading, BlurHighlight; remove Key Capabilities section)
+=======
+  box-shadow: rgba(207, 87, 0, 0.15) -4px 16px 10px 0;
+>>>>>>> f2684c1 (Remove staggered heading; recolor glass CTA card to site warm palette)
 }
 
 .glass-start-btn {
@@ -1478,10 +1522,14 @@ a:focus-visible {
   font-size: 12px;
   font-weight: 800;
 <<<<<<< HEAD
+<<<<<<< HEAD
   color: var(--orange-dark);
 =======
   color: #fff;
 >>>>>>> 3e9fd7b (Add GlassCard CTA, StaggeredHeading, BlurHighlight; remove Key Capabilities section)
+=======
+  color: var(--orange-dark);
+>>>>>>> f2684c1 (Remove staggered heading; recolor glass CTA card to site warm palette)
   cursor: pointer;
   letter-spacing: 0.02em;
   padding: 0;
