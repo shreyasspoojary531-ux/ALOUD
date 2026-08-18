@@ -115,15 +115,44 @@ a:focus-visible {
   background: rgba(248, 226, 213, 0.6);
 }
 
+/* Bevel-Styled Control Mode Dropdown Matching Site Palette */
 select.mode-select {
   appearance: none;
   -webkit-appearance: none;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23a54200' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+  border: 1.5px solid #efc9b5;
+  border-radius: var(--r-pill);
+  background: linear-gradient(180deg, #fffbf7 0%, #fceee6 100%);
+  color: var(--orange-dark);
+  font-size: 14px;
+  font-weight: 700;
+  min-height: 44px;
+  padding: 0 38px 0 var(--sp4);
+  box-shadow: var(--elevation-pill), inset 0 1px 0.5px rgba(255, 255, 255, 0.9);
+  cursor: pointer;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23a54200' stroke-width='2.8' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
   background-repeat: no-repeat;
   background-position: right 14px center;
-  padding-right: 36px;
+  transition: transform 0.2s var(--ease-spring), box-shadow 0.2s ease, border-color 0.2s ease;
   font-family: inherit;
   outline: none;
+}
+
+select.mode-select:hover {
+  box-shadow: var(--elevation-card-hover), inset 0 1px 1px #ffffff;
+  transform: translateY(-1px);
+  border-color: var(--orange);
+}
+
+select.mode-select:focus-visible {
+  outline: var(--focus) solid var(--orange);
+  outline-offset: 2px;
+}
+
+select.mode-select option {
+  background: var(--paper);
+  color: var(--ink);
+  font-weight: 700;
+  padding: 10px;
 }
 
 .button.primary {

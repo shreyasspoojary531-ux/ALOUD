@@ -22,6 +22,9 @@ export default function CameraPill({
   const callbacks = useRef({ onLongBlink, onBlendshape, onBlinkOnset, onCameraReady });
   const [status, setStatus] = useState("Starting camera…");
   const [statusType, setStatusType] = useState("normal"); // 'normal' | 'warning' | 'confidence'
+  const statusTypeRef = useRef("normal");
+  statusTypeRef.current = statusType;
+
   const [minimized, setMinimized] = useState(() => {
     try {
       return typeof window !== "undefined" && localStorage.getItem("aloud_camera_minimized") === "true";
@@ -32,6 +35,7 @@ export default function CameraPill({
 
   const noDetectionSince = useRef(0);
   const lastVideoTime = useRef(-1);
+  const lastTimestampRef = useRef(0);
   const prevHeadPose = useRef(null);
   const headMotionRef = useRef(0);
   const confidenceTimeoutRef = useRef(null);
@@ -75,10 +79,12 @@ export default function CameraPill({
     
     setStatus(`${confidencePct}% confidence`);
     setStatusType("confidence");
+    statusTypeRef.current = "confidence";
 
     if (confidenceTimeoutRef.current) clearTimeout(confidenceTimeoutRef.current);
     confidenceTimeoutRef.current = setTimeout(() => {
       setStatusType("normal");
+      statusTypeRef.current = "normal";
       if (activeMode === "eyebrow") setStatus("Tracking your eyebrows");
       else if (activeMode === "palm") setStatus("Tracking your palm");
       else setStatus("Tracking your eyes");
@@ -103,6 +109,9 @@ export default function CameraPill({
     () => callbacks.current.onBlinkOnset?.()
   );
 
+  const gestureHooksRef = useRef({ blinkSelect, eyebrowSelect, palmSelect });
+  gestureHooksRef.current = { blinkSelect, eyebrowSelect, palmSelect };
+
   useEffect(() => {
     callbacks.current = { onLongBlink, onBlendshape, onBlinkOnset, onCameraReady };
   }, [onLongBlink, onBlendshape, onBlinkOnset, onCameraReady]);
@@ -116,6 +125,7 @@ export default function CameraPill({
     if (!enabled || activeMode === "manual") {
       setStatus("Manual mode (mouse only)");
       setStatusType("normal");
+      statusTypeRef.current = "normal";
       return;
     }
 
@@ -153,35 +163,46 @@ export default function CameraPill({
             ) {
               lastVideoTime.current = video.current.currentTime;
 
-              const timestamp = performance.now();
+              // Ensure integer monotonically increasing timestamp for MediaPipe WASM
+              let timestamp = Math.round(performance.now());
+              if (timestamp <= lastTimestampRef.current) {
+                timestamp = lastTimestampRef.current + 1;
+              }
+              lastTimestampRef.current = timestamp;
+
               const result = detector.detectForVideo(video.current, timestamp);
+
+              const currentStatusType = statusTypeRef.current;
+              const { blinkSelect: bSel, eyebrowSelect: eSel, palmSelect: pSel } = gestureHooksRef.current;
 
               if (activeMode === "palm") {
                 // Hand Landmarker processing
-                const hasHand = result.landmarks && result.landmarks.length > 0;
+                const hasHand = result?.landmarks && result.landmarks.length > 0;
                 if (hasHand) {
                   noDetectionSince.current = 0;
                   const handLandmarks = result.landmarks[0];
-                  palmSelect.ingest(handLandmarks);
+                  pSel.ingest(handLandmarks);
 
-                  if (statusType !== "confidence") {
+                  if (currentStatusType !== "confidence") {
                     setStatusType("normal");
+                    statusTypeRef.current = "normal";
                     setStatus(
-                      palmSelect.phaseRef.current === "open"
+                      pSel.phaseRef.current === "open"
                         ? "Open palm to select…"
                         : "Tracking your palm"
                     );
                   }
                 } else {
-                  if (statusType !== "confidence") {
+                  if (currentStatusType !== "confidence") {
                     setStatus("No hand detected");
                     setStatusType("warning");
+                    statusTypeRef.current = "warning";
                   }
                 }
               } else if (activeMode === "eyebrow") {
                 // Eyebrow Raise FaceLandmarker processing
-                const hasFace = result.faceLandmarks && result.faceLandmarks.length > 0;
-                const shapes = result.faceBlendshapes?.[0]?.categories;
+                const hasFace = result?.faceLandmarks && result.faceLandmarks.length > 0;
+                const shapes = result?.faceBlendshapes?.[0]?.categories;
 
                 if (hasFace && shapes) {
                   noDetectionSince.current = 0;
@@ -191,26 +212,28 @@ export default function CameraPill({
 
                   currentGestureScoreRef.current = Math.min(0.98, Math.max(0.65, browScore + 0.3));
                   callbacks.current.onBlendshape?.(browScore);
-                  eyebrowSelect.ingest(browScore);
+                  eSel.ingest(browScore);
 
-                  if (statusType !== "confidence") {
+                  if (currentStatusType !== "confidence") {
                     setStatusType("normal");
+                    statusTypeRef.current = "normal";
                     setStatus(
-                      eyebrowSelect.phaseRef.current === "raised"
+                      eSel.phaseRef.current === "raised"
                         ? "Eyebrows raised to select…"
                         : "Tracking your eyebrows"
                     );
                   }
                 } else {
-                  if (statusType !== "confidence") {
+                  if (currentStatusType !== "confidence") {
                     setStatus("No face detected");
                     setStatusType("warning");
+                    statusTypeRef.current = "warning";
                   }
                 }
               } else {
                 // Default Eye Blink FaceLandmarker processing
-                const hasFace = result.faceLandmarks && result.faceLandmarks.length > 0;
-                const shapes = result.faceBlendshapes?.[0]?.categories;
+                const hasFace = result?.faceLandmarks && result.faceLandmarks.length > 0;
+                const shapes = result?.faceBlendshapes?.[0]?.categories;
 
                 if (hasFace && shapes) {
                   const landmarks = result.faceLandmarks[0];
@@ -246,27 +269,30 @@ export default function CameraPill({
                   noDetectionSince.current = 0;
                   callbacks.current.onBlendshape?.(blink);
 
-                  blinkSelect.ingest(blink, { isMoving: isHeadMoving });
+                  bSel.ingest(blink, { isMoving: isHeadMoving });
 
-                  if (statusType !== "confidence") {
+                  if (currentStatusType !== "confidence") {
                     if (isHeadMoving) {
                       setStatus("Head moving… hold still");
                       setStatusType("warning");
+                      statusTypeRef.current = "warning";
                     } else {
                       setStatusType("normal");
+                      statusTypeRef.current = "normal";
                       setStatus(
-                        blinkSelect.phaseRef.current === "resting"
+                        bSel.phaseRef.current === "resting"
                           ? "Eyes resting — reopen"
-                          : blinkSelect.phaseRef.current === "closed"
+                          : bSel.phaseRef.current === "closed"
                           ? "Blinking to select…"
                           : "Tracking your eyes"
                       );
                     }
                   }
                 } else {
-                  if (statusType !== "confidence") {
+                  if (currentStatusType !== "confidence") {
                     setStatus("No eyes tracked");
                     setStatusType("warning");
+                    statusTypeRef.current = "warning";
                   }
                 }
               }
@@ -283,6 +309,7 @@ export default function CameraPill({
         console.error("[CameraPill] Camera initialization error:", err);
         setStatus("Camera unavailable — click or press Space");
         setStatusType("warning");
+        statusTypeRef.current = "warning";
         callbacks.current.onCameraReady?.(false);
       }
     })();
@@ -295,7 +322,7 @@ export default function CameraPill({
       }
       if (confidenceTimeoutRef.current) clearTimeout(confidenceTimeoutRef.current);
     };
-  }, [enabled, activeMode, blinkSelect, eyebrowSelect, palmSelect, statusType]);
+  }, [enabled, activeMode]);
 
   // Hide CameraPill completely in Manual mode
   if (activeMode === "manual" || !enabled) {
