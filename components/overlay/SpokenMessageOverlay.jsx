@@ -3,6 +3,7 @@ import { useEffect, useRef } from "react";
 import useScanner from "../scanner/useScanner";
 import { cancelSpeech, isSpeechSupported, say } from "../../lib/speech";
 import { useSettings } from "../shared/SettingsContext";
+import { trackSpeechEvent } from "../../lib/analytics";
 
 export default function SpokenMessageOverlay({
   message,
@@ -42,6 +43,7 @@ export default function SpokenMessageOverlay({
   // repeat cycle — onEnd only fires after all repeats finish.
   useEffect(() => {
     dismissed.current = false;
+    trackSpeechEvent({ text: message, repeatCount: repeat });
     say(message, {
       repeat,
       onEnd: () => {

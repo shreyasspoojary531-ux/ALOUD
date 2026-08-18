@@ -6,7 +6,6 @@ import CameraPill from "../../components/camera/CameraPill";
 import CategoryGrid from "../../components/home/CategoryGrid";
 import SpokenMessageOverlay from "../../components/overlay/SpokenMessageOverlay";
 import HelpModal from "../../components/shared/HelpModal";
-import SettingsModal from "../../components/shared/SettingsModal";
 import { useEyeControl } from "../../components/shared/EyeControlContext";
 import { useSettings } from "../../components/shared/SettingsContext";
 import { say } from "../../lib/speech";
@@ -115,7 +114,6 @@ export default function Home() {
     if (item.label === "Spell it out") return router.push("/spell");
     if (groups[item.label]) return setGroup(item.label);
 
-    say(item.label, { repeat: repeatCount });
     setSpoken(item.label);
   };
 
@@ -136,7 +134,6 @@ export default function Home() {
         eyeOn={eyeOn}
         toggleEye={toggleEye}
         onHelp={() => setHelp(true)}
-        onSettings={() => setSettings(true)}
       />
       <section className="home center">
         <p className="eyebrow">
@@ -168,7 +165,6 @@ export default function Home() {
         />
       )}
       {help && <HelpModal onClose={() => setHelp(false)} />}
-      {settings && <SettingsModal onClose={() => setSettings(false)} />}
     </main>
   );
 }
