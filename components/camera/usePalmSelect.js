@@ -10,10 +10,10 @@ export const DEFAULT_PALM_THRESHOLDS = {
 
 /**
  * Pure state machine handling closed fist gesture selection.
- * - Open hand = idle / resting state
- * - Closed fist held for ~380-500ms = selection action
- * - Fires select ONCE when hold duration is met while fist is closed
- * - Hand must re-open before next selection can trigger
+ * - Open hand (fistScore <= openThreshold) = resting idle state (re-arms machine).
+ * - Closed fist (fistScore >= closeThreshold) held for ~380-500ms = selection action.
+ * - Fires select EXACTLY ONCE per closed fist hold.
+ * - Re-opening motion (transitioning to open state) ONLY resets state, NEVER fires select.
  */
 export function advancePalm(
   state,
@@ -22,49 +22,59 @@ export function advancePalm(
   thresholds = DEFAULT_PALM_THRESHOLDS,
   onPalmOnset = null
 ) {
-  // 1. Re-arm machine ONLY when hand returns to open state below openThreshold
-  if (!state.armed && fistScore <= thresholds.open) {
-    return { ...state, armed: true, hasSelected: false };
+  // 1. Hand returns to OPEN state (below openThreshold):
+  // Pure state reset + re-arm gate for next gesture. NEVER fires select.
+  if (fistScore <= thresholds.open) {
+    return {
+      closedFist: false,
+      closedAt: 0,
+      armed: true,
+      hasSelected: false,
+      selected: false,
+    };
   }
 
-  // 2. Fist closes past closeThreshold while armed
+  // 2. Fist CLOSES past closeThreshold while armed
   if (!state.closedFist && fistScore >= thresholds.close && state.armed) {
     onPalmOnset?.();
-    return { ...state, closedFist: true, closedAt: now, hasSelected: false, selected: false };
+    return {
+      closedFist: true,
+      closedAt: now,
+      armed: true,
+      hasSelected: false,
+      selected: false,
+    };
   }
 
-  // 3. Sustained closed fist hold duration met while closed -> FIRE SELECT IMMEDIATELY!
+  // 3. Sustained closed fist hold duration met -> FIRE SELECT EXACTLY ONCE
   if (state.closedFist && state.armed && !state.hasSelected) {
     const duration = now - state.closedAt;
     if (duration >= thresholds.min && duration <= thresholds.max) {
-      console.log("[PalmSelect DIAGNOSTIC 1] Closed fist hold duration met! Fire selection.", {
+      console.log("[PalmSelect StateMachine] Sustained closed fist hold met! Selection fired ONCE.", {
         duration: Math.round(duration),
         fistScore: fistScore.toFixed(2),
       });
       return {
         ...state,
-        hasSelected: true,
-        armed: false, // Disarm until hand fully re-opens
+        hasSelected: true, // Mark selection fired for this fist hold
+        armed: false,      // Disarm until hand fully returns to open state (fistScore <= openThreshold)
         selected: true,
       };
     }
   }
 
-  // 4. Hand re-opens
-  if (state.closedFist && fistScore <= thresholds.open) {
+  // 4. Max timeout disarm to prevent endless hold
+  if (state.closedFist && now - state.closedAt > thresholds.max) {
     return {
       ...state,
-      closedFist: false,
-      closedAt: 0,
+      closedFist: true,
+      armed: false,
+      hasSelected: true,
       selected: false,
     };
   }
 
-  // 5. Max timeout disarm to prevent duplicate triggers on continuous hold
-  if (state.closedFist && now - state.closedAt > thresholds.max) {
-    return { ...state, closedFist: false, closedAt: 0, armed: false, selected: false };
-  }
-
+  // Maintain current state with selected = false
   return { ...state, selected: false };
 }
 
@@ -143,6 +153,8 @@ export default function usePalmSelect(onClosedFistSelect, thresholds, onPalmOnse
       emaRef.current = fistScore;
 
       const currentThresholds = thresholdsRef.current;
+      const prevClosedState = machine.current.closedFist;
+
       const next = advancePalm(
         machine.current,
         fistScore,
@@ -152,12 +164,21 @@ export default function usePalmSelect(onClosedFistSelect, thresholds, onPalmOnse
       );
       const nextPhase = next.closedFist ? "closed" : "resting";
 
+      // Diagnostic logging of state transitions
+      if (prevClosedState !== next.closedFist) {
+        console.log(
+          `[PalmSelect Transition] ${prevClosedState ? "CLOSED -> OPEN" : "OPEN -> CLOSED"} at t=${Math.round(now)}ms (fistScore=${fistScore.toFixed(2)})`
+        );
+      }
+
       machine.current = next;
       phaseRef.current = nextPhase;
       setPhase(nextPhase);
 
       if (next.selected && callbackRef.current) {
-        console.log("[PalmSelect DIAGNOSTIC 2 & 3] Invoking onClosedFistSelect callback!");
+        console.log(
+          `[PalmSelect Action] Executing select() callback at t=${Math.round(now)}ms (fistScore=${fistScore.toFixed(2)})`
+        );
         callbackRef.current();
       }
     },
