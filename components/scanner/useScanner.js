@@ -5,7 +5,7 @@ import { useEyeControl } from '../shared/EyeControlContext';
 /**
  * Screen-agnostic scanning engine hook.
  * Auto-advances active item index on a timer, handles selection via click/blink/spacebar,
- * and pauses briefly during transitions to prevent accidental double-selections.
+ * locks target index at blink onset, and pauses briefly during transitions to prevent accidental double-selections.
  */
 export default function useScanner(items, onSelect, interval = 1800, enabled = true) {
   const { eyeOn } = useEyeControl();
@@ -13,6 +13,7 @@ export default function useScanner(items, onSelect, interval = 1800, enabled = t
   const [isPaused, setIsPaused] = useState(false);
   const [selectedIndex, setSelectedIndex] = useState(null);
   const activeRef = useRef(0);
+  const onsetIndexRef = useRef(null);
   const selectRef = useRef(onSelect);
   const isPausedRef = useRef(false);
 
@@ -29,6 +30,7 @@ export default function useScanner(items, onSelect, interval = 1800, enabled = t
   useEffect(() => {
     setActive(0);
     activeRef.current = 0;
+    onsetIndexRef.current = null;
   }, [itemsKey]);
 
   // Auto-advance timer
@@ -42,9 +44,14 @@ export default function useScanner(items, onSelect, interval = 1800, enabled = t
     return () => clearInterval(id);
   }, [items.length, interval, enabled, isPaused, itemsKey]);
 
+  // Captures the active item index at the exact moment a blink begins (onset)
+  const captureOnset = useCallback(() => {
+    onsetIndexRef.current = activeRef.current;
+  }, []);
+
   // Selection function with mode validation options
   const select = useCallback(
-    (index = activeRef.current, options = {}) => {
+    (index = undefined, options = {}) => {
       if (isPausedRef.current) return;
       const { isPointer = false, isBlink = false } = options;
 
@@ -54,7 +61,17 @@ export default function useScanner(items, onSelect, interval = 1800, enabled = t
       // When Eye Control is OFF, blink detection must NOT trigger select.
       if (!eyeOn && isBlink) return;
 
-      const targetIndex = typeof index === 'number' ? index : activeRef.current;
+      // Prefer target index captured at blink onset over current auto-advanced index
+      let targetIndex;
+      if (typeof index === 'number') {
+        targetIndex = index;
+      } else if (onsetIndexRef.current !== null) {
+        targetIndex = onsetIndexRef.current;
+      } else {
+        targetIndex = activeRef.current;
+      }
+      onsetIndexRef.current = null;
+
       const item = items[targetIndex];
 
       if (item) {
@@ -91,5 +108,5 @@ export default function useScanner(items, onSelect, interval = 1800, enabled = t
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [select, enabled]);
 
-  return { active, select, isPaused, selectedIndex };
+  return { active, select, isPaused, selectedIndex, captureOnset };
 }

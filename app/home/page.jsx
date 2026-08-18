@@ -89,8 +89,20 @@ export default function Home() {
   const [group, setGroup] = useState(null);
   const [spoken, setSpoken] = useState(null);
 
-  const blink = useRef(() => {});
-  const onBlink = useCallback(() => blink.current(undefined, { isBlink: true }), []);
+  const blink = useRef(null);
+  const onBlink = useCallback((...args) => {
+    if (typeof blink.current === "function") {
+      blink.current(...args);
+    } else if (blink.current?.onLongBlink) {
+      blink.current.onLongBlink(...args);
+    }
+  }, []);
+
+  const onBlinkOnset = useCallback(() => {
+    if (blink.current?.onBlinkOnset) {
+      blink.current.onBlinkOnset();
+    }
+  }, []);
 
   const choose = (item) => {
     if (!item) return;
@@ -136,7 +148,7 @@ export default function Home() {
         <span className="pulse-dot" />
         The highlight moves on its own · take a long blink to select
       </p>
-      <CameraPill enabled={eyeOn} onLongBlink={onBlink} />
+      <CameraPill enabled={eyeOn} onLongBlink={onBlink} onBlinkOnset={onBlinkOnset} />
       {spoken && (
         <SpokenMessageOverlay
           message={spoken}
@@ -165,4 +177,3 @@ export default function Home() {
     </main>
   );
 }
-

@@ -10,13 +10,21 @@ export default function CategoryGrid({
   blinkSelect,
   enabled = true,
 }) {
-  const { active, select, selectedIndex } = useScanner(items, onChoose, 1800, enabled);
+  const { active, select, selectedIndex, captureOnset } = useScanner(
+    items,
+    onChoose,
+    1800,
+    enabled
+  );
 
   useEffect(() => {
     if (enabled && blinkSelect) {
-      blinkSelect.current = select;
+      blinkSelect.current = {
+        onLongBlink: (index, options) => select(index, { isBlink: true, ...options }),
+        onBlinkOnset: () => captureOnset(),
+      };
     }
-  }, [enabled, blinkSelect, select]);
+  }, [enabled, blinkSelect, select, captureOnset]);
 
   return (
     <div className={sub ? "grid subgrid" : "grid"}>
@@ -30,6 +38,5 @@ export default function CategoryGrid({
         />
       ))}
     </div>
-
   );
 }

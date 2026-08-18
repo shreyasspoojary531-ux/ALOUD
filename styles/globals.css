@@ -67,14 +67,25 @@ a:focus-visible {
 .button {
   border: 1px solid var(--line);
   border-radius: var(--r-pill);
-  background: transparent;
+  background: linear-gradient(180deg, #ffffff 0%, var(--paper) 100%);
   color: var(--muted);
-  min-height: 38px;
-  padding: 0 var(--sp4);
-  font-size: 13px;
+  min-height: 44px;
+  padding: 0 var(--sp5);
+  font-size: 14px;
   font-weight: 700;
   cursor: pointer;
   box-shadow: var(--elevation-pill);
+  transition: transform 0.2s var(--ease-spring), box-shadow 0.2s ease, background 0.2s ease;
+}
+
+.button:hover {
+  box-shadow: var(--elevation-card-hover);
+  transform: translateY(-1px);
+}
+
+.button:active {
+  box-shadow: var(--elevation-card-active);
+  transform: translateY(0);
 }
 
 .eye-pill {
@@ -84,10 +95,22 @@ a:focus-visible {
 }
 
 .button.primary {
-  border-color: var(--orange);
-  background: var(--orange);
+  border-color: var(--orange-dark);
+  background: linear-gradient(180deg, #df630c 0%, #b84600 100%);
   color: white;
-  box-shadow: 0 12px 22px rgba(207, 87, 0, 0.22);
+  box-shadow: 0 4px 12px rgba(207, 87, 0, 0.32), 0 10px 24px rgba(52, 40, 23, 0.12), inset 0 1px 0.5px rgba(255, 255, 255, 0.45);
+}
+
+.button.primary:hover {
+  box-shadow: 0 6px 16px rgba(207, 87, 0, 0.4), 0 14px 28px rgba(52, 40, 23, 0.16), inset 0 1px 1px rgba(255, 255, 255, 0.55);
+  transform: translateY(-1px);
+}
+
+.cal-start-btn,
+.cal-skip-btn {
+  min-height: 48px;
+  padding: 0 32px;
+  font-size: 15px;
 }
 
 .button.dark {

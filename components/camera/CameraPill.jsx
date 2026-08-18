@@ -1,25 +1,25 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
 import useBlinkSelect, { DEFAULT_BLINK_THRESHOLDS } from "./useBlinkSelect";
-
-const MODEL =
-  "https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/latest/face_landmarker.task";
-const WASM = "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@latest/wasm";
+import { createFaceLandmarker } from "../../lib/mediapipeLoader";
 
 export default function CameraPill({
   enabled,
   onLongBlink,
   onBlendshape,
   calibration,
+  onBlinkOnset,
 }) {
   const video = useRef(null);
-  const callbacks = useRef({ onLongBlink, onBlendshape });
+  const callbacks = useRef({ onLongBlink, onBlendshape, onBlinkOnset });
   const [status, setStatus] = useState(
     enabled ? "Starting camera…" : "Eye control is off"
   );
   const [score, setScore] = useState(null);
   const noFaceSince = useRef(0);
   const lastVideoTime = useRef(-1);
+  const prevHeadPose = useRef(null);
+  const headMotionRef = useRef(0);
   const [calibState, setCalibState] = useState(null);
 
   useEffect(() => {
@@ -41,12 +41,13 @@ export default function CameraPill({
   const thresholds = calibState || calibration || DEFAULT_BLINK_THRESHOLDS;
   const { ingest, phaseRef } = useBlinkSelect(
     () => callbacks.current.onLongBlink?.(),
-    thresholds
+    thresholds,
+    () => callbacks.current.onBlinkOnset?.()
   );
 
   useEffect(() => {
-    callbacks.current = { onLongBlink, onBlendshape };
-  }, [onLongBlink, onBlendshape]);
+    callbacks.current = { onLongBlink, onBlendshape, onBlinkOnset };
+  }, [onLongBlink, onBlendshape, onBlinkOnset]);
 
   useEffect(() => {
     let stream;
@@ -72,16 +73,8 @@ export default function CameraPill({
           await video.current.play();
         }
 
-        const vision = await import("@mediapipe/tasks-vision");
-        const fileset = await vision.FilesetResolver.forVisionTasks(WASM);
-
+        landmarker = await createFaceLandmarker();
         if (cancelled) return;
-        landmarker = await vision.FaceLandmarker.createFromOptions(fileset, {
-          baseOptions: { delegate: "CPU", modelAssetPath: MODEL },
-          runningMode: "VIDEO",
-          numFaces: 1,
-          outputFaceBlendshapes: true,
-        });
 
         const tick = () => {
           if (cancelled) return;
@@ -101,6 +94,32 @@ export default function CameraPill({
               const shapes = result.faceBlendshapes?.[0]?.categories;
 
               if (hasFace && shapes) {
+                const landmarks = result.faceLandmarks[0];
+                const nose = landmarks[1];
+                const leftEyeCorner = landmarks[33];
+                const rightEyeCorner = landmarks[263];
+
+                // Head pose movement delta tracking across consecutive frames
+                if (prevHeadPose.current && nose && leftEyeCorner && rightEyeCorner) {
+                  const dNose = Math.hypot(
+                    nose.x - prevHeadPose.current.nose.x,
+                    nose.y - prevHeadPose.current.nose.y
+                  );
+                  const dLeft = Math.hypot(
+                    leftEyeCorner.x - prevHeadPose.current.leftEye.x,
+                    leftEyeCorner.y - prevHeadPose.current.leftEye.y
+                  );
+                  const dRight = Math.hypot(
+                    rightEyeCorner.x - prevHeadPose.current.rightEye.x,
+                    rightEyeCorner.y - prevHeadPose.current.rightEye.y
+                  );
+                  const rawMotion = (dNose + dLeft + dRight) / 3;
+                  headMotionRef.current = headMotionRef.current * 0.6 + rawMotion * 0.4;
+                }
+                prevHeadPose.current = { nose, leftEye: leftEyeCorner, rightEye: rightEyeCorner };
+
+                const isHeadMoving = headMotionRef.current > 0.035;
+
                 const left = shapes.find((x) => x.categoryName === "eyeBlinkLeft")?.score ?? 0;
                 const right = shapes.find((x) => x.categoryName === "eyeBlinkRight")?.score ?? 0;
                 const blink = (left + right) / 2;
@@ -108,21 +127,21 @@ export default function CameraPill({
                 noFaceSince.current = 0;
                 setScore(blink);
                 callbacks.current.onBlendshape?.(blink);
-                ingest(blink);
 
-                if (typeof window !== "undefined" && (window.DEBUG_BLINK || process.env.NODE_ENV === "development")) {
-                  if (Math.random() < 0.05) {
-                    console.log(`[BlinkScore] ${blink.toFixed(3)} | Phase: ${phaseRef.current}`);
-                  }
+                // Suppress blink selection ingest during rapid head movement
+                ingest(blink, { isMoving: isHeadMoving });
+
+                if (isHeadMoving) {
+                  setStatus("Head moving… hold still");
+                } else {
+                  setStatus(
+                    phaseRef.current === "resting"
+                      ? "Eyes resting — reopen to arm"
+                      : phaseRef.current === "closed"
+                      ? "Long blink to select…"
+                      : "Tracking your eyes"
+                  );
                 }
-
-                setStatus(
-                  phaseRef.current === "resting"
-                    ? "Eyes resting — reopen to arm"
-                    : phaseRef.current === "closed"
-                    ? "Long blink to select…"
-                    : "Tracking your eyes"
-                );
               } else {
                 if (!noFaceSince.current) noFaceSince.current = performance.now();
                 if (performance.now() - noFaceSince.current > 2500) {
@@ -147,9 +166,6 @@ export default function CameraPill({
     return () => {
       cancelled = true;
       if (frame) cancelAnimationFrame(frame);
-      try {
-        landmarker?.close?.();
-      } catch (e) {}
       if (stream) {
         stream.getTracks().forEach((t) => t.stop());
       }

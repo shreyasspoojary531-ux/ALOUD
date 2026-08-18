@@ -16,7 +16,7 @@ export default function KeyRow({
 }) {
   const { eyeOn } = useEyeControl();
 
-  const { active: keyActive, select, selectedIndex } = useScanner(
+  const { active: keyActive, select, selectedIndex, captureOnset } = useScanner(
     row.keys,
     onKey,
     1800,
@@ -25,10 +25,15 @@ export default function KeyRow({
 
   useEffect(() => {
     if (enabled && active && blinkSelect) {
-      blinkSelect.current = (index, options) =>
-        opened ? select(index, options) : onOpen();
+      blinkSelect.current = {
+        onLongBlink: (index, options) =>
+          opened ? select(index, { isBlink: true, ...options }) : onOpen(),
+        onBlinkOnset: () => {
+          if (opened) captureOnset();
+        },
+      };
     }
-  }, [enabled, active, opened, blinkSelect, select, onOpen]);
+  }, [enabled, active, opened, blinkSelect, select, captureOnset, onOpen]);
 
   const handleKeyClick = (key, i, e) => {
     if (eyeOn) {

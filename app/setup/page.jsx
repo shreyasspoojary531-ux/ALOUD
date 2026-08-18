@@ -8,6 +8,7 @@ import CameraPill from "../../components/camera/CameraPill";
 import useScanner from "../../components/scanner/useScanner";
 import { useEyeControl } from "../../components/shared/EyeControlContext";
 import { calibratedThresholds } from "../../components/camera/useBlinkSelect";
+import { prefetchMediaPipe } from "../../lib/mediapipeLoader";
 
 const steps = [
   {
@@ -46,9 +47,15 @@ export default function Setup() {
   const router = useRouter();
   const { eyeOn, toggleEye } = useEyeControl();
   const [step, setStep] = useState(0);
+  const startTimestampRef = useRef(null);
 
   const openSamples = useRef([]);
   const closedSamples = useRef([]);
+
+  // Prefetch MediaPipe model & WASM binaries in background as soon as calibration mounts
+  useEffect(() => {
+    prefetchMediaPipe();
+  }, []);
 
   const handleBlendshape = useCallback((score) => {
     if (step === 2) {
@@ -69,6 +76,12 @@ export default function Setup() {
         localStorage.setItem("aloud_calibration", JSON.stringify(thresholds));
       } catch (e) {}
     }
+
+    if (startTimestampRef.current) {
+      const durationMs = performance.now() - startTimestampRef.current;
+      console.log(`[PerfBenchmark] Calibration Start to Complete: ${durationMs.toFixed(1)}ms`);
+    }
+
     router.push("/home");
   }, [router]);
 
@@ -80,9 +93,15 @@ export default function Setup() {
     }
   }, [step, completeCalibration]);
 
+  const handleStart = useCallback(() => {
+    startTimestampRef.current = performance.now();
+    console.log("[PerfBenchmark] Calibration 'Start' clicked at:", startTimestampRef.current);
+    next();
+  }, [next]);
+
   const { select } = useScanner(
     [{ label: step === 0 ? "Start" : "Continue" }],
-    next,
+    step === 0 ? handleStart : next,
   );
   const blink = useRef(select);
   blink.current = select;
@@ -111,10 +130,10 @@ export default function Setup() {
           <p>{current.text}</p>
           {current.intro ? (
             <div className="button-row">
-              <Button className="primary" onSelect={(e) => select(0, { isPointer: !!e })}>
+              <Button className="primary cal-start-btn" onSelect={handleStart}>
                 Start
               </Button>
-              <Button onSelect={() => router.push("/home")}>
+              <Button className="cal-skip-btn" onSelect={() => router.push("/home")}>
                 Skip for now
               </Button>
             </div>
@@ -123,8 +142,8 @@ export default function Setup() {
           )}
         </section>
       </div>
-      <CameraPill enabled={eyeOn} onLongBlink={onBlink} onBlendshape={handleBlendshape} />
+      {/* Camera only enables once user clicks Start (step > 0) */}
+      <CameraPill enabled={eyeOn && step > 0} onLongBlink={onBlink} onBlendshape={handleBlendshape} />
     </main>
   );
 }
-

@@ -13,8 +13,20 @@ export default function Spell() {
   const [spoken, setSpoken] = useState(null);
   const [suggestions, setSuggestions] = useState([]);
 
-  const blink = useRef(() => {});
-  const onBlink = useCallback(() => blink.current(undefined, { isBlink: true }), []);
+  const blink = useRef(null);
+  const onBlink = useCallback((...args) => {
+    if (typeof blink.current === "function") {
+      blink.current(...args);
+    } else if (blink.current?.onLongBlink) {
+      blink.current.onLongBlink(...args);
+    }
+  }, []);
+
+  const onBlinkOnset = useCallback(() => {
+    if (blink.current?.onBlinkOnset) {
+      blink.current.onBlinkOnset();
+    }
+  }, []);
 
   // Fetch AI suggestions whenever message changes; silently fail on error.
   useEffect(() => {
@@ -64,7 +76,7 @@ export default function Spell() {
       <p className="caption">
         A row is highlighting — <b>long-blink</b> to open it
       </p>
-      <CameraPill enabled={eyeOn} onLongBlink={onBlink} />
+      <CameraPill enabled={eyeOn} onLongBlink={onBlink} onBlinkOnset={onBlinkOnset} />
       {spoken && (
         <SpokenMessageOverlay
           message={spoken.text}
@@ -76,4 +88,3 @@ export default function Spell() {
     </main>
   );
 }
-

@@ -1,10 +1,8 @@
 "use client";
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useState } from "react";
 import { useRouter } from "next/navigation";
 import TopBar from "../components/shared/TopBar";
 import Button from "../components/shared/Button";
-import CameraPill from "../components/camera/CameraPill";
-import useScanner from "../components/scanner/useScanner";
 import { useEyeControl } from "../components/shared/EyeControlContext";
 import LandingSections from "../components/landing/LandingSections";
 
@@ -16,15 +14,6 @@ export default function Splash() {
   const handleBegin = useCallback(() => {
     router.push("/setup");
   }, [router]);
-
-  const { select } = useScanner(
-    [{ label: "Begin with eye control" }],
-    handleBegin,
-  );
-
-  const blink = useRef(select);
-  blink.current = select;
-  const onBlink = useCallback(() => blink.current(0, { isBlink: true }), []);
 
   return (
     <main className="app">
@@ -95,8 +84,6 @@ export default function Splash() {
           </div>
         </div>
       )}
-
-      <CameraPill enabled={eyeOn} onLongBlink={onBlink} />
     </main>
   );
 }
