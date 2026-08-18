@@ -11,7 +11,8 @@ export const DEFAULT_PALM_THRESHOLDS = {
 /**
  * Pure state machine handling closed fist gesture selection.
  * - Open hand = idle / resting state
- * - Closed fist held for ~400-600ms = selection action
+ * - Closed fist held for ~380-500ms = selection action
+ * - Fires select ONCE when hold duration is met while fist is closed
  * - Hand must re-open before next selection can trigger
  */
 export function advancePalm(
@@ -23,28 +24,43 @@ export function advancePalm(
 ) {
   // 1. Re-arm machine ONLY when hand returns to open state below openThreshold
   if (!state.armed && fistScore <= thresholds.open) {
-    return { ...state, armed: true };
+    return { ...state, armed: true, hasSelected: false };
   }
 
   // 2. Fist closes past closeThreshold while armed
   if (!state.closedFist && fistScore >= thresholds.close && state.armed) {
     onPalmOnset?.();
-    return { ...state, closedFist: true, closedAt: now, selected: false };
+    return { ...state, closedFist: true, closedAt: now, hasSelected: false, selected: false };
   }
 
-  // 3. Hand re-opens after sustained closed fist duration
-  if (state.closedFist && fistScore <= thresholds.open) {
+  // 3. Sustained closed fist hold duration met while closed -> FIRE SELECT IMMEDIATELY!
+  if (state.closedFist && state.armed && !state.hasSelected) {
     const duration = now - state.closedAt;
-    const isSelected = state.armed && duration >= thresholds.min && duration <= thresholds.max;
+    if (duration >= thresholds.min && duration <= thresholds.max) {
+      console.log("[PalmSelect DIAGNOSTIC 1] Closed fist hold duration met! Fire selection.", {
+        duration: Math.round(duration),
+        fistScore: fistScore.toFixed(2),
+      });
+      return {
+        ...state,
+        hasSelected: true,
+        armed: false, // Disarm until hand fully re-opens
+        selected: true,
+      };
+    }
+  }
+
+  // 4. Hand re-opens
+  if (state.closedFist && fistScore <= thresholds.open) {
     return {
+      ...state,
       closedFist: false,
       closedAt: 0,
-      armed: false, // Disarm until hand fully opens again
-      selected: isSelected,
+      selected: false,
     };
   }
 
-  // 4. Max timeout disarm to prevent duplicate triggers on continuous hold
+  // 5. Max timeout disarm to prevent duplicate triggers on continuous hold
   if (state.closedFist && now - state.closedAt > thresholds.max) {
     return { ...state, closedFist: false, closedAt: 0, armed: false, selected: false };
   }
@@ -69,6 +85,7 @@ export default function usePalmSelect(onClosedFistSelect, thresholds, onPalmOnse
     closedFist: false,
     closedAt: 0,
     armed: true,
+    hasSelected: false,
     selected: false,
   });
 
@@ -89,6 +106,7 @@ export default function usePalmSelect(onClosedFistSelect, thresholds, onPalmOnse
       closedFist: false,
       closedAt: 0,
       armed: true,
+      hasSelected: false,
       selected: false,
     };
   }, [thresholds]);
@@ -139,6 +157,7 @@ export default function usePalmSelect(onClosedFistSelect, thresholds, onPalmOnse
       setPhase(nextPhase);
 
       if (next.selected && callbackRef.current) {
+        console.log("[PalmSelect DIAGNOSTIC 2 & 3] Invoking onClosedFistSelect callback!");
         callbackRef.current();
       }
     },
