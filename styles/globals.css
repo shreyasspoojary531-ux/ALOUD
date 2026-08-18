@@ -37,6 +37,26 @@ a:focus-visible {
   position: relative;
 }
 
+/* ─────────────────────────────────────────────
+   PAGE ROUTE TRANSITION (Next.js template.jsx)
+   ───────────────────────────────────────────── */
+
+.page-transition {
+  animation: pageEnter var(--dur-page) var(--ease-out-smooth) forwards;
+  will-change: opacity, transform;
+}
+
+@keyframes pageEnter {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
 .topbar {
   display: flex;
   align-items: center;
@@ -83,7 +103,8 @@ a:focus-visible {
   transform: translateY(-1px);
 }
 
-.button:active {
+.button:active,
+.button.is-pressed {
   box-shadow: var(--elevation-card-active);
   transform: translateY(0);
 }
@@ -162,12 +183,21 @@ a:focus-visible {
   animation: splashFadeIn 0.8s cubic-bezier(0.16, 1, 0.3, 1) 0.3s forwards;
 }
 
+/* Signature "Begin with eye control" Button Motion */
 .button.primary.splash-btn {
   font-size: 16px;
   padding: 0 36px;
   min-height: 54px;
   border-radius: var(--r-pill);
-  animation: splashBtnPulse 3s cubic-bezier(0.4, 0, 0.6, 1) 1.2s infinite;
+  position: relative;
+  will-change: transform, box-shadow;
+  animation: heroBtnIdle var(--dur-idle) ease-in-out 1s infinite;
+  transform-origin: center;
+}
+
+.button.primary.splash-btn:active,
+.button.primary.splash-btn.is-pressed {
+  animation: heroBtnSquish var(--dur-fast) var(--ease-spring-squish) forwards !important;
 }
 
 @keyframes splashFadeIn {
@@ -177,12 +207,29 @@ a:focus-visible {
   }
 }
 
-@keyframes splashBtnPulse {
+@keyframes heroBtnIdle {
   0%, 100% {
-    box-shadow: 0 12px 22px rgba(207, 87, 0, 0.22);
+    transform: scale(1);
+    box-shadow: 0 4px 14px rgba(207, 87, 0, 0.32), 0 10px 24px rgba(52, 40, 23, 0.12), inset 0 1px 0.5px rgba(255, 255, 255, 0.45);
   }
   50% {
-    box-shadow: 0 16px 32px rgba(207, 87, 0, 0.42);
+    transform: scale(1.025);
+    box-shadow: 0 8px 24px rgba(207, 87, 0, 0.48), 0 14px 32px rgba(52, 40, 23, 0.18), inset 0 1px 1px rgba(255, 255, 255, 0.55);
+  }
+}
+
+@keyframes heroBtnSquish {
+  0% {
+    transform: scale(1);
+  }
+  35% {
+    transform: scale(0.93);
+  }
+  70% {
+    transform: scale(1.04);
+  }
+  100% {
+    transform: scale(1);
   }
 }
 
@@ -233,7 +280,7 @@ a:focus-visible {
   display: block;
   height: 100%;
   background: var(--orange);
-  transition: width 0.3s;
+  transition: width 0.3s ease;
 }
 
 .home {
@@ -694,12 +741,65 @@ a:focus-visible {
   box-shadow: 0 0 0 2px var(--orange-pale);
 }
 
+/* ScanRing SVG & Dwell Progress */
 .scan-ring {
   position: absolute;
   inset: 0;
   pointer-events: none;
   border-radius: inherit;
-  z-index: 1;
+  z-index: 2;
+  overflow: hidden;
+  display: block;
+}
+
+.scan-ring-svg {
+  width: 100%;
+  height: 100%;
+  position: absolute;
+  inset: 0;
+  overflow: visible;
+  pointer-events: none;
+}
+
+.scan-ring-rect {
+  fill: none;
+  stroke: var(--orange);
+  stroke-width: var(--ring-width);
+  stroke-dasharray: 400;
+  stroke-dashoffset: 400;
+  vector-effect: non-scaling-stroke;
+}
+
+.scan-ring--active .scan-ring-rect {
+  animation: scanDwellDraw var(--scan-duration, 1800ms) var(--ease-dwell) forwards;
+}
+
+@keyframes scanDwellDraw {
+  from {
+    stroke-dashoffset: 400;
+  }
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+.scan-ring--selected {
+  animation: scanConfirmPulse var(--dur-normal) var(--ease-spring) forwards;
+}
+
+@keyframes scanConfirmPulse {
+  0% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1.05);
+    opacity: 0.95;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
 }
 
 .key.suggest {
@@ -1392,13 +1492,27 @@ a:focus-visible {
   }
 }
 
-/* Reduced Motion Accessibility Handling */
+/* ─────────────────────────────────────────────
+   REDUCED MOTION ACCESSIBILITY OVERRIDES
+   ───────────────────────────────────────────── */
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
   *::after {
-    animation: none !important;
-    transition: none !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+
+  .page-transition {
+    animation: pageEnterReduced 0.01ms ease-out forwards !important;
+  }
+
+  @keyframes pageEnterReduced {
+    from { opacity: 1; transform: none; }
+    to { opacity: 1; transform: none; }
   }
 
   .splash-word,
@@ -1411,7 +1525,15 @@ a:focus-visible {
 
   .button.primary.splash-btn {
     animation: none !important;
+    transform: none !important;
     box-shadow: 0 12px 22px rgba(207, 87, 0, 0.24) !important;
+  }
+
+  .button.primary.splash-btn:active,
+  .button.primary.splash-btn.is-pressed {
+    animation: none !important;
+    transform: none !important;
+    background: var(--orange-dark) !important;
   }
 
   .category-card.active,
@@ -1427,6 +1549,15 @@ a:focus-visible {
     transform: none !important;
   }
 
+  .scan-ring--active .scan-ring-rect {
+    animation: none !important;
+    stroke-dashoffset: 0 !important;
+  }
+
+  .scan-ring--selected {
+    animation: none !important;
+  }
+
   .scroll-chevron-svg {
     animation: none !important;
   }
@@ -1439,6 +1570,7 @@ a:focus-visible {
 
   .bento-card {
     transition: none !important;
+    animation: none !important;
   }
 
   .bento-texture,

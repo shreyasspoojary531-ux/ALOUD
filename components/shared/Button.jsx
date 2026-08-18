@@ -1,4 +1,5 @@
 "use client";
+import { useState } from "react";
 
 export default function Button({
   children,
@@ -6,14 +7,18 @@ export default function Button({
   className = "",
   ariaLabel,
 }) {
+  const [pressed, setPressed] = useState(false);
+
   const handleClick = (e) => {
+    setPressed(true);
+    setTimeout(() => setPressed(false), 250);
     onSelect?.(e);
   };
 
   return (
     <button
       type="button"
-      className={`button ${className}`}
+      className={`button ${className} ${pressed ? "is-pressed" : ""}`}
       onClick={handleClick}
       aria-label={ariaLabel}
     >

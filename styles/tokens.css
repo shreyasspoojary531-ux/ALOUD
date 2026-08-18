@@ -52,9 +52,15 @@
   --elevation-card-selected: 0 22px 48px rgba(52, 40, 23, 0.24), 0 36px 72px rgba(207, 87, 0, 0.35), inset 0 1px 1px #ffffff;
   --elevation-pill: 0 4px 12px rgba(52, 40, 23, 0.07), inset 0 1px 0.5px rgba(255, 255, 255, 0.8);
 
-  /* Spring Easing & Motion Tokens */
+  /* Unified Motion & Easing Tokens */
+  --dur-fast: 150ms;
+  --dur-normal: 250ms;
+  --dur-page: 240ms;
+  --dur-idle: 3600ms;
   --ease-spring: cubic-bezier(0.22, 1.25, 0.36, 1);
+  --ease-spring-squish: cubic-bezier(0.175, 0.885, 0.32, 1.275);
   --ease-out-smooth: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-dwell: cubic-bezier(0.35, 0, 0.25, 1);
   --dur-suggest: 220ms;
   --say-it-full-h: 92px;
   --say-it-compact-h: 92px;
