@@ -1,23 +1,27 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
 import useBlinkSelect, { DEFAULT_BLINK_THRESHOLDS } from "./useBlinkSelect";
-import { createFaceLandmarker } from "../../lib/mediapipeLoader";
+import useEyebrowSelect, { DEFAULT_EYEBROW_THRESHOLDS } from "./useEyebrowSelect";
+import usePalmSelect, { DEFAULT_PALM_THRESHOLDS } from "./usePalmSelect";
+import { createFaceLandmarker, createHandLandmarker } from "../../lib/mediapipeLoader";
+import { useEyeControl } from "../shared/EyeControlContext";
 
 export default function CameraPill({
-  enabled,
+  enabled: enabledProp,
   onLongBlink,
   onBlendshape,
   calibration,
   onBlinkOnset,
   onCameraReady,
 }) {
+  const ctx = useEyeControl();
+  const activeMode = ctx.mode || "blink";
+  const enabled = enabledProp ?? (activeMode !== "manual");
+
   const video = useRef(null);
   const callbacks = useRef({ onLongBlink, onBlendshape, onBlinkOnset, onCameraReady });
-  const [status, setStatus] = useState(
-    enabled ? "Starting camera…" : "Eye control is off"
-  );
+  const [status, setStatus] = useState("Starting camera…");
   const [statusType, setStatusType] = useState("normal"); // 'normal' | 'warning' | 'confidence'
-  const [score, setScore] = useState(null);
   const [minimized, setMinimized] = useState(() => {
     try {
       return typeof window !== "undefined" && localStorage.getItem("aloud_camera_minimized") === "true";
@@ -26,12 +30,12 @@ export default function CameraPill({
     }
   });
 
-  const noFaceSince = useRef(0);
+  const noDetectionSince = useRef(0);
   const lastVideoTime = useRef(-1);
   const prevHeadPose = useRef(null);
   const headMotionRef = useRef(0);
   const confidenceTimeoutRef = useRef(null);
-  const currentBlinkScoreRef = useRef(0);
+  const currentGestureScoreRef = useRef(0.9);
   const [calibState, setCalibState] = useState(null);
 
   const toggleMinimize = () => {
@@ -60,14 +64,14 @@ export default function CameraPill({
     }
   }, [calibration]);
 
-  const thresholds = calibState || calibration || DEFAULT_BLINK_THRESHOLDS;
+  const blinkThresholds = calibState || calibration || DEFAULT_BLINK_THRESHOLDS;
 
-  // Handle blink selection confirmation & show real confidence percentage
+  // Unified select confirmation handler for all modes
   const handleSelectConfirmation = () => {
     callbacks.current.onLongBlink?.();
 
-    const rawScore = currentBlinkScoreRef.current || 0.9;
-    const confidencePct = Math.min(99, Math.max(75, Math.round(rawScore * 100)));
+    const rawScore = currentGestureScoreRef.current || 0.9;
+    const confidencePct = Math.min(99, Math.max(78, Math.round(rawScore * 100)));
     
     setStatus(`${confidencePct}% confidence`);
     setStatusType("confidence");
@@ -75,13 +79,27 @@ export default function CameraPill({
     if (confidenceTimeoutRef.current) clearTimeout(confidenceTimeoutRef.current);
     confidenceTimeoutRef.current = setTimeout(() => {
       setStatusType("normal");
-      setStatus("Tracking your eyes");
+      if (activeMode === "eyebrow") setStatus("Tracking your eyebrows");
+      else if (activeMode === "palm") setStatus("Tracking your palm");
+      else setStatus("Tracking your eyes");
     }, 1500);
   };
 
-  const { ingest, phaseRef } = useBlinkSelect(
+  const blinkSelect = useBlinkSelect(
     handleSelectConfirmation,
-    thresholds,
+    blinkThresholds,
+    () => callbacks.current.onBlinkOnset?.()
+  );
+
+  const eyebrowSelect = useEyebrowSelect(
+    handleSelectConfirmation,
+    DEFAULT_EYEBROW_THRESHOLDS,
+    () => callbacks.current.onBlinkOnset?.()
+  );
+
+  const palmSelect = usePalmSelect(
+    handleSelectConfirmation,
+    DEFAULT_PALM_THRESHOLDS,
     () => callbacks.current.onBlinkOnset?.()
   );
 
@@ -91,12 +109,12 @@ export default function CameraPill({
 
   useEffect(() => {
     let stream;
-    let landmarker;
+    let detector;
     let frame;
     let cancelled = false;
 
-    if (!enabled) {
-      setStatus("Eye control is off");
+    if (!enabled || activeMode === "manual") {
+      setStatus("Manual mode (mouse only)");
       setStatusType("normal");
       return;
     }
@@ -114,10 +132,14 @@ export default function CameraPill({
           await video.current.play();
         }
 
-        landmarker = await createFaceLandmarker();
-        if (cancelled) return;
+        // Load specific landmarker based on active mode
+        if (activeMode === "palm") {
+          detector = await createHandLandmarker();
+        } else {
+          detector = await createFaceLandmarker();
+        }
 
-        // Notify parent setup component that camera stream is genuinely ready
+        if (cancelled) return;
         callbacks.current.onCameraReady?.(true);
 
         const tick = () => {
@@ -132,69 +154,120 @@ export default function CameraPill({
               lastVideoTime.current = video.current.currentTime;
 
               const timestamp = performance.now();
-              const result = landmarker.detectForVideo(video.current, timestamp);
+              const result = detector.detectForVideo(video.current, timestamp);
 
-              const hasFace = result.faceLandmarks && result.faceLandmarks.length > 0;
-              const shapes = result.faceBlendshapes?.[0]?.categories;
+              if (activeMode === "palm") {
+                // Hand Landmarker processing
+                const hasHand = result.landmarks && result.landmarks.length > 0;
+                if (hasHand) {
+                  noDetectionSince.current = 0;
+                  const handLandmarks = result.landmarks[0];
+                  palmSelect.ingest(handLandmarks);
 
-              if (hasFace && shapes) {
-                const landmarks = result.faceLandmarks[0];
-                const nose = landmarks[1];
-                const leftEyeCorner = landmarks[33];
-                const rightEyeCorner = landmarks[263];
-
-                if (prevHeadPose.current && nose && leftEyeCorner && rightEyeCorner) {
-                  const dNose = Math.hypot(
-                    nose.x - prevHeadPose.current.nose.x,
-                    nose.y - prevHeadPose.current.nose.y
-                  );
-                  const dLeft = Math.hypot(
-                    leftEyeCorner.x - prevHeadPose.current.leftEye.x,
-                    leftEyeCorner.y - prevHeadPose.current.leftEye.y
-                  );
-                  const dRight = Math.hypot(
-                    rightEyeCorner.x - prevHeadPose.current.rightEye.x,
-                    rightEyeCorner.y - prevHeadPose.current.rightEye.y
-                  );
-                  const rawMotion = (dNose + dLeft + dRight) / 3;
-                  headMotionRef.current = headMotionRef.current * 0.6 + rawMotion * 0.4;
-                }
-                prevHeadPose.current = { nose, leftEye: leftEyeCorner, rightEye: rightEyeCorner };
-
-                const isHeadMoving = headMotionRef.current > 0.035;
-
-                const left = shapes.find((x) => x.categoryName === "eyeBlinkLeft")?.score ?? 0;
-                const right = shapes.find((x) => x.categoryName === "eyeBlinkRight")?.score ?? 0;
-                const blink = (left + right) / 2;
-
-                currentBlinkScoreRef.current = blink;
-                noFaceSince.current = 0;
-                setScore(blink);
-                callbacks.current.onBlendshape?.(blink);
-
-                ingest(blink, { isMoving: isHeadMoving });
-
-                // Update live status if not currently showing confidence flash
-                if (statusType !== "confidence") {
-                  if (isHeadMoving) {
-                    setStatus("Head moving… hold still");
-                    setStatusType("warning");
-                  } else {
+                  if (statusType !== "confidence") {
                     setStatusType("normal");
-                    if (phaseRef.current === "resting") {
-                      setStatus("Eyes resting — reopen");
-                    } else if (phaseRef.current === "closed") {
-                      setStatus("Blinking to select…");
-                    } else {
-                      setStatus("Tracking your eyes");
-                    }
+                    setStatus(
+                      palmSelect.phaseRef.current === "open"
+                        ? "Open palm to select…"
+                        : "Tracking your palm"
+                    );
+                  }
+                } else {
+                  if (statusType !== "confidence") {
+                    setStatus("No hand detected");
+                    setStatusType("warning");
+                  }
+                }
+              } else if (activeMode === "eyebrow") {
+                // Eyebrow Raise FaceLandmarker processing
+                const hasFace = result.faceLandmarks && result.faceLandmarks.length > 0;
+                const shapes = result.faceBlendshapes?.[0]?.categories;
+
+                if (hasFace && shapes) {
+                  noDetectionSince.current = 0;
+                  const browLeft = shapes.find((x) => x.categoryName === "browOuterUpLeft")?.score ?? 0;
+                  const browRight = shapes.find((x) => x.categoryName === "browOuterUpRight")?.score ?? 0;
+                  const browScore = (browLeft + browRight) / 2;
+
+                  currentGestureScoreRef.current = Math.min(0.98, Math.max(0.65, browScore + 0.3));
+                  callbacks.current.onBlendshape?.(browScore);
+                  eyebrowSelect.ingest(browScore);
+
+                  if (statusType !== "confidence") {
+                    setStatusType("normal");
+                    setStatus(
+                      eyebrowSelect.phaseRef.current === "raised"
+                        ? "Eyebrows raised to select…"
+                        : "Tracking your eyebrows"
+                    );
+                  }
+                } else {
+                  if (statusType !== "confidence") {
+                    setStatus("No face detected");
+                    setStatusType("warning");
                   }
                 }
               } else {
-                if (!noFaceSince.current) noFaceSince.current = performance.now();
-                if (statusType !== "confidence") {
-                  setStatus("No eyes tracked");
-                  setStatusType("warning");
+                // Default Eye Blink FaceLandmarker processing
+                const hasFace = result.faceLandmarks && result.faceLandmarks.length > 0;
+                const shapes = result.faceBlendshapes?.[0]?.categories;
+
+                if (hasFace && shapes) {
+                  const landmarks = result.faceLandmarks[0];
+                  const nose = landmarks[1];
+                  const leftEyeCorner = landmarks[33];
+                  const rightEyeCorner = landmarks[263];
+
+                  if (prevHeadPose.current && nose && leftEyeCorner && rightEyeCorner) {
+                    const dNose = Math.hypot(
+                      nose.x - prevHeadPose.current.nose.x,
+                      nose.y - prevHeadPose.current.nose.y
+                    );
+                    const dLeft = Math.hypot(
+                      leftEyeCorner.x - prevHeadPose.current.leftEye.x,
+                      leftEyeCorner.y - prevHeadPose.current.leftEye.y
+                    );
+                    const dRight = Math.hypot(
+                      rightEyeCorner.x - prevHeadPose.current.rightEye.x,
+                      rightEyeCorner.y - prevHeadPose.current.rightEye.y
+                    );
+                    const rawMotion = (dNose + dLeft + dRight) / 3;
+                    headMotionRef.current = headMotionRef.current * 0.6 + rawMotion * 0.4;
+                  }
+                  prevHeadPose.current = { nose, leftEye: leftEyeCorner, rightEye: rightEyeCorner };
+
+                  const isHeadMoving = headMotionRef.current > 0.035;
+
+                  const left = shapes.find((x) => x.categoryName === "eyeBlinkLeft")?.score ?? 0;
+                  const right = shapes.find((x) => x.categoryName === "eyeBlinkRight")?.score ?? 0;
+                  const blink = (left + right) / 2;
+
+                  currentGestureScoreRef.current = blink;
+                  noDetectionSince.current = 0;
+                  callbacks.current.onBlendshape?.(blink);
+
+                  blinkSelect.ingest(blink, { isMoving: isHeadMoving });
+
+                  if (statusType !== "confidence") {
+                    if (isHeadMoving) {
+                      setStatus("Head moving… hold still");
+                      setStatusType("warning");
+                    } else {
+                      setStatusType("normal");
+                      setStatus(
+                        blinkSelect.phaseRef.current === "resting"
+                          ? "Eyes resting — reopen"
+                          : blinkSelect.phaseRef.current === "closed"
+                          ? "Blinking to select…"
+                          : "Tracking your eyes"
+                      );
+                    }
+                  }
+                } else {
+                  if (statusType !== "confidence") {
+                    setStatus("No eyes tracked");
+                    setStatusType("warning");
+                  }
                 }
               }
             }
@@ -222,7 +295,12 @@ export default function CameraPill({
       }
       if (confidenceTimeoutRef.current) clearTimeout(confidenceTimeoutRef.current);
     };
-  }, [enabled, ingest, phaseRef, statusType]);
+  }, [enabled, activeMode, blinkSelect, eyebrowSelect, palmSelect, statusType]);
+
+  // Hide CameraPill completely in Manual mode
+  if (activeMode === "manual" || !enabled) {
+    return null;
+  }
 
   return (
     <aside
@@ -239,25 +317,15 @@ export default function CameraPill({
         {minimized ? "⤢" : "–"}
       </button>
 
-      {enabled ? (
-        <>
-          <video
-            ref={video}
-            muted
-            playsInline
-            className={minimized ? "video-hidden" : ""}
-          />
-          <div className="camera-label">
-            <b className={`status-dot ${statusType}`}>•</b> {status}
-          </div>
-        </>
-      ) : (
-        <div className="camera-off">
-          {status}
-          <br />
-          Click or press Space to select
-        </div>
-      )}
+      <video
+        ref={video}
+        muted
+        playsInline
+        className={minimized ? "video-hidden" : ""}
+      />
+      <div className="camera-label">
+        <b className={`status-dot ${statusType}`}>•</b> {status}
+      </div>
     </aside>
   );
 }
