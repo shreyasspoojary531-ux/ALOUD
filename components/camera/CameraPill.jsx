@@ -187,8 +187,8 @@ export default function CameraPill({
                     setStatusType("normal");
                     statusTypeRef.current = "normal";
                     setStatus(
-                      pSel.phaseRef.current === "open"
-                        ? "Open palm to select…"
+                      pSel.phaseRef.current === "closed"
+                        ? "Fist closed to select…"
                         : "Tracking your palm"
                     );
                   }

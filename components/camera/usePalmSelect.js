@@ -2,43 +2,51 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 
 export const DEFAULT_PALM_THRESHOLDS = {
-  open: 1.55,
-  close: 1.25,
-  min: 350,
+  close: 0.65,
+  open: 0.35,
+  min: 380,
   max: 1800,
 };
 
 /**
- * Pure state machine handling open palm gesture selection.
+ * Pure state machine handling closed fist gesture selection.
+ * - Open hand = idle / resting state
+ * - Closed fist held for ~400-600ms = selection action
+ * - Hand must re-open before next selection can trigger
  */
 export function advancePalm(
   state,
-  score,
+  fistScore,
   now,
   thresholds = DEFAULT_PALM_THRESHOLDS,
   onPalmOnset = null
 ) {
-  // If palm is closed/idle and opens past threshold while armed
-  if (!state.openPalm && score >= thresholds.open && state.armed) {
-    onPalmOnset?.();
-    return { ...state, openPalm: true, openAt: now, selected: false };
+  // 1. Re-arm machine ONLY when hand returns to open state below openThreshold
+  if (!state.armed && fistScore <= thresholds.open) {
+    return { ...state, armed: true };
   }
 
-  // If palm was open and now closes/lowers below threshold
-  if (state.openPalm && score < thresholds.close) {
-    const duration = now - state.openAt;
+  // 2. Fist closes past closeThreshold while armed
+  if (!state.closedFist && fistScore >= thresholds.close && state.armed) {
+    onPalmOnset?.();
+    return { ...state, closedFist: true, closedAt: now, selected: false };
+  }
+
+  // 3. Hand re-opens after sustained closed fist duration
+  if (state.closedFist && fistScore <= thresholds.open) {
+    const duration = now - state.closedAt;
     const isSelected = state.armed && duration >= thresholds.min && duration <= thresholds.max;
     return {
-      openPalm: false,
-      openAt: 0,
-      armed: true,
+      closedFist: false,
+      closedAt: 0,
+      armed: false, // Disarm until hand fully opens again
       selected: isSelected,
     };
   }
 
-  // If open duration exceeds max timeout
-  if (state.openPalm && now - state.openAt > thresholds.max) {
-    return { ...state, armed: false, selected: false };
+  // 4. Max timeout disarm to prevent duplicate triggers on continuous hold
+  if (state.closedFist && now - state.closedAt > thresholds.max) {
+    return { ...state, closedFist: false, closedAt: 0, armed: false, selected: false };
   }
 
   return { ...state, selected: false };
@@ -51,25 +59,25 @@ function dist2D(pt1, pt2) {
   return Math.hypot(pt1.x - pt2.x, pt1.y - pt2.y);
 }
 
-export default function usePalmSelect(onOpenPalm, thresholds, onPalmOnset) {
-  const callbackRef = useRef(onOpenPalm);
+export default function usePalmSelect(onClosedFistSelect, thresholds, onPalmOnset) {
+  const callbackRef = useRef(onClosedFistSelect);
   const onsetCallbackRef = useRef(onPalmOnset);
   const thresholdsRef = useRef(thresholds || DEFAULT_PALM_THRESHOLDS);
   const emaRef = useRef(null);
 
   const machine = useRef({
-    openPalm: false,
-    openAt: 0,
+    closedFist: false,
+    closedAt: 0,
     armed: true,
     selected: false,
   });
 
-  const phaseRef = useRef("closed");
-  const [phase, setPhase] = useState("closed");
+  const phaseRef = useRef("resting");
+  const [phase, setPhase] = useState("resting");
 
   useEffect(() => {
-    callbackRef.current = onOpenPalm;
-  }, [onOpenPalm]);
+    callbackRef.current = onClosedFistSelect;
+  }, [onClosedFistSelect]);
 
   useEffect(() => {
     onsetCallbackRef.current = onPalmOnset;
@@ -78,8 +86,8 @@ export default function usePalmSelect(onOpenPalm, thresholds, onPalmOnset) {
   useEffect(() => {
     thresholdsRef.current = thresholds || DEFAULT_PALM_THRESHOLDS;
     machine.current = {
-      openPalm: false,
-      openAt: 0,
+      closedFist: false,
+      closedAt: 0,
       armed: true,
       selected: false,
     };
@@ -94,47 +102,37 @@ export default function usePalmSelect(onOpenPalm, thresholds, onPalmOnset) {
       const wrist = landmarks[0];
       const middleMCP = landmarks[9];
 
-      // Hand scale reference (wrist to middle MCP 2D distance)
+      // Hand scale reference (wrist 0 to middle MCP 9 2D distance)
       const handScale = dist2D(wrist, middleMCP);
       if (handScale < 0.01) return;
 
-      // 1. Calculate 2D Wrist-to-Fingertip distances (Index 8, Middle 12, Ring 16, Pinky 20)
+      // Calculate 2D Wrist-to-Fingertip distances (Index 8, Middle 12, Ring 16, Pinky 20)
       const fingerTips = [8, 12, 16, 20];
-      const wristToTipAvg =
+      const avgWristToTip =
         fingerTips.reduce((sum, tipIdx) => sum + dist2D(wrist, landmarks[tipIdx]), 0) / (4 * handScale);
 
-      // 2. Calculate 2D MCP-to-Fingertip distances for multi-finger extension
-      // Index (MCP 5 -> Tip 8), Middle (MCP 9 -> Tip 12), Ring (MCP 13 -> Tip 16), Pinky (MCP 17 -> Tip 20)
-      const mcpPairs = [
-        { mcp: 5, tip: 8 },
-        { mcp: 9, tip: 12 },
-        { mcp: 13, tip: 16 },
-        { mcp: 17, tip: 20 },
-      ];
-      const mcpToTipAvg =
-        mcpPairs.reduce((sum, pair) => sum + dist2D(landmarks[pair.mcp], landmarks[pair.tip]), 0) /
-        (4 * handScale);
-
-      // Composite multi-finger open palm score
-      const rawCompositeScore = wristToTipAvg * 0.55 + mcpToTipAvg * 0.70;
+      // Normalized Fist Closure Score:
+      // Open hand (avgWristToTip ~ 1.80) -> score 0.0
+      // Closed fist (avgWristToTip ~ 1.10) -> score 1.0
+      const rawFistScore = Math.max(0, Math.min(1, (1.80 - avgWristToTip) / 0.70));
 
       // Exponential Moving Average (EMA) smoothing (alpha = 0.35)
       const alpha = 0.35;
-      const score =
+      const fistScore =
         emaRef.current === null
-          ? rawCompositeScore
-          : alpha * rawCompositeScore + (1 - alpha) * emaRef.current;
-      emaRef.current = score;
+          ? rawFistScore
+          : alpha * rawFistScore + (1 - alpha) * emaRef.current;
+      emaRef.current = fistScore;
 
       const currentThresholds = thresholdsRef.current;
       const next = advancePalm(
         machine.current,
-        score,
+        fistScore,
         now,
         currentThresholds,
         () => onsetCallbackRef.current?.()
       );
-      const nextPhase = next.openPalm ? "open" : "closed";
+      const nextPhase = next.closedFist ? "closed" : "resting";
 
       machine.current = next;
       phaseRef.current = nextPhase;
