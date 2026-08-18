@@ -1067,12 +1067,169 @@ a:focus-visible {
   background: var(--orange-dark);
 }
 
+/* Settings Profile Link */
+.settings-profile-link {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: var(--paper);
+  border: 1.5px solid var(--line);
+  border-radius: var(--r-sm);
+  padding: var(--sp3);
+  text-decoration: none;
+  color: var(--ink);
+  transition: background var(--dur-fast) ease, border-color var(--dur-fast) ease;
+}
+
+.settings-profile-link:hover {
+  background: var(--orange-pale);
+  border-color: var(--orange);
+}
+
+.profile-link-content {
+  display: flex;
+  align-items: center;
+  gap: var(--sp3);
+}
+
+.profile-link-icon {
+  font-size: 18px;
+}
+
+.profile-link-content strong {
+  display: block;
+  font-size: 13px;
+  color: var(--ink);
+}
+
+.profile-link-content p {
+  font-size: 11px;
+  color: var(--muted);
+  margin: 0;
+}
+
+.profile-link-arrow {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--orange-dark);
+}
+
 /* Overlay repeat indicator */
 .repeat-indicator {
   font-size: 13px;
   color: rgba(255, 255, 255, 0.7);
   margin: 0;
   letter-spacing: 0.04em;
+}
+
+/* ─── Mobile Hamburger Menu & Drawer Panel (<900px) ────────────────────────── */
+
+.mobile-menu-btn {
+  display: none;
+  background: var(--paper);
+  border: var(--ring-width) solid var(--line);
+  border-radius: var(--r-pill);
+  padding: 8px 14px;
+  color: var(--ink);
+  cursor: pointer;
+  box-shadow: var(--elevation-pill);
+  transition: transform var(--dur-fast) ease, background var(--dur-fast) ease;
+}
+
+.mobile-menu-btn:hover {
+  background: var(--orange-pale);
+  color: var(--orange-dark);
+}
+
+.mobile-drawer-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(40, 34, 27, 0.45);
+  backdrop-filter: blur(4px);
+  z-index: 400;
+  animation: drawerFadeIn var(--dur-fast) ease forwards;
+}
+
+@keyframes drawerFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.mobile-drawer-panel {
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: min(85vw, 320px);
+  background: linear-gradient(160deg, #ffffff 0%, #fffdf8 60%, #fdf5e7 100%);
+  border-left: var(--ring-width) solid var(--line);
+  box-shadow: -10px 0 30px rgba(52, 40, 23, 0.2);
+  z-index: 410;
+  padding: var(--sp5) var(--sp4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp4);
+  transform: translateX(100%);
+  transition: transform var(--dur-normal) var(--ease-spring);
+}
+
+.mobile-drawer-panel.open {
+  transform: translateX(0);
+}
+
+.mobile-drawer-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid var(--line);
+  padding-bottom: var(--sp3);
+}
+
+.drawer-title {
+  font: 1.35rem var(--serif);
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.mobile-drawer-content {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp4);
+  overflow-y: auto;
+}
+
+.drawer-item {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp2);
+}
+
+.drawer-item-label {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: var(--muted);
+}
+
+.drawer-pill-btn {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 12px var(--sp4);
+}
+
+@media (max-width: 899px) {
+  .desktop-controls {
+    display: none !important;
+  }
+
+  .mobile-menu-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
 }
 
 

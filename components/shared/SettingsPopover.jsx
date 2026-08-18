@@ -1,5 +1,6 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
+import Link from "next/link";
 import { isSpeechSupported, cancelSpeech } from "../../lib/speech";
 import { useSettings } from "./SettingsContext";
 
@@ -159,6 +160,25 @@ export default function SettingsPopover({ isOpen, onClose }) {
         <p className="settings-hint">
           How many times the message repeats before closing.
         </p>
+      </section>
+
+      {/* Setting 3 — Profile & Analytics */}
+      <section className="settings-section">
+        <p className="settings-label">Account & Analytics</p>
+        <Link
+          href="/profile"
+          className="settings-profile-link"
+          onClick={onClose}
+        >
+          <div className="profile-link-content">
+            <span className="profile-link-icon">👤</span>
+            <div>
+              <strong>Profile & Analytics</strong>
+              <p>View your real speech metrics & history</p>
+            </div>
+          </div>
+          <span className="profile-link-arrow">→</span>
+        </Link>
       </section>
     </div>
   );
