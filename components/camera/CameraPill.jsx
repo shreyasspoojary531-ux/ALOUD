@@ -20,10 +20,15 @@ export default function CameraPill({
 
   const video = useRef(null);
   const callbacks = useRef({ onLongBlink, onBlendshape, onBlinkOnset, onCameraReady });
+
+  // retryKey increments to force the camera useEffect to re-run cleanly
+  const [retryKey, setRetryKey] = useState(0);
   const [status, setStatus] = useState("Starting camera…");
-  const [statusType, setStatusType] = useState("normal"); // 'normal' | 'warning' | 'confidence'
+  const [statusType, setStatusType] = useState("normal");
   const statusTypeRef = useRef("normal");
   statusTypeRef.current = statusType;
+
+  const [cameraError, setCameraError] = useState(null); // null | "notreadable" | "denied" | "generic"
 
   const [minimized, setMinimized] = useState(() => {
     try {
@@ -70,13 +75,12 @@ export default function CameraPill({
 
   const blinkThresholds = calibState || calibration || DEFAULT_BLINK_THRESHOLDS;
 
-  // Unified select confirmation handler for all modes
   const handleSelectConfirmation = () => {
     callbacks.current.onLongBlink?.();
 
     const rawScore = currentGestureScoreRef.current || 0.9;
     const confidencePct = Math.min(99, Math.max(78, Math.round(rawScore * 100)));
-    
+
     setStatus(`${confidencePct}% confidence`);
     setStatusType("confidence");
     statusTypeRef.current = "confidence";
@@ -122,9 +126,13 @@ export default function CameraPill({
     let frame;
     let cancelled = false;
 
-    // Reset video time & landmarker timestamp baseline on mode change
+    // Reset state on every attempt (mode change or retry)
     lastVideoTime.current = -1;
     lastTimestampRef.current = 0;
+    setCameraError(null);
+    setStatus("Starting camera…");
+    setStatusType("normal");
+    statusTypeRef.current = "normal";
 
     if (!enabled || activeMode === "manual") {
       setStatus("Manual mode (mouse only)");
@@ -136,6 +144,7 @@ export default function CameraPill({
     (async () => {
       try {
         if (!navigator.mediaDevices?.getUserMedia) throw new Error("No camera device");
+
         stream = await navigator.mediaDevices.getUserMedia({
           video: { facingMode: "user", width: { ideal: 640 }, height: { ideal: 480 } },
         });
@@ -146,7 +155,6 @@ export default function CameraPill({
           await video.current.play();
         }
 
-        // Load specific landmarker based on active mode
         if (activeMode === "palm") {
           detector = await createHandLandmarker();
         } else {
@@ -168,19 +176,17 @@ export default function CameraPill({
             ) {
               lastVideoTime.current = video.current.currentTime;
 
-              // Ensure integer monotonically increasing timestamp for MediaPipe WASM
               let timestamp = Math.round(performance.now());
               if (timestamp <= lastTimestampRef.current) {
                 timestamp = lastTimestampRef.current + 1;
               }
               lastTimestampRef.current = timestamp;
 
-              // Safely invoke detectForVideo
               let result = null;
               try {
                 result = detector?.detectForVideo ? detector.detectForVideo(video.current, timestamp) : null;
               } catch (wasmErr) {
-                // Ignore transient frame alignment errors from MediaPipe WASM
+                // Ignore transient WASM frame alignment errors
               }
 
               if (!result) {
@@ -192,7 +198,6 @@ export default function CameraPill({
               const { blinkSelect: bSel, eyebrowSelect: eSel, palmSelect: pSel } = gestureHooksRef.current;
 
               if (activeMode === "palm") {
-                // Hand Landmarker processing
                 const hasHand = result?.landmarks && result.landmarks.length > 0;
                 if (hasHand) {
                   noDetectionSince.current = 0;
@@ -216,7 +221,6 @@ export default function CameraPill({
                   }
                 }
               } else if (activeMode === "eyebrow") {
-                // Eyebrow Raise FaceLandmarker processing
                 const hasFace = result?.faceLandmarks && result.faceLandmarks.length > 0;
                 const shapes = result?.faceBlendshapes?.[0]?.categories;
 
@@ -247,7 +251,6 @@ export default function CameraPill({
                   }
                 }
               } else {
-                // Default Eye Blink FaceLandmarker processing
                 const hasFace = result?.faceLandmarks && result.faceLandmarks.length > 0;
                 const shapes = result?.faceBlendshapes?.[0]?.categories;
 
@@ -322,8 +325,30 @@ export default function CameraPill({
 
         tick();
       } catch (err) {
-        console.error("[CameraPill] Camera initialization error:", err);
-        setStatus("Camera unavailable — click or press Space");
+        if (cancelled) return;
+
+        // Stop any partially-acquired stream tracks before surfacing the error,
+        // so the OS releases the camera hardware and a retry can succeed.
+        if (stream) {
+          stream.getTracks().forEach((t) => t.stop());
+          stream = null;
+        }
+
+        const errorName = err.name || "";
+        console.error("[CameraPill] Camera error:", errorName, err.message);
+
+        if (errorName === "NotReadableError" || errorName === "OverconstrainedError") {
+          // Camera hardware busy (another tab / OS app has it locked)
+          setCameraError("notreadable");
+          setStatus("Camera in use by another app");
+        } else if (errorName === "NotAllowedError" || errorName === "PermissionDeniedError") {
+          setCameraError("denied");
+          setStatus("Camera permission denied");
+        } else {
+          setCameraError("generic");
+          setStatus("Camera unavailable");
+        }
+
         setStatusType("warning");
         statusTypeRef.current = "warning";
         callbacks.current.onCameraReady?.(false);
@@ -334,13 +359,26 @@ export default function CameraPill({
       cancelled = true;
       if (frame) cancelAnimationFrame(frame);
       if (stream) {
+        // Fully stop all tracks so OS releases the camera before the next attempt
         stream.getTracks().forEach((t) => t.stop());
+      }
+      if (video.current) {
+        video.current.srcObject = null;
       }
       if (confidenceTimeoutRef.current) clearTimeout(confidenceTimeoutRef.current);
     };
-  }, [enabled, activeMode]);
+  }, [enabled, activeMode, retryKey]); // retryKey causes a clean re-run on Retry click
 
-  // Hide CameraPill completely in Manual mode
+  // Retry: stop current stream, clear error state, force effect to re-run
+  const handleRetry = () => {
+    // Explicitly stop any lingering tracks before re-requesting
+    if (video.current?.srcObject) {
+      video.current.srcObject.getTracks().forEach((t) => t.stop());
+      video.current.srcObject = null;
+    }
+    setRetryKey((k) => k + 1);
+  };
+
   if (activeMode === "manual" || !enabled) {
     return null;
   }
@@ -366,9 +404,34 @@ export default function CameraPill({
         playsInline
         className={minimized ? "video-hidden" : ""}
       />
+
       <div className="camera-label">
         <b className={`status-dot ${statusType}`}>•</b> {status}
       </div>
+
+      {/* Retry button — only shown when there's a camera error */}
+      {cameraError && (
+        <button
+          type="button"
+          className="camera-retry-btn"
+          onClick={handleRetry}
+          aria-label="Retry camera"
+        >
+          Retry camera
+        </button>
+      )}
+
+      {/* Specific guidance text per error type */}
+      {cameraError === "notreadable" && (
+        <p className="camera-error-hint">
+          Close other apps using your camera, then retry.
+        </p>
+      )}
+      {cameraError === "denied" && (
+        <p className="camera-error-hint">
+          Allow camera access in your browser settings, then retry.
+        </p>
+      )}
     </aside>
   );
 }

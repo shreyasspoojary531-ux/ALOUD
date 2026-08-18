@@ -663,6 +663,35 @@ a:focus-visible {
   transform: scale(1.1);
 }
 
+/* Shown only when camera fails — sits below the video/label */
+.camera-retry-btn {
+  display: block;
+  width: calc(100% - 16px);
+  margin: 6px 8px 4px;
+  padding: 6px 10px;
+  border: none;
+  border-radius: 8px;
+  background: var(--orange);
+  color: #fff;
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.18s ease, transform 0.15s ease;
+}
+
+.camera-retry-btn:hover {
+  background: var(--orange-dark, #b84a00);
+  transform: scale(1.03);
+}
+
+.camera-error-hint {
+  margin: 0 8px 6px;
+  font-size: 10px;
+  color: rgba(255, 255, 255, 0.75);
+  line-height: 1.4;
+  text-align: center;
+}
+
 .camera-label {
   position: absolute;
   bottom: 0;
