@@ -1,15 +1,25 @@
 "use client";
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import useScanner from "../scanner/useScanner";
-import { cancelSpeech, isSpeechSupported } from "../../lib/speech";
+import { cancelSpeech, isSpeechSupported, say } from "../../lib/speech";
+import { useSettings } from "../shared/SettingsContext";
 
 export default function SpokenMessageOverlay({
   message,
   urgent,
   onDismiss,
   blinkSelect,
+  repeatCount: repeatCountProp,
 }) {
+  const { repeatCount: ctxRepeat } = useSettings();
+  // repeatCountProp takes precedence (passed from the page that calls say()),
+  // falling back to context if not explicitly given.
+  const repeat = repeatCountProp ?? ctxRepeat ?? 1;
+
+  const dismissed = useRef(false);
+
   const handleDismiss = () => {
+    dismissed.current = true;
     cancelSpeech();
     onDismiss?.();
   };
@@ -28,6 +38,25 @@ export default function SpokenMessageOverlay({
     }
   }, [blinkSelect, select]);
 
+  // Speak the message (with repeats). The overlay stays mounted for the full
+  // repeat cycle — onEnd only fires after all repeats finish.
+  useEffect(() => {
+    dismissed.current = false;
+    say(message, {
+      repeat,
+      onEnd: () => {
+        // Auto-dismiss only if user hasn't already manually dismissed
+        if (!dismissed.current) onDismiss?.();
+      },
+    });
+
+    return () => {
+      cancelSpeech();
+    };
+    // Re-run only when the message itself changes (new item selected).
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [message]);
+
   const speechAvailable = isSpeechSupported();
 
   return (
@@ -43,6 +72,11 @@ export default function SpokenMessageOverlay({
         {!speechAvailable && (
           <p className="speech-fallback-note">
             (Speech audio unavailable in browser — message displayed as text)
+          </p>
+        )}
+        {repeat > 1 && (
+          <p className="repeat-indicator">
+            Repeating {repeat}×
           </p>
         )}
         <button

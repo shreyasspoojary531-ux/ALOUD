@@ -2,7 +2,7 @@
 import Link from "next/link";
 import CustomModeSelect from "./CustomModeSelect";
 
-export default function TopBar({ onHelp, spell = false }) {
+export default function TopBar({ onHelp, onSettings, spell = false }) {
   return (
     <header className={spell ? "spellbar" : "topbar"}>
       {spell ? (
@@ -24,6 +24,11 @@ export default function TopBar({ onHelp, spell = false }) {
             {onHelp && (
               <button type="button" className="pill" onClick={onHelp}>
                 ◯&nbsp; Help
+              </button>
+            )}
+            {onSettings && (
+              <button type="button" className="pill" onClick={onSettings} aria-label="Settings">
+                ⚙&nbsp; Settings
               </button>
             )}
           </div>

@@ -5,10 +5,11 @@ import CameraPill from "../../components/camera/CameraPill";
 import Keyboard from "../../components/keyboard/Keyboard";
 import SpokenMessageOverlay from "../../components/overlay/SpokenMessageOverlay";
 import { useEyeControl } from "../../components/shared/EyeControlContext";
-import { say } from "../../lib/speech";
+import { useSettings } from "../../components/shared/SettingsContext";
 
 export default function Spell() {
   const { eyeOn, toggleEye } = useEyeControl();
+  const { repeatCount } = useSettings();
   const [message, setMessage] = useState("");
   const [spoken, setSpoken] = useState(null);
   const [suggestions, setSuggestions] = useState([]);
@@ -48,9 +49,9 @@ export default function Spell() {
     return () => { cancelled = true; };
   }, [message]);
 
+  // SpokenMessageOverlay now calls say() internally with repeat count
   const speak = (text, urgent = false) => {
     if (!text) return;
-    say(text);
     setSpoken({ text, urgent });
   };
 
@@ -80,6 +81,7 @@ export default function Spell() {
       {spoken && (
         <SpokenMessageOverlay
           message={spoken.text}
+          repeatCount={repeatCount}
           urgent={spoken.urgent}
           blinkSelect={blink}
           onDismiss={() => setSpoken(null)}
