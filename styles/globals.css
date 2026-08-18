@@ -653,16 +653,21 @@ select.mode-select option {
 .help {
   position: fixed;
   inset: 0;
+  height: 100dvh;
+  max-height: 100dvh;
   background: rgba(40, 34, 27, 0.45);
   backdrop-filter: blur(4px);
   display: grid;
   place-items: center;
   z-index: 200;
   padding: var(--sp4);
+  overflow: hidden;
 }
 
 .help-card {
   width: min(92%, 520px);
+  max-height: calc(100dvh - 32px);
+  overflow-y: auto;
   background: linear-gradient(160deg, #ffffff 0%, #fffdf8 50%, #fdf5e7 100%);
   border: var(--ring-width) solid var(--line);
   border-radius: 28px;
