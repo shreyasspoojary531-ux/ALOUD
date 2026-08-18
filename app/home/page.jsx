@@ -5,6 +5,7 @@ import TopBar from "../../components/shared/TopBar";
 import CameraPill from "../../components/camera/CameraPill";
 import CategoryGrid from "../../components/home/CategoryGrid";
 import SpokenMessageOverlay from "../../components/overlay/SpokenMessageOverlay";
+import HelpModal from "../../components/shared/HelpModal";
 import { useEyeControl } from "../../components/shared/EyeControlContext";
 import { say } from "../../lib/speech";
 
@@ -160,20 +161,7 @@ export default function Home() {
           }}
         />
       )}
-      {help && (
-        <div className="help">
-          <div className="help-card">
-            <h2>Speaking with your eyes</h2>
-            <p>
-              The scan moves through every choice. A long blink, click, and
-              Spacebar always select the same highlighted choice.
-            </p>
-            <button className="button dark" onClick={() => setHelp(false)}>
-              Got it
-            </button>
-          </div>
-        </div>
-      )}
+      {help && <HelpModal onClose={() => setHelp(false)} />}
     </main>
   );
 }

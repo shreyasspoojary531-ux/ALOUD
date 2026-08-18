@@ -9,6 +9,7 @@ import useScanner from "../../components/scanner/useScanner";
 import { useEyeControl } from "../../components/shared/EyeControlContext";
 import { calibratedThresholds } from "../../components/camera/useBlinkSelect";
 import { prefetchMediaPipe } from "../../lib/mediapipeLoader";
+import HelpModal from "../../components/shared/HelpModal";
 
 const steps = [
   {
@@ -20,25 +21,25 @@ const steps = [
   {
     icon: "▣",
     title: "Starting camera…",
-    text: "One moment — getting eye control ready. Allow the camera if your browser asks.",
+    text: "One moment — getting eye control ready. Allow camera access if your browser prompts you.",
     value: 14,
   },
   {
     icon: "◉",
     title: "Keep your eyes open",
-    text: "Look at the screen, relaxed.",
+    text: "Look at the screen naturally.",
     value: 38,
   },
   {
     icon: "◉",
     title: "Get ready…",
-    text: "When you hear the beep, close your eyes and hold them shut.",
+    text: "Close your eyes when prompted and hold them shut.",
     value: 60,
   },
   {
     icon: "◉̸",
     title: "Close your eyes now",
-    text: "Hold them shut until you hear the next tone.",
+    text: "Hold them shut until the check completes.",
     value: 82,
   },
 ];
@@ -47,12 +48,13 @@ export default function Setup() {
   const router = useRouter();
   const { eyeOn, toggleEye } = useEyeControl();
   const [step, setStep] = useState(0);
+  const [cameraError, setCameraError] = useState(false);
+  const [showHelp, setShowHelp] = useState(false);
   const startTimestampRef = useRef(null);
 
   const openSamples = useRef([]);
   const closedSamples = useRef([]);
 
-  // Prefetch MediaPipe model & WASM binaries in background as soon as calibration mounts
   useEffect(() => {
     prefetchMediaPipe();
   }, []);
@@ -95,9 +97,20 @@ export default function Setup() {
 
   const handleStart = useCallback(() => {
     startTimestampRef.current = performance.now();
-    console.log("[PerfBenchmark] Calibration 'Start' clicked at:", startTimestampRef.current);
-    next();
-  }, [next]);
+    setCameraError(false);
+    setStep(1); // Move to "Starting camera…" state
+  }, []);
+
+  // Real camera permission readiness callback from CameraPill
+  const handleCameraReady = useCallback((success) => {
+    if (success) {
+      setCameraError(false);
+      // Genuinely advance to step 2 ("Keep your eyes open") ONLY after getUserMedia succeeds
+      setStep((curr) => (curr === 1 ? 2 : curr));
+    } else {
+      setCameraError(true);
+    }
+  }, []);
 
   const { select } = useScanner(
     [{ label: step === 0 ? "Start" : "Continue" }],
@@ -107,9 +120,10 @@ export default function Setup() {
   blink.current = select;
   const onBlink = useCallback(() => blink.current(undefined, { isBlink: true }), []);
 
+  // Timed calibration sampling ONLY for step >= 2 (after camera permission is verified)
   useEffect(() => {
-    if (step && step < steps.length) {
-      const id = setTimeout(next, step === 1 ? 1600 : 2600);
+    if (step >= 2 && step < steps.length) {
+      const id = setTimeout(next, 2600);
       return () => clearTimeout(id);
     }
   }, [step, next]);
@@ -121,14 +135,29 @@ export default function Setup() {
       <TopBar
         eyeOn={eyeOn}
         toggleEye={toggleEye}
-        onHelp={() => router.push("/")}
+        onHelp={() => setShowHelp(true)}
       />
       <div className="screen-center">
         <section className="calibration">
           <div className="cal-icon">{current.icon}</div>
           <h1>{current.title}</h1>
           <p>{current.text}</p>
-          {current.intro ? (
+
+          {cameraError ? (
+            <div className="camera-error-block">
+              <p className="error-text">
+                Camera access was denied or unavailable. You can use mouse clicks or Spacebar to navigate Aloud.
+              </p>
+              <div className="button-row">
+                <Button className="primary" onSelect={handleStart}>
+                  Retry Camera
+                </Button>
+                <Button className="cal-skip-btn" onSelect={() => router.push("/home")}>
+                  Continue with Click / Space
+                </Button>
+              </div>
+            </div>
+          ) : current.intro ? (
             <div className="button-row">
               <Button className="primary cal-start-btn" onSelect={handleStart}>
                 Start
@@ -142,8 +171,15 @@ export default function Setup() {
           )}
         </section>
       </div>
-      {/* Camera only enables once user clicks Start (step > 0) */}
-      <CameraPill enabled={eyeOn && step > 0} onLongBlink={onBlink} onBlendshape={handleBlendshape} />
+
+      <CameraPill
+        enabled={eyeOn && step > 0}
+        onLongBlink={onBlink}
+        onBlendshape={handleBlendshape}
+        onCameraReady={handleCameraReady}
+      />
+
+      {showHelp && <HelpModal onClose={() => setShowHelp(false)} />}
     </main>
   );
 }

@@ -138,7 +138,7 @@ a:focus-visible {
   border: 0;
   background: var(--dark);
   color: #fff;
-  min-height: 58px;
+  min-height: 54px;
   padding: 0 28px;
 }
 
@@ -252,26 +252,45 @@ a:focus-visible {
   font-size: 30px;
 }
 
+/* Fluid Responsive Calibration Setup */
 .calibration {
-  max-width: 440px;
+  width: min(100%, 460px);
+  padding: 0 var(--sp3);
 }
 
 .calibration h1 {
-  font: 48px / 1 var(--serif);
+  font: clamp(1.8rem, 1.4rem + 2vw, 2.8rem) / 1.15 var(--serif);
   margin: var(--sp5) 0 var(--sp3);
 }
 
 .calibration p {
   color: var(--muted);
+  font-size: clamp(0.95rem, 0.85rem + 0.3vw, 1.15rem);
   line-height: 1.5;
   margin: 0 auto var(--sp5);
-  max-width: 380px;
+  max-width: 400px;
 }
 
 .button-row {
   display: flex;
   justify-content: center;
   gap: var(--sp3);
+  flex-wrap: wrap;
+}
+
+.camera-error-block {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp4);
+  align-items: center;
+}
+
+.camera-error-block .error-text {
+  color: var(--alert-ink);
+  background: var(--alert);
+  padding: var(--sp3) var(--sp4);
+  border-radius: var(--r-sm);
+  font-size: 14px;
 }
 
 .progress {
@@ -449,18 +468,32 @@ a:focus-visible {
   animation: pulse 1s infinite;
 }
 
+/* ─────────────────────────────────────────────
+   FLOATING CAMERA PILL & CONFIDENCE METRICS
+   ───────────────────────────────────────────── */
+
 .camera {
   position: fixed;
-  right: 18px;
-  bottom: 18px;
+  right: calc(24px + env(safe-area-inset-right, 0px));
+  bottom: calc(24px + env(safe-area-inset-bottom, 0px));
   width: var(--camera-fluid-w);
   height: var(--camera-fluid-h);
-  z-index: 3;
+  z-index: 100;
   border: 1px solid #6d655a;
-  border-radius: 17px;
+  border-radius: 18px;
   overflow: hidden;
-  background: #302b26;
-  box-shadow: var(--shadow);
+  background: #2a2520;
+  box-shadow: 0 12px 28px rgba(30, 24, 18, 0.35);
+  transition: width 0.3s var(--ease-spring), height 0.3s var(--ease-spring), border-radius 0.3s ease;
+}
+
+.camera.minimized {
+  width: 175px;
+  height: 38px;
+  border-radius: 999px;
+  background: rgba(42, 37, 32, 0.92);
+  backdrop-filter: blur(8px);
+  border-color: #524a40;
 }
 
 .camera video {
@@ -468,6 +501,35 @@ a:focus-visible {
   height: 100%;
   object-fit: cover;
   transform: scaleX(-1);
+  display: block;
+}
+
+.video-hidden {
+  display: none !important;
+}
+
+.camera-toggle-btn {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  z-index: 10;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  border: none;
+  background: rgba(0, 0, 0, 0.55);
+  color: #ffffff;
+  font-size: 12px;
+  font-weight: bold;
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  transition: background 0.2s ease, transform 0.2s ease;
+}
+
+.camera-toggle-btn:hover {
+  background: rgba(207, 87, 0, 0.85);
+  transform: scale(1.1);
 }
 
 .camera-label {
@@ -475,17 +537,48 @@ a:focus-visible {
   bottom: 0;
   left: 0;
   right: 0;
-  padding: 9px;
+  padding: 8px 10px;
   color: #fff;
-  background: linear-gradient(transparent, rgba(0, 0, 0, 0.75));
+  background: linear-gradient(transparent, rgba(0, 0, 0, 0.82));
   font-size: 11px;
   font-weight: 700;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: flex;
+  align-items: center;
+  gap: 5px;
 }
 
-.camera-label b {
+.camera.minimized .camera-label {
+  position: relative;
+  background: transparent;
+  padding: 0 0 0 10px;
+  height: 100%;
+}
+
+.status-dot {
   color: #58dd91;
   font-size: 16px;
-  vertical-align: -1px;
+}
+
+.status-dot.warning,
+.camera.warning .status-dot {
+  color: #e07a5f;
+}
+
+.camera.confidence .status-dot {
+  color: var(--orange);
+  animation: confidencePulse 0.5s ease-in-out infinite;
+}
+
+.camera.confidence .camera-label {
+  color: #ffbe98;
+}
+
+@keyframes confidencePulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.6; transform: scale(1.3); }
 }
 
 .camera-off {
@@ -513,32 +606,104 @@ a:focus-visible {
   display: block;
 }
 
+/* ─────────────────────────────────────────────
+   HELP MODAL OVERLAY & RECALIBRATION FLOW
+   ───────────────────────────────────────────── */
+
 .help {
   position: fixed;
   inset: 0;
-  background: rgba(40, 34, 27, 0.25);
-  backdrop-filter: blur(2px);
+  background: rgba(40, 34, 27, 0.45);
+  backdrop-filter: blur(4px);
   display: grid;
   place-items: center;
-  z-index: 10;
+  z-index: 200;
+  padding: var(--sp4);
 }
 
 .help-card {
-  width: min(90%, 560px);
-  background: var(--paper);
+  width: min(92%, 520px);
+  background: linear-gradient(160deg, #ffffff 0%, #fffdf8 50%, #fdf5e7 100%);
+  border: var(--ring-width) solid var(--line);
   border-radius: 28px;
-  padding: 44px;
+  padding: clamp(22px, 4vw, 36px);
   box-shadow: var(--elevation-card-hover);
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp4);
 }
 
-.help-card h2 {
-  font: 36px var(--serif);
+.help-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.help-card-header h2 {
+  font: clamp(1.6rem, 1.3rem + 1vw, 2.2rem) var(--serif);
+  margin: 0;
+  color: var(--ink);
+}
+
+.help-close-btn {
+  background: transparent;
+  border: none;
+  font-size: 18px;
+  color: var(--muted);
+  cursor: pointer;
+  padding: var(--sp1) var(--sp2);
+  border-radius: 50%;
+  transition: color 0.2s ease;
+}
+
+.help-close-btn:hover {
+  color: var(--ink);
+}
+
+.help-steps {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp3);
+}
+
+.help-step {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--sp3);
+}
+
+.step-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 12px;
+  background: var(--orange-pale);
+  color: var(--orange-dark);
+  display: grid;
+  place-items: center;
+  font-size: 18px;
+  flex-shrink: 0;
+}
+
+.help-step strong {
+  display: block;
+  font-size: 15px;
+  color: var(--ink);
+  margin-bottom: 2px;
+}
+
+.help-step p {
+  font-size: 13px;
+  line-height: 1.4;
+  color: var(--muted);
   margin: 0;
 }
 
-.help-card p {
-  line-height: 1.55;
-  color: var(--muted);
+.help-card-actions {
+  display: flex;
+  gap: var(--sp3);
+  justify-content: flex-end;
+  margin-top: var(--sp2);
+  flex-wrap: wrap;
 }
 
 .spell {
@@ -780,7 +945,7 @@ a:focus-visible {
 .overlay {
   position: fixed;
   inset: 0;
-  z-index: 20;
+  z-index: 200;
   display: grid;
   place-items: center;
   text-align: center;
@@ -1162,6 +1327,7 @@ a:focus-visible {
   perspective: 1000px;
   width: 290px;
   height: 300px;
+  max-width: 100%;
 }
 
 .glass-card {
@@ -1442,6 +1608,11 @@ a:focus-visible {
   .cta-glass-text .cta-title,
   .cta-glass-text .cta-subtitle {
     text-align: center;
+  }
+
+  .camera {
+    right: 14px;
+    bottom: 14px;
   }
 }
 

@@ -5,6 +5,7 @@ import TopBar from "../components/shared/TopBar";
 import Button from "../components/shared/Button";
 import { useEyeControl } from "../components/shared/EyeControlContext";
 import LandingSections from "../components/landing/LandingSections";
+import HelpModal from "../components/shared/HelpModal";
 
 export default function Splash() {
   const router = useRouter();
@@ -70,20 +71,7 @@ export default function Splash() {
       {/* Scrollable Landing Sections */}
       <LandingSections onSelectCTA={handleBegin} />
 
-      {help && (
-        <div className="help">
-          <div className="help-card">
-            <h2>Speaking with your eyes</h2>
-            <p>
-              The highlight moves through choices. Hold a long blink to choose,
-              or click any choice. Spacebar works as a testing fallback.
-            </p>
-            <Button className="dark" onSelect={() => setHelp(false)}>
-              Got it
-            </Button>
-          </div>
-        </div>
-      )}
+      {help && <HelpModal onClose={() => setHelp(false)} />}
     </main>
   );
 }

@@ -33,7 +33,7 @@ say why, don't default into it silently.
 
 Think like a senior product designer who specializes in accessibility tools, not like
 a template generator. That means:
-- Strictly use skills inside .agents/skill read all the skills and use it and AGENTS.md
+
 - Every color, spacing value, and font must come from the design tokens file
   (see File Structure below) — never hardcode a hex code or px value inline.
 - Justify layout decisions in terms of the actual user: someone scanning with their
@@ -47,7 +47,62 @@ a template generator. That means:
 - Before finishing a screen, review it against this checklist: would this be
   mistaken for a generic template if someone saw it out of context? If yes, revise.
 
+Confirmed palette and type (put these in `styles/tokens.css`, don't invent
+alternatives):
+- Background: warm cream with a soft radial glow centered behind content
+- Primary accent: burnt orange/terracotta — primary buttons, highlight rings, the
+  logo's dot
+- Category tint set: soft rose (deeper rose icon), soft gold/mustard, soft sage
+  green, soft slate blue — used for card icon backgrounds, each with a matching
+  deeper tone for its icon and its selected-ring color
+- Alert tone: warm red/salmon, reserved for urgent states (e.g. the spoken-message
+  overlay for an urgent message, the "call for help" key) — never used decoratively
+- Type: an elegant serif for headlines and large spoken-message text (matches the
+  "Aloud." wordmark), a clean sans-serif for buttons/labels/body, and small-caps
+  letter-spaced sans for eyebrow labels (e.g. "WHAT WOULD YOU LIKE TO SAY?")
+- Selected/highlighted state = a colored ring border matching the element's own
+  tint, not just a background swap
+
 ---
+
+## Input rule — always dual, never either/or
+
+Every selectable element in the app must respond to a real mouse/touch click AND
+the long-blink scan-select signal AND the Spacebar (testing fallback) at all times,
+simultaneously — never a mode you switch between. All three call the exact same
+`select()` function on the exact same item. Don't gate click behind "eye control
+off" or treat it as a fallback-only path; a sighted companion or the user themself
+should be able to just tap when that's easier, with zero difference in outcome from
+blinking.
+
+## Reference screens — build to match, don't reinterpret
+
+These screens are confirmed from actual design references. Match their structure
+and tone; don't substitute a generic layout for any of them.
+
+1. **Splash** — centered "Aloud." wordmark with an orange dot, italic tagline below,
+   single orange pill button "Begin with eye control."
+2. **Calibration flow** — sequence of full-screen centered steps (icon, headline,
+   one line of instruction, thin filling progress bar): intro with Start/Skip for
+   now, "Starting camera…", "Keep your eyes open", "Get ready…", "Close your eyes
+   now" — then continue to Home. Skippable, not a hard requirement.
+3. **Home** — eyebrow label "WHAT WOULD YOU LIKE TO SAY?" above a card grid (I feel,
+   I need, People, Answers as 2x2, full-width "Spell it out" card below). Selecting
+   a category shows a similar grid of sub-options with a Back option. Bottom caption:
+   "The highlight moves on its own · take a long blink to select," with a small
+   pulsing dot.
+4. **Spell it out** — top bar (Home back link, centered title, "Normal" speed pill),
+   eyebrow "YOUR MESSAGE" with an italic placeholder/live message line, then labeled
+   rows (suggestions, A–I, J–R, S–Z+space, edit, actions) each ending in a "back"
+   cell. Row-level scan first (whole row outlined), select a row to scan its keys.
+   The "call for help" action gets distinct alert styling, not a neutral key. Bottom
+   caption: "A row is highlighting — long-blink to open it."
+5. **Spoken-message overlay** — full-screen takeover when a message is spoken: small
+   pulsing dots row at top, the message in large bold centered text, a dark pill "✓
+   I got help" button below, caption explaining it repeats until dismissed. Background
+   shifts tone with urgency — alert/urgent messages get a warmer red/salmon
+   background, routine messages stay on the normal cream background. Dismissing
+   returns to Home.
 
 ## Code efficiency
 
@@ -76,7 +131,6 @@ happens:
   one wins rather than guessing or blending both.
 - Never let a new reference doc silently change existing tokens or components. Treat
   it as additive guidance until I confirm a change.
-  apple design skills inside skills folder
 
 ## Accessibility beyond visual design
 
@@ -122,9 +176,15 @@ Always handle these explicitly, don't let them fail silently:
 
 ## Responsive breakpoints
 
-Use these consistently everywhere instead of inventing new ones per component:
-- Desktop: ≥900px — sidebar layout
-- Mobile: <900px — top bar + floating camera pill
+There is no sidebar in this app, on any screen, at any width — every screen uses a
+simple top bar (logo left, control pills right) with centered content below it. Only
+the content's max-width and padding change with viewport size.
+- Desktop: ≥900px — content centered, generous whitespace around it
+- Mobile: <900px — same top bar and centered content, just narrower
+- Camera preview is a floating rounded pill, bottom-right, on every screen, at every
+  width. It never sits inside a fixed panel and must never overlap an interactive
+  element — if a screen's layout would let that happen, fix the layout, don't just
+  let it float on top.
 Don't add a tablet-specific breakpoint unless a real layout problem shows up at that
 width.
 
@@ -141,33 +201,38 @@ Keep this structure. Ask before adding new top-level folders.
 
 ```
 app/
-  page.jsx                 → Home screen only
-  spell/page.jsx            → Spell-it-out keyboard screen
+  page.jsx                  → Splash screen
+  setup/page.jsx             → Calibration flow
+  home/page.jsx               → Home screen + category sub-grids
+  spell/page.jsx                → Spell-it-out keyboard screen
   api/
-    suggest/route.js        → Gemini call, server-side only
+    suggest/route.js           → Gemini call, server-side only
 
 components/
   scanner/
-    useScanner.js            → core scan-cycle + select logic (screen-agnostic)
-    ScanRing.jsx              → the visual dwell-time indicator
+    useScanner.js                → core scan-cycle + select logic (screen-agnostic)
+    ScanRing.jsx                  → the visual dwell-time indicator
   keyboard/
     Keyboard.jsx
     KeyRow.jsx
   camera/
-    CameraPanel.jsx           → webcam feed + blink detection wiring
+    CameraPill.jsx                 → floating webcam pill + blink detection wiring
   home/
     CategoryGrid.jsx
     CategoryCard.jsx
+  overlay/
+    SpokenMessageOverlay.jsx        → full-screen "message being spoken" takeover
   shared/
     Button.jsx
-    TopBar.jsx
+    TopBar.jsx                       → logo + control pills, used on every screen
+    ProgressBar.jsx
 
 lib/
-  gemini.js                  → server-side API call wrapper
-  speech.js                  → Web Speech API wrapper
+  gemini.js                   → server-side API call wrapper
+  speech.js                   → Web Speech API wrapper
 
 styles/
-  tokens.css                 → ALL colors, fonts, spacing as CSS variables
+  tokens.css                  → ALL colors, fonts, spacing as CSS variables
   globals.css
 ```
 
@@ -178,10 +243,40 @@ Rules:
   cards, or cameras specifically.
 - Anything reading or writing the camera/blink signal lives only in
   `components/camera/`. No other file should touch MediaPipe directly.
+- `TopBar` is the one layout shell reused on every screen — don't build a
+  per-screen header from scratch, and don't build a sidebar; this app doesn't
+  have one anywhere.
 - Server-only code (API keys, Gemini calls) never gets imported into a client
   component. If you're not sure whether a file is client or server, ask.
 
 ---
+
+## Formatting & comments
+
+Every file in this project should be properly formatted and readable — this
+is not optional polish, treat it as a standing requirement, not something
+that only happens if I separately ask.
+
+- Run a consistent formatter (Prettier, using its default rules unless I've
+  set up a `.prettierrc`) across every file you touch, and treat "run the
+  formatter" as implied by any edit, not a separate task I need to request.
+- When I explicitly ask for a formatting/cleanup pass, this is the one
+  exception to the "only touch what I asked about" rule below — that pass
+  is allowed to reformat every file in the project, not just the ones tied
+  to the specific feature, since the whole codebase being formatted is the
+  actual goal.
+- Add short, plain-language comments explaining *why*, not *what*, for any
+  non-obvious logic — especially in the scanning engine, blink/gesture
+  detection hooks, and anything with timing/threshold values, since those
+  numbers look arbitrary without context (e.g. "// hysteresis gap prevents
+  flicker at the threshold boundary" beats no comment or a comment that just
+  restates the line).
+- Don't add comments that just restate obvious code (e.g. `// set loading to
+  true` above `setLoading(true)`) — comment intent and reasoning, not syntax.
+- Consistent naming and structure across files doing similar jobs (e.g. every
+  hook file shaped the same way) — if you notice inconsistency while working
+  in a file, fix it in that file, and flag if you think a wider pass is
+  needed rather than silently fixing it everywhere.
 
 ## Working process
 
@@ -193,4 +288,3 @@ Rules:
   Don't just say "this should work now."
 - If you're stuck after 2-3 fix attempts on the same bug, stop guessing — explain
   what you currently understand is happening, line by line, before trying again.
-- Strictly use skills inside .agents/skill read all the skills and use it and AGENTS.md
