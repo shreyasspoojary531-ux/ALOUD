@@ -115,44 +115,135 @@ a:focus-visible {
   background: rgba(248, 226, 213, 0.6);
 }
 
-/* Bevel-Styled Control Mode Dropdown Matching Site Palette */
-select.mode-select {
-  appearance: none;
-  -webkit-appearance: none;
+/* ─────────────────────────────────────────────
+   CUSTOM MODE SELECT DROPDOWN COMPONENT
+   ───────────────────────────────────────────── */
+
+.custom-mode-select {
+  position: relative;
+  display: inline-block;
+}
+
+.mode-trigger-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp2);
+  min-height: 44px;
+  padding: 0 16px 0 14px;
   border: 1.5px solid #efc9b5;
   border-radius: var(--r-pill);
   background: linear-gradient(180deg, #fffbf7 0%, #fceee6 100%);
   color: var(--orange-dark);
   font-size: 14px;
   font-weight: 700;
-  min-height: 44px;
-  padding: 0 38px 0 var(--sp4);
   box-shadow: var(--elevation-pill), inset 0 1px 0.5px rgba(255, 255, 255, 0.9);
   cursor: pointer;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23a54200' stroke-width='2.8' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
-  background-repeat: no-repeat;
-  background-position: right 14px center;
   transition: transform 0.2s var(--ease-spring), box-shadow 0.2s ease, border-color 0.2s ease;
-  font-family: inherit;
-  outline: none;
 }
 
-select.mode-select:hover {
+.mode-trigger-btn:hover {
   box-shadow: var(--elevation-card-hover), inset 0 1px 1px #ffffff;
   transform: translateY(-1px);
   border-color: var(--orange);
 }
 
-select.mode-select:focus-visible {
-  outline: var(--focus) solid var(--orange);
-  outline-offset: 2px;
+.mode-btn-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--orange);
 }
 
-select.mode-select option {
-  background: var(--paper);
-  color: var(--ink);
+.mode-btn-label {
+  white-space: nowrap;
+}
+
+.mode-chevron {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--orange-dark);
+  transition: transform 0.2s ease;
+  margin-left: 2px;
+}
+
+.mode-chevron.open {
+  transform: rotate(180deg);
+}
+
+.mode-dropdown-menu {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  z-index: 350;
+  min-width: 220px;
+  margin: 0;
+  padding: 8px;
+  list-style: none;
+  background: linear-gradient(160deg, #ffffff 0%, #fffdf8 50%, #fdf5e7 100%);
+  border: 1.5px solid var(--line);
+  border-radius: 18px;
+  box-shadow: 0 16px 36px rgba(52, 40, 23, 0.18), 0 4px 12px rgba(0, 0, 0, 0.05);
+  animation: menuFadeIn 0.2s var(--ease-out-smooth) forwards;
+}
+
+@keyframes menuFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.mode-option-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  border-radius: 12px;
+  font-size: 14px;
   font-weight: 700;
-  padding: 10px;
+  color: var(--ink);
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.mode-option-item .option-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--muted);
+  transition: color 0.15s ease;
+}
+
+.mode-option-item:hover,
+.mode-option-item.focused {
+  background: var(--orange-pale);
+  color: var(--orange-dark);
+}
+
+.mode-option-item:hover .option-icon,
+.mode-option-item.focused .option-icon {
+  color: var(--orange-dark);
+}
+
+.mode-option-item.selected {
+  background: var(--orange-pale);
+  color: var(--orange-dark);
+}
+
+.mode-option-item.selected .option-icon {
+  color: var(--orange);
+}
+
+.option-check {
+  margin-left: auto;
+  font-size: 14px;
+  font-weight: 800;
+  color: var(--orange);
 }
 
 .button.primary {

@@ -2,10 +2,10 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 
 export const DEFAULT_PALM_THRESHOLDS = {
-  open: 1.65,
-  close: 1.35,
-  min: 400,
-  max: 2000,
+  open: 1.55,
+  close: 1.25,
+  min: 350,
+  max: 1800,
 };
 
 /**
@@ -13,19 +13,19 @@ export const DEFAULT_PALM_THRESHOLDS = {
  */
 export function advancePalm(
   state,
-  ratio,
+  score,
   now,
   thresholds = DEFAULT_PALM_THRESHOLDS,
   onPalmOnset = null
 ) {
   // If palm is closed/idle and opens past threshold while armed
-  if (!state.openPalm && ratio >= thresholds.open && state.armed) {
+  if (!state.openPalm && score >= thresholds.open && state.armed) {
     onPalmOnset?.();
     return { ...state, openPalm: true, openAt: now, selected: false };
   }
 
   // If palm was open and now closes/lowers below threshold
-  if (state.openPalm && ratio < thresholds.close) {
+  if (state.openPalm && score < thresholds.close) {
     const duration = now - state.openAt;
     const isSelected = state.armed && duration >= thresholds.min && duration <= thresholds.max;
     return {
@@ -44,6 +44,13 @@ export function advancePalm(
   return { ...state, selected: false };
 }
 
+/**
+ * Helper to compute 2D Euclidean distance between two MediaPipe landmarks
+ */
+function dist2D(pt1, pt2) {
+  return Math.hypot(pt1.x - pt2.x, pt1.y - pt2.y);
+}
+
 export default function usePalmSelect(onOpenPalm, thresholds, onPalmOnset) {
   const callbackRef = useRef(onOpenPalm);
   const onsetCallbackRef = useRef(onPalmOnset);
@@ -53,7 +60,7 @@ export default function usePalmSelect(onOpenPalm, thresholds, onPalmOnset) {
   const machine = useRef({
     openPalm: false,
     openAt: 0,
-    armed: false,
+    armed: true,
     selected: false,
   });
 
@@ -87,41 +94,42 @@ export default function usePalmSelect(onOpenPalm, thresholds, onPalmOnset) {
       const wrist = landmarks[0];
       const middleMCP = landmarks[9];
 
-      // Hand scale reference (wrist to middle MCP distance)
-      const handScale = Math.hypot(
-        middleMCP.x - wrist.x,
-        middleMCP.y - wrist.y,
-        (middleMCP.z || 0) - (wrist.z || 0)
-      );
-
+      // Hand scale reference (wrist to middle MCP 2D distance)
+      const handScale = dist2D(wrist, middleMCP);
       if (handScale < 0.01) return;
 
-      // Calculate distance of index (8), middle (12), ring (16), and pinky (20) tips to wrist (0)
-      const tips = [8, 12, 16, 20];
-      const avgTipDist =
-        tips.reduce((sum, idx) => {
-          const pt = landmarks[idx];
-          return (
-            sum +
-            Math.hypot(
-              pt.x - wrist.x,
-              pt.y - wrist.y,
-              (pt.z || 0) - (wrist.z || 0)
-            )
-          );
-        }, 0) / 4;
+      // 1. Calculate 2D Wrist-to-Fingertip distances (Index 8, Middle 12, Ring 16, Pinky 20)
+      const fingerTips = [8, 12, 16, 20];
+      const wristToTipAvg =
+        fingerTips.reduce((sum, tipIdx) => sum + dist2D(wrist, landmarks[tipIdx]), 0) / (4 * handScale);
 
-      const rawRatio = avgTipDist / handScale;
+      // 2. Calculate 2D MCP-to-Fingertip distances for multi-finger extension
+      // Index (MCP 5 -> Tip 8), Middle (MCP 9 -> Tip 12), Ring (MCP 13 -> Tip 16), Pinky (MCP 17 -> Tip 20)
+      const mcpPairs = [
+        { mcp: 5, tip: 8 },
+        { mcp: 9, tip: 12 },
+        { mcp: 13, tip: 16 },
+        { mcp: 17, tip: 20 },
+      ];
+      const mcpToTipAvg =
+        mcpPairs.reduce((sum, pair) => sum + dist2D(landmarks[pair.mcp], landmarks[pair.tip]), 0) /
+        (4 * handScale);
 
-      // EMA smoothing (alpha = 0.40)
-      const alpha = 0.40;
-      const ratio = emaRef.current === null ? rawRatio : alpha * rawRatio + (1 - alpha) * emaRef.current;
-      emaRef.current = ratio;
+      // Composite multi-finger open palm score
+      const rawCompositeScore = wristToTipAvg * 0.55 + mcpToTipAvg * 0.70;
+
+      // Exponential Moving Average (EMA) smoothing (alpha = 0.35)
+      const alpha = 0.35;
+      const score =
+        emaRef.current === null
+          ? rawCompositeScore
+          : alpha * rawCompositeScore + (1 - alpha) * emaRef.current;
+      emaRef.current = score;
 
       const currentThresholds = thresholdsRef.current;
       const next = advancePalm(
         machine.current,
-        ratio,
+        score,
         now,
         currentThresholds,
         () => onsetCallbackRef.current?.()
