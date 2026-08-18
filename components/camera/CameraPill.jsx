@@ -122,6 +122,10 @@ export default function CameraPill({
     let frame;
     let cancelled = false;
 
+    // Reset video time & landmarker timestamp baseline on mode change
+    lastVideoTime.current = -1;
+    lastTimestampRef.current = 0;
+
     if (!enabled || activeMode === "manual") {
       setStatus("Manual mode (mouse only)");
       setStatusType("normal");
@@ -159,6 +163,7 @@ export default function CameraPill({
             if (
               video.current?.readyState >= 2 &&
               video.current.videoWidth > 0 &&
+              video.current.currentTime > 0 &&
               video.current.currentTime !== lastVideoTime.current
             ) {
               lastVideoTime.current = video.current.currentTime;
@@ -170,7 +175,18 @@ export default function CameraPill({
               }
               lastTimestampRef.current = timestamp;
 
-              const result = detector.detectForVideo(video.current, timestamp);
+              // Safely invoke detectForVideo
+              let result = null;
+              try {
+                result = detector?.detectForVideo ? detector.detectForVideo(video.current, timestamp) : null;
+              } catch (wasmErr) {
+                // Ignore transient frame alignment errors from MediaPipe WASM
+              }
+
+              if (!result) {
+                frame = requestAnimationFrame(tick);
+                return;
+              }
 
               const currentStatusType = statusTypeRef.current;
               const { blinkSelect: bSel, eyebrowSelect: eSel, palmSelect: pSel } = gestureHooksRef.current;

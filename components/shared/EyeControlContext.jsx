@@ -10,17 +10,17 @@ const EyeControlContext = createContext({
 });
 
 export function EyeControlProvider({ children }) {
-  const [mode, setModeState] = useState(() => {
+  // Deterministic initial state for Next.js SSR hydration match
+  const [mode, setModeState] = useState("blink");
+
+  useEffect(() => {
     try {
-      return (
-        (typeof window !== "undefined" &&
-          localStorage.getItem("aloud_control_mode")) ||
-        "blink"
-      );
-    } catch (e) {
-      return "blink";
-    }
-  });
+      const saved = localStorage.getItem("aloud_control_mode");
+      if (saved && ["blink", "eyebrow", "palm", "manual"].includes(saved)) {
+        setModeState(saved);
+      }
+    } catch (e) {}
+  }, []);
 
   const setMode = (newMode) => {
     setModeState(newMode);
