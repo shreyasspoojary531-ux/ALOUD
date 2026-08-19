@@ -1,8 +1,28 @@
 "use client";
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import CustomModeSelect from "./CustomModeSelect";
 import SettingsPopover from "./SettingsPopover";
+
+function BackArrowIcon() {
+  return (
+    <svg
+      width="22"
+      height="22"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2.4"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <line x1="19" y1="12" x2="5" y2="12" />
+      <polyline points="12 19 5 12 12 5" />
+    </svg>
+  );
+}
 
 function HamburgerIcon() {
   return (
@@ -24,11 +44,32 @@ function HamburgerIcon() {
   );
 }
 
-export default function TopBar({ onHelp, spell = false, backTo = null, backLabel = null }) {
+function ProfileIcon() {
+  return (
+    <svg
+      width="16"
+      height="16"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2.2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+      style={{ display: "inline-block", verticalAlign: "middle", marginRight: "6px" }}
+    >
+      <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+      <circle cx="12" cy="7" r="4" />
+    </svg>
+  );
+}
+
+export default function TopBar({ onHelp, spell = false, backTo = null }) {
+  const router = useRouter();
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
-  // Close mobile drawer on ESC or route change
+  // Close mobile drawer on ESC key
   useEffect(() => {
     const handleKeyDown = (e) => {
       if (e.key === "Escape") setMobileMenuOpen(false);
@@ -37,20 +78,43 @@ export default function TopBar({ onHelp, spell = false, backTo = null, backLabel
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, []);
 
+  // Sequential drawer closure handlers
+  const handleMobileHelp = () => {
+    setMobileMenuOpen(false);
+    setTimeout(() => {
+      onHelp?.();
+    }, 180);
+  };
+
+  const handleMobileSettings = () => {
+    setMobileMenuOpen(false);
+    setTimeout(() => {
+      setSettingsOpen(true);
+    }, 180);
+  };
+
+  const handleMobileProfile = (e) => {
+    e.preventDefault();
+    setMobileMenuOpen(false);
+    setTimeout(() => {
+      router.push("/profile");
+    }, 180);
+  };
+
   return (
     <header className={spell ? "spellbar" : "topbar"}>
       {backTo ? (
         <>
-          <Link href={backTo} className="pill">
-            ‹&nbsp; {backLabel || "Back"}
+          <Link href={backTo} className="plain-back-btn" aria-label="Back">
+            <BackArrowIcon />
           </Link>
           <h1>{spell ? "Spell it out" : "Profile & Analytics"}</h1>
           <CustomModeSelect />
         </>
       ) : spell ? (
         <>
-          <Link href="/home" className="pill">
-            ‹&nbsp; Home
+          <Link href="/home" className="plain-back-btn" aria-label="Back to Home">
+            <BackArrowIcon />
           </Link>
           <h1>Spell it out</h1>
           <CustomModeSelect />
@@ -131,37 +195,28 @@ export default function TopBar({ onHelp, spell = false, backTo = null, backLabel
                 <button
                   type="button"
                   className="pill drawer-pill-btn"
-                  onClick={() => {
-                    setMobileMenuOpen(false);
-                    onHelp();
-                  }}
+                  onClick={handleMobileHelp}
                 >
                   ◯&nbsp; Help
                 </button>
               )}
 
-              <div className="drawer-settings-wrapper" style={{ position: "relative", width: "100%" }}>
-                <button
-                  type="button"
-                  className={`pill drawer-pill-btn ${settingsOpen ? "active" : ""}`}
-                  onClick={() => setSettingsOpen((prev) => !prev)}
-                  aria-label="Settings"
-                >
-                  ⚙&nbsp; Settings
-                </button>
-                <SettingsPopover
-                  isOpen={settingsOpen}
-                  onClose={() => setSettingsOpen(false)}
-                />
-              </div>
+              <button
+                type="button"
+                className={`pill drawer-pill-btn ${settingsOpen ? "active" : ""}`}
+                onClick={handleMobileSettings}
+                aria-label="Settings"
+              >
+                ⚙&nbsp; Settings
+              </button>
 
-              <Link
+              <a
                 href="/profile"
                 className="pill drawer-pill-btn profile-drawer-btn"
-                onClick={() => setMobileMenuOpen(false)}
+                onClick={handleMobileProfile}
               >
-                👤&nbsp; Profile & Analytics
-              </Link>
+                <ProfileIcon /> Profile & Analytics
+              </a>
             </div>
           </aside>
         </>

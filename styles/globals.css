@@ -1220,16 +1220,49 @@ a:focus-visible {
   padding: 12px var(--sp4);
 }
 
-@media (max-width: 899px) {
-  .desktop-controls {
-    display: none !important;
-  }
+/* Unboxed Plain Back Arrow Button (Fix 5) */
+.plain-back-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: none;
+  color: var(--ink);
+  padding: 10px;
+  margin: -10px;
+  cursor: pointer;
+  border-radius: 50%;
+  text-decoration: none;
+  transition: color var(--dur-fast) ease, transform var(--dur-fast) ease;
+}
 
-  .mobile-menu-btn {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-  }
+.plain-back-btn:hover {
+  color: var(--orange-dark);
+  transform: translateX(-3px);
+}
+
+/* Drawer Mode Selector Fit (Fix 3) */
+.mobile-drawer-content .custom-mode-select {
+  width: 100%;
+}
+
+.mobile-drawer-content .mode-trigger-btn {
+  width: 100%;
+  justify-content: space-between;
+}
+
+.mobile-drawer-content .mode-dropdown-menu {
+  position: static;
+  width: 100%;
+  margin-top: 8px;
+  box-shadow: none;
+  animation: menuFadeIn var(--dur-fast) ease forwards;
+}
+
+.mobile-drawer-content .mode-option-item {
+  font-size: 13px;
+  padding: 8px 10px;
+  white-space: nowrap;
 }
 
 

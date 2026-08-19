@@ -4,6 +4,27 @@ import TopBar from "../../components/shared/TopBar";
 import Button from "../../components/shared/Button";
 import { getAnalyticsSummary, clearAnalyticsData } from "../../lib/analytics";
 
+function AnalyticsChartIcon() {
+  return (
+    <svg
+      width="44"
+      height="44"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+      style={{ color: "var(--orange-dark)" }}
+    >
+      <line x1="18" y1="20" x2="18" y2="10" />
+      <line x1="12" y1="20" x2="12" y2="4" />
+      <line x1="6" y1="20" x2="6" y2="14" />
+    </svg>
+  );
+}
+
 export default function ProfilePage() {
   const [summary, setSummary] = useState(null);
 
@@ -44,7 +65,7 @@ export default function ProfilePage() {
 
   return (
     <main className="app">
-      <TopBar backTo="/home" backLabel="Home" />
+      <TopBar backTo="/home" />
 
       <section className="profile-container center">
         <div className="profile-header-card">
@@ -71,7 +92,9 @@ export default function ProfilePage() {
 
         {isEmpty ? (
           <div className="analytics-empty-card">
-            <span className="empty-icon">📊</span>
+            <div className="empty-icon-wrap">
+              <AnalyticsChartIcon />
+            </div>
             <h2>No activity yet</h2>
             <p>
               Phrases and words you speak using eye control, long blinks, or typing will appear here as real-time communication statistics.

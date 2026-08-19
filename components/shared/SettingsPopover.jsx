@@ -4,6 +4,25 @@ import Link from "next/link";
 import { isSpeechSupported, cancelSpeech } from "../../lib/speech";
 import { useSettings } from "./SettingsContext";
 
+function ProfileIcon() {
+  return (
+    <svg
+      width="20"
+      height="20"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2.2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+      <circle cx="12" cy="7" r="4" />
+    </svg>
+  );
+}
+
 /** Returns the live voice list, updating when voiceschanged fires. */
 function useVoices() {
   const [voices, setVoices] = useState([]);
@@ -171,7 +190,9 @@ export default function SettingsPopover({ isOpen, onClose }) {
           onClick={onClose}
         >
           <div className="profile-link-content">
-            <span className="profile-link-icon">👤</span>
+            <span className="profile-link-icon">
+              <ProfileIcon />
+            </span>
             <div>
               <strong>Profile & Analytics</strong>
               <p>View your real speech metrics & history</p>
