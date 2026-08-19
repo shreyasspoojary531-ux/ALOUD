@@ -5,6 +5,29 @@ import { useRouter } from "next/navigation";
 import CustomModeSelect from "./CustomModeSelect";
 import SettingsPopover from "./SettingsPopover";
 
+function useIsMobile(breakpoint = 900) {
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    const mql = window.matchMedia(`(max-width: ${breakpoint - 1}px)`);
+    const onChange = (e) => setIsMobile(e.matches);
+
+    setIsMobile(mql.matches);
+
+    if (mql.addEventListener) {
+      mql.addEventListener("change", onChange);
+      return () => mql.removeEventListener("change", onChange);
+    } else {
+      mql.addListener(onChange);
+      return () => mql.removeListener(onChange);
+    }
+  }, [breakpoint]);
+
+  return isMobile;
+}
+
 function BackArrowIcon() {
   return (
     <svg
@@ -66,6 +89,7 @@ function ProfileIcon() {
 
 export default function TopBar({ onHelp, spell = false, backTo = null }) {
   const router = useRouter();
+  const isMobile = useIsMobile(900);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
@@ -101,8 +125,8 @@ export default function TopBar({ onHelp, spell = false, backTo = null }) {
     }, 180);
   };
 
-  // Reusable Mobile Drawer component
-  const mobileDrawerJSX = (
+  // Reusable Mobile Drawer component (ONLY rendered on mobile widths)
+  const mobileDrawerJSX = isMobile ? (
     <>
       {mobileMenuOpen && (
         <div
@@ -166,7 +190,7 @@ export default function TopBar({ onHelp, spell = false, backTo = null }) {
         </div>
       </aside>
     </>
-  );
+  ) : null;
 
   // Subpages with back button (Spell or Profile)
   if (backTo || spell) {
@@ -179,22 +203,23 @@ export default function TopBar({ onHelp, spell = false, backTo = null }) {
         <h1>{spell ? "Spell it out" : "Profile & Analytics"}</h1>
 
         <div className="spellbar-right">
-          {spell && (
+          {spell && !isMobile && (
             <div className="desktop-controls">
               <CustomModeSelect />
             </div>
           )}
 
-          {/* Mobile hamburger button (<900px) */}
-          <button
-            type="button"
-            className="mobile-menu-btn"
-            onClick={() => setMobileMenuOpen(true)}
-            aria-label="Open menu"
-            aria-expanded={mobileMenuOpen}
-          >
-            <HamburgerIcon />
-          </button>
+          {isMobile && (
+            <button
+              type="button"
+              className="mobile-menu-btn"
+              onClick={() => setMobileMenuOpen(true)}
+              aria-label="Open menu"
+              aria-expanded={mobileMenuOpen}
+            >
+              <HamburgerIcon />
+            </button>
+          )}
         </div>
 
         {mobileDrawerJSX}
@@ -209,42 +234,46 @@ export default function TopBar({ onHelp, spell = false, backTo = null }) {
         Aloud
       </Link>
 
-      {/* Desktop controls (≥900px) */}
-      <div className="controls desktop-controls">
-        <CustomModeSelect />
-        {onHelp && (
-          <button type="button" className="pill" onClick={onHelp}>
-            ◯&nbsp; Help
-          </button>
-        )}
-        <div className="settings-popover-wrapper" style={{ position: "relative" }}>
-          <button
-            type="button"
-            className={`pill ${settingsOpen ? "active" : ""}`}
-            onClick={() => setSettingsOpen((prev) => !prev)}
-            aria-haspopup="dialog"
-            aria-expanded={settingsOpen}
-            aria-label="Settings"
-          >
-            ⚙&nbsp; Settings
-          </button>
-          <SettingsPopover
-            isOpen={settingsOpen}
-            onClose={() => setSettingsOpen(false)}
-          />
+      {/* Desktop controls (≥900px ONLY) */}
+      {!isMobile && (
+        <div className="controls desktop-controls">
+          <CustomModeSelect />
+          {onHelp && (
+            <button type="button" className="pill" onClick={onHelp}>
+              ◯&nbsp; Help
+            </button>
+          )}
+          <div className="settings-popover-wrapper" style={{ position: "relative" }}>
+            <button
+              type="button"
+              className={`pill ${settingsOpen ? "active" : ""}`}
+              onClick={() => setSettingsOpen((prev) => !prev)}
+              aria-haspopup="dialog"
+              aria-expanded={settingsOpen}
+              aria-label="Settings"
+            >
+              ⚙&nbsp; Settings
+            </button>
+            <SettingsPopover
+              isOpen={settingsOpen}
+              onClose={() => setSettingsOpen(false)}
+            />
+          </div>
         </div>
-      </div>
+      )}
 
-      {/* Mobile hamburger button (<900px) */}
-      <button
-        type="button"
-        className="mobile-menu-btn"
-        onClick={() => setMobileMenuOpen(true)}
-        aria-label="Open menu"
-        aria-expanded={mobileMenuOpen}
-      >
-        <HamburgerIcon />
-      </button>
+      {/* Mobile hamburger button (<900px ONLY) */}
+      {isMobile && (
+        <button
+          type="button"
+          className="mobile-menu-btn"
+          onClick={() => setMobileMenuOpen(true)}
+          aria-label="Open menu"
+          aria-expanded={mobileMenuOpen}
+        >
+          <HamburgerIcon />
+        </button>
+      )}
 
       {mobileDrawerJSX}
     </header>

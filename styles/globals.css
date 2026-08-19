@@ -1220,6 +1220,20 @@ a:focus-visible {
   padding: 12px var(--sp4);
 }
 
+@media (max-width: 899px) {
+  .desktop-controls {
+    display: none !important;
+  }
+}
+
+@media (min-width: 900px) {
+  .mobile-menu-btn,
+  .mobile-drawer-panel,
+  .mobile-drawer-backdrop {
+    display: none !important;
+  }
+}
+
 /* Unboxed Plain Back Arrow Button (Fix 5) */
 .plain-back-btn {
   display: inline-flex;
