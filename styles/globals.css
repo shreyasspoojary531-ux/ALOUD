@@ -1298,9 +1298,13 @@ a:focus-visible {
 }
 
 .spellbar > :nth-child(3),
+.spellbar-right,
 .spellbar .pill:last-child {
   justify-self: end;
   align-self: center;
+  display: flex;
+  align-items: center;
+  gap: var(--sp3);
 }
 
 .spell-message {
