@@ -125,18 +125,20 @@ export default function TopBar({ onHelp, spell = false, backTo = null }) {
     }, 180);
   };
 
-  // Reusable Mobile Drawer component (ONLY rendered on mobile widths)
-  const mobileDrawerJSX = isMobile ? (
-    <>
-      {mobileMenuOpen && (
-        <div
-          className="mobile-drawer-backdrop"
-          onClick={() => setMobileMenuOpen(false)}
-          aria-hidden="true"
-        />
-      )}
+  const toggleMobileMenu = () => {
+    setMobileMenuOpen((prev) => !prev);
+  };
 
-      <aside className={`mobile-drawer-panel ${mobileMenuOpen ? "open" : ""}`} aria-label="Navigation menu">
+  // Reusable Mobile Drawer component (ONLY rendered in DOM when isMobile AND mobileMenuOpen are true)
+  const mobileDrawerJSX = (isMobile && mobileMenuOpen) ? (
+    <>
+      <div
+        className="mobile-drawer-backdrop"
+        onClick={() => setMobileMenuOpen(false)}
+        aria-hidden="true"
+      />
+
+      <aside className="mobile-drawer-panel open" aria-label="Navigation menu">
         <div className="mobile-drawer-header">
           <span className="drawer-title">Menu</span>
           <button
@@ -213,8 +215,8 @@ export default function TopBar({ onHelp, spell = false, backTo = null }) {
             <button
               type="button"
               className="mobile-menu-btn"
-              onClick={() => setMobileMenuOpen(true)}
-              aria-label="Open menu"
+              onClick={toggleMobileMenu}
+              aria-label="Toggle menu"
               aria-expanded={mobileMenuOpen}
             >
               <HamburgerIcon />
@@ -267,8 +269,8 @@ export default function TopBar({ onHelp, spell = false, backTo = null }) {
         <button
           type="button"
           className="mobile-menu-btn"
-          onClick={() => setMobileMenuOpen(true)}
-          aria-label="Open menu"
+          onClick={toggleMobileMenu}
+          aria-label="Toggle menu"
           aria-expanded={mobileMenuOpen}
         >
           <HamburgerIcon />
