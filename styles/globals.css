@@ -1233,6 +1233,12 @@ a:focus-visible {
   .desktop-controls {
     display: none !important;
   }
+
+  .mobile-menu-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
 }
 
 @media (min-width: 900px) {
