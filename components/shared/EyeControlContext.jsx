@@ -7,11 +7,14 @@ const EyeControlContext = createContext({
   eyeOn: true,
   setEyeOn: () => {},
   toggleEye: () => {},
+  isPaused: false,
+  setIsPaused: () => {},
 });
 
 export function EyeControlProvider({ children }) {
   // Deterministic initial state for Next.js SSR hydration match
   const [mode, setModeState] = useState("blink");
+  const [isPaused, setIsPaused] = useState(false);
 
   useEffect(() => {
     try {
@@ -39,7 +42,7 @@ export function EyeControlProvider({ children }) {
 
   return (
     <EyeControlContext.Provider
-      value={{ mode, setMode, eyeOn, setEyeOn, toggleEye }}
+      value={{ mode, setMode, eyeOn, setEyeOn, toggleEye, isPaused, setIsPaused }}
     >
       {children}
     </EyeControlContext.Provider>

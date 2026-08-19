@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import CustomModeSelect from "./CustomModeSelect";
 import SettingsPopover from "./SettingsPopover";
+import { useEyeControl } from "./EyeControlContext";
 
 function useIsMobile(breakpoint = 900) {
   const [isMobile, setIsMobile] = useState(false);
@@ -90,8 +91,25 @@ function ProfileIcon() {
 export default function TopBar({ onHelp, spell = false, backTo = null }) {
   const router = useRouter();
   const isMobile = useIsMobile(900);
+  const { setIsPaused } = useEyeControl();
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
+  // Sync gesture tracking & scanning pause state with mobile menu open state
+  useEffect(() => {
+    if (isMobile) {
+      setIsPaused(mobileMenuOpen);
+    } else {
+      setIsPaused(false);
+    }
+  }, [mobileMenuOpen, isMobile, setIsPaused]);
+
+  // Clean up pause state on unmount
+  useEffect(() => {
+    return () => {
+      setIsPaused(false);
+    };
+  }, [setIsPaused]);
 
   // Close mobile drawer on ESC key
   useEffect(() => {
@@ -102,7 +120,7 @@ export default function TopBar({ onHelp, spell = false, backTo = null }) {
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, []);
 
-  // Sequential drawer closure handlers
+  // Sequential drawer closure handlers (sidebar closes FIRST, then target action triggers)
   const handleMobileHelp = () => {
     setMobileMenuOpen(false);
     setTimeout(() => {
@@ -167,20 +185,14 @@ export default function TopBar({ onHelp, spell = false, backTo = null }) {
             </button>
           )}
 
-          <div style={{ position: "relative", width: "100%" }}>
-            <button
-              type="button"
-              className={`pill drawer-pill-btn ${settingsOpen ? "active" : ""}`}
-              onClick={handleMobileSettings}
-              aria-label="Settings"
-            >
-              ⚙&nbsp; Settings
-            </button>
-            <SettingsPopover
-              isOpen={settingsOpen}
-              onClose={() => setSettingsOpen(false)}
-            />
-          </div>
+          <button
+            type="button"
+            className={`pill drawer-pill-btn ${settingsOpen ? "active" : ""}`}
+            onClick={handleMobileSettings}
+            aria-label="Settings"
+          >
+            ⚙&nbsp; Settings
+          </button>
 
           <a
             href="/profile"
@@ -193,6 +205,24 @@ export default function TopBar({ onHelp, spell = false, backTo = null }) {
       </aside>
     </>
   ) : null;
+
+  // Settings Overlay JSX for mobile/desktop
+  const settingsOverlayJSX = (
+    <>
+      {isMobile && settingsOpen && (
+        <div
+          className="mobile-drawer-backdrop"
+          onClick={() => setSettingsOpen(false)}
+          style={{ zIndex: 490 }}
+          aria-hidden="true"
+        />
+      )}
+      <SettingsPopover
+        isOpen={settingsOpen}
+        onClose={() => setSettingsOpen(false)}
+      />
+    </>
+  );
 
   // Subpages with back button (Spell or Profile)
   if (backTo || spell) {
@@ -225,6 +255,7 @@ export default function TopBar({ onHelp, spell = false, backTo = null }) {
         </div>
 
         {mobileDrawerJSX}
+        {settingsOverlayJSX}
       </header>
     );
   }
@@ -278,6 +309,7 @@ export default function TopBar({ onHelp, spell = false, backTo = null }) {
       )}
 
       {mobileDrawerJSX}
+      {isMobile && settingsOverlayJSX}
     </header>
   );
 }

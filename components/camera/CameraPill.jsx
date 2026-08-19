@@ -168,6 +168,16 @@ export default function CameraPill({
           if (cancelled) return;
 
           try {
+            if (ctx.isPaused) {
+              if (statusTypeRef.current !== "confidence") {
+                setStatus("Paused (Menu open)");
+                setStatusType("normal");
+                statusTypeRef.current = "normal";
+              }
+              frame = requestAnimationFrame(tick);
+              return;
+            }
+
             if (
               video.current?.readyState >= 2 &&
               video.current.videoWidth > 0 &&

@@ -8,7 +8,7 @@ import { useEyeControl } from '../shared/EyeControlContext';
  * locks target index at blink onset, and pauses briefly during transitions to prevent accidental double-selections.
  */
 export default function useScanner(items, onSelect, interval = 1800, enabled = true) {
-  const { eyeOn } = useEyeControl();
+  const { eyeOn, isPaused: globalPaused } = useEyeControl();
   const [active, setActive] = useState(0);
   const [isPaused, setIsPaused] = useState(false);
   const [selectedIndex, setSelectedIndex] = useState(null);
@@ -33,26 +33,27 @@ export default function useScanner(items, onSelect, interval = 1800, enabled = t
     onsetIndexRef.current = null;
   }, [itemsKey]);
 
-  // Auto-advance timer
+  // Auto-advance timer (paused if local or global tracking is paused)
   useEffect(() => {
-    if (!items.length || !enabled || isPaused) return;
+    if (!items.length || !enabled || isPaused || globalPaused) return;
 
     const id = setInterval(() => {
       setActive((i) => (i + 1) % items.length);
     }, interval);
 
     return () => clearInterval(id);
-  }, [items.length, interval, enabled, isPaused, itemsKey]);
+  }, [items.length, interval, enabled, isPaused, globalPaused, itemsKey]);
 
   // Captures the active item index at the exact moment a blink begins (onset)
   const captureOnset = useCallback(() => {
+    if (globalPaused) return;
     onsetIndexRef.current = activeRef.current;
-  }, []);
+  }, [globalPaused]);
 
   // Selection function with mode validation options
   const select = useCallback(
     (index = undefined, options = {}) => {
-      if (isPausedRef.current) return;
+      if (isPausedRef.current || globalPaused) return;
       const { isPointer = false, isBlink = false } = options;
 
       // Exclusive Input Mode:
@@ -89,12 +90,12 @@ export default function useScanner(items, onSelect, interval = 1800, enabled = t
         }, 400);
       }
     },
-    [items, eyeOn]
+    [items, eyeOn, globalPaused]
   );
 
-  // Spacebar fallback listener (works in both modes for testing)
+  // Spacebar fallback listener (works in both modes for testing, disabled when globally paused)
   useEffect(() => {
-    if (!enabled) return;
+    if (!enabled || globalPaused) return;
 
     const handleKeyDown = (e) => {
       if (e.code === 'Space' && !e.repeat) {
@@ -106,7 +107,7 @@ export default function useScanner(items, onSelect, interval = 1800, enabled = t
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [select, enabled]);
+  }, [select, enabled, globalPaused]);
 
   return { active, select, isPaused, selectedIndex, captureOnset };
 }
