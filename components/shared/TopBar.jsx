@@ -101,126 +101,125 @@ export default function TopBar({ onHelp, spell = false, backTo = null }) {
     }, 180);
   };
 
+  // Subpages with back button (Spell or Profile)
+  if (backTo || spell) {
+    return (
+      <header className="spellbar">
+        <Link href={backTo || "/home"} className="plain-back-btn" aria-label="Back">
+          <BackArrowIcon />
+        </Link>
+
+        <h1>{spell ? "Spell it out" : "Profile & Analytics"}</h1>
+
+        {spell ? (
+          <CustomModeSelect />
+        ) : (
+          <div style={{ width: 22, height: 22 }} aria-hidden="true" />
+        )}
+      </header>
+    );
+  }
+
   return (
-    <header className={spell ? "spellbar" : "topbar"}>
-      {backTo ? (
-        <>
-          <Link href={backTo} className="plain-back-btn" aria-label="Back">
-            <BackArrowIcon />
-          </Link>
-          <h1>{spell ? "Spell it out" : "Profile & Analytics"}</h1>
-          <CustomModeSelect />
-        </>
-      ) : spell ? (
-        <>
-          <Link href="/home" className="plain-back-btn" aria-label="Back to Home">
-            <BackArrowIcon />
-          </Link>
-          <h1>Spell it out</h1>
-          <CustomModeSelect />
-        </>
-      ) : (
-        <>
-          <Link href="/" className="brand">
-            <i />
-            Aloud
-          </Link>
+    <header className="topbar">
+      <Link href="/" className="brand">
+        <i />
+        Aloud
+      </Link>
 
-          {/* Desktop controls (≥900px) */}
-          <div className="controls desktop-controls">
-            <CustomModeSelect />
-            {onHelp && (
-              <button type="button" className="pill" onClick={onHelp}>
-                ◯&nbsp; Help
-              </button>
-            )}
-            <div className="settings-popover-wrapper" style={{ position: "relative" }}>
-              <button
-                type="button"
-                className={`pill ${settingsOpen ? "active" : ""}`}
-                onClick={() => setSettingsOpen((prev) => !prev)}
-                aria-haspopup="dialog"
-                aria-expanded={settingsOpen}
-                aria-label="Settings"
-              >
-                ⚙&nbsp; Settings
-              </button>
-              <SettingsPopover
-                isOpen={settingsOpen}
-                onClose={() => setSettingsOpen(false)}
-              />
-            </div>
-          </div>
-
-          {/* Mobile hamburger button (<900px) */}
+      {/* Desktop controls (≥900px) */}
+      <div className="controls desktop-controls">
+        <CustomModeSelect />
+        {onHelp && (
+          <button type="button" className="pill" onClick={onHelp}>
+            ◯&nbsp; Help
+          </button>
+        )}
+        <div className="settings-popover-wrapper" style={{ position: "relative" }}>
           <button
             type="button"
-            className="mobile-menu-btn"
-            onClick={() => setMobileMenuOpen(true)}
-            aria-label="Open menu"
-            aria-expanded={mobileMenuOpen}
+            className={`pill ${settingsOpen ? "active" : ""}`}
+            onClick={() => setSettingsOpen((prev) => !prev)}
+            aria-haspopup="dialog"
+            aria-expanded={settingsOpen}
+            aria-label="Settings"
           >
-            <HamburgerIcon />
+            ⚙&nbsp; Settings
           </button>
+          <SettingsPopover
+            isOpen={settingsOpen}
+            onClose={() => setSettingsOpen(false)}
+          />
+        </div>
+      </div>
 
-          {/* Mobile Slide-in Drawer & Dimmed Backdrop */}
-          {mobileMenuOpen && (
-            <div
-              className="mobile-drawer-backdrop"
-              onClick={() => setMobileMenuOpen(false)}
-              aria-hidden="true"
-            />
+      {/* Mobile hamburger button (<900px) */}
+      <button
+        type="button"
+        className="mobile-menu-btn"
+        onClick={() => setMobileMenuOpen(true)}
+        aria-label="Open menu"
+        aria-expanded={mobileMenuOpen}
+      >
+        <HamburgerIcon />
+      </button>
+
+      {/* Mobile Slide-in Drawer & Dimmed Backdrop */}
+      {mobileMenuOpen && (
+        <div
+          className="mobile-drawer-backdrop"
+          onClick={() => setMobileMenuOpen(false)}
+          aria-hidden="true"
+        />
+      )}
+
+      <aside className={`mobile-drawer-panel ${mobileMenuOpen ? "open" : ""}`} aria-label="Navigation menu">
+        <div className="mobile-drawer-header">
+          <span className="drawer-title">Menu</span>
+          <button
+            type="button"
+            className="help-close-btn"
+            onClick={() => setMobileMenuOpen(false)}
+            aria-label="Close menu"
+          >
+            ✕
+          </button>
+        </div>
+
+        <div className="mobile-drawer-content">
+          <div className="drawer-item">
+            <span className="drawer-item-label">INPUT MODE</span>
+            <CustomModeSelect />
+          </div>
+
+          {onHelp && (
+            <button
+              type="button"
+              className="pill drawer-pill-btn"
+              onClick={handleMobileHelp}
+            >
+              ◯&nbsp; Help
+            </button>
           )}
 
-          <aside className={`mobile-drawer-panel ${mobileMenuOpen ? "open" : ""}`} aria-label="Navigation menu">
-            <div className="mobile-drawer-header">
-              <span className="drawer-title">Menu</span>
-              <button
-                type="button"
-                className="help-close-btn"
-                onClick={() => setMobileMenuOpen(false)}
-                aria-label="Close menu"
-              >
-                ✕
-              </button>
-            </div>
+          <button
+            type="button"
+            className={`pill drawer-pill-btn ${settingsOpen ? "active" : ""}`}
+            onClick={handleMobileSettings}
+            aria-label="Settings"
+          >
+            ⚙&nbsp; Settings
+          </button>
 
-            <div className="mobile-drawer-content">
-              <div className="drawer-item">
-                <span className="drawer-item-label">INPUT MODE</span>
-                <CustomModeSelect />
-              </div>
-
-              {onHelp && (
-                <button
-                  type="button"
-                  className="pill drawer-pill-btn"
-                  onClick={handleMobileHelp}
-                >
-                  ◯&nbsp; Help
-                </button>
-              )}
-
-              <button
-                type="button"
-                className={`pill drawer-pill-btn ${settingsOpen ? "active" : ""}`}
-                onClick={handleMobileSettings}
-                aria-label="Settings"
-              >
-                ⚙&nbsp; Settings
-              </button>
-
-              <a
-                href="/profile"
-                className="pill drawer-pill-btn profile-drawer-btn"
-                onClick={handleMobileProfile}
-              >
-                <ProfileIcon /> Profile & Analytics
-              </a>
-            </div>
-          </aside>
-        </>
-      )}
+          <a
+            href="/profile"
+            className="pill drawer-pill-btn profile-drawer-btn"
+            onClick={handleMobileProfile}
+          >
+            <ProfileIcon /> Profile & Analytics
+          </a>
+        </div>
+      </aside>
     </header>
   );
 }

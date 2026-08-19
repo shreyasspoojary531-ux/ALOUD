@@ -1289,7 +1289,8 @@ a:focus-visible {
 }
 
 .spellbar h1 {
-  font: 26px var(--serif);
+  font: clamp(1.35rem, 1.15rem + 0.8vw, 1.75rem) var(--serif);
+  color: var(--ink);
   margin: 0;
   justify-self: center;
   align-self: center;
