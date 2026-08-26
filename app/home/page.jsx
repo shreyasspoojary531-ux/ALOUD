@@ -8,7 +8,6 @@ import SpokenMessageOverlay from "../../components/overlay/SpokenMessageOverlay"
 import HelpModal from "../../components/shared/HelpModal";
 import { useEyeControl } from "../../components/shared/EyeControlContext";
 import { useSettings } from "../../components/shared/SettingsContext";
-import { say } from "../../lib/speech";
 
 const root = [
   { label: "I feel", icon: "I feel", tint: "rose" },
@@ -86,10 +85,9 @@ const groups = {
 
 export default function Home() {
   const router = useRouter();
-  const { eyeOn, toggleEye } = useEyeControl();
+  const { eyeOn } = useEyeControl();
   const { repeatCount } = useSettings();
   const [help, setHelp] = useState(false);
-  const [settings, setSettings] = useState(false);
   const [group, setGroup] = useState(null);
   const [spoken, setSpoken] = useState(null);
 
@@ -130,11 +128,7 @@ export default function Home() {
 
   return (
     <main className="app">
-      <TopBar
-        eyeOn={eyeOn}
-        toggleEye={toggleEye}
-        onHelp={() => setHelp(true)}
-      />
+      <TopBar onHelp={() => setHelp(true)} />
       <section className="home center">
         <p className="eyebrow">
           {group ? group.toUpperCase() : "WHAT WOULD YOU LIKE TO SAY?"}

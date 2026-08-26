@@ -3,13 +3,11 @@ import { useCallback, useState } from "react";
 import { useRouter } from "next/navigation";
 import TopBar from "../components/shared/TopBar";
 import Button from "../components/shared/Button";
-import { useEyeControl } from "../components/shared/EyeControlContext";
 import LandingSections from "../components/landing/LandingSections";
 import HelpModal from "../components/shared/HelpModal";
 
 export default function Splash() {
   const router = useRouter();
-  const { eyeOn, toggleEye } = useEyeControl();
   const [help, setHelp] = useState(false);
 
   const handleBegin = useCallback(() => {
@@ -18,11 +16,7 @@ export default function Splash() {
 
   return (
     <main className="app">
-      <TopBar
-        eyeOn={eyeOn}
-        toggleEye={toggleEye}
-        onHelp={() => setHelp(true)}
-      />
+      <TopBar onHelp={() => setHelp(true)} />
 
       {/* Hero Splash View */}
       <section className="hero-splash">

@@ -8,7 +8,7 @@ import { useEyeControl } from "../../components/shared/EyeControlContext";
 import { useSettings } from "../../components/shared/SettingsContext";
 
 export default function Spell() {
-  const { eyeOn, toggleEye } = useEyeControl();
+  const { eyeOn } = useEyeControl();
   const { repeatCount } = useSettings();
   const [message, setMessage] = useState("");
   const [spoken, setSpoken] = useState(null);
@@ -58,7 +58,7 @@ export default function Spell() {
   return (
     <main className="app">
       <section className="spell center">
-        <TopBar spell eyeOn={eyeOn} toggleEye={toggleEye} />
+        <TopBar spell />
         <div className="spell-message">
           <p className="eyebrow">YOUR MESSAGE</p>
           <div className={`message-line ${message ? "live" : ""}`}>

@@ -50,10 +50,6 @@ export function advancePalm(
   if (state.closedFist && state.armed && !state.hasSelected) {
     const duration = now - state.closedAt;
     if (duration >= thresholds.min && duration <= thresholds.max) {
-      console.log("[PalmSelect StateMachine] Sustained closed fist hold met! Selection fired ONCE.", {
-        duration: Math.round(duration),
-        fistScore: fistScore.toFixed(2),
-      });
       return {
         ...state,
         hasSelected: true, // Mark selection fired for this fist hold
@@ -153,7 +149,6 @@ export default function usePalmSelect(onClosedFistSelect, thresholds, onPalmOnse
       emaRef.current = fistScore;
 
       const currentThresholds = thresholdsRef.current;
-      const prevClosedState = machine.current.closedFist;
 
       const next = advancePalm(
         machine.current,
@@ -164,21 +159,11 @@ export default function usePalmSelect(onClosedFistSelect, thresholds, onPalmOnse
       );
       const nextPhase = next.closedFist ? "closed" : "resting";
 
-      // Diagnostic logging of state transitions
-      if (prevClosedState !== next.closedFist) {
-        console.log(
-          `[PalmSelect Transition] ${prevClosedState ? "CLOSED -> OPEN" : "OPEN -> CLOSED"} at t=${Math.round(now)}ms (fistScore=${fistScore.toFixed(2)})`
-        );
-      }
-
       machine.current = next;
       phaseRef.current = nextPhase;
       setPhase(nextPhase);
 
       if (next.selected && callbackRef.current) {
-        console.log(
-          `[PalmSelect Action] Executing select() callback at t=${Math.round(now)}ms (fistScore=${fistScore.toFixed(2)})`
-        );
         callbackRef.current();
       }
     },

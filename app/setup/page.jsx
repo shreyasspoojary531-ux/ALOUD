@@ -46,7 +46,7 @@ const steps = [
 
 export default function Setup() {
   const router = useRouter();
-  const { eyeOn, toggleEye } = useEyeControl();
+  const { eyeOn } = useEyeControl();
   const [step, setStep] = useState(0);
   const [cameraError, setCameraError] = useState(false);
   const [showHelp, setShowHelp] = useState(false);
@@ -132,11 +132,7 @@ export default function Setup() {
 
   return (
     <main className="app">
-      <TopBar
-        eyeOn={eyeOn}
-        toggleEye={toggleEye}
-        onHelp={() => setShowHelp(true)}
-      />
+      <TopBar onHelp={() => setShowHelp(true)} />
       <div className="screen-center">
         <section className="calibration">
           <div className="cal-icon">{current.icon}</div>

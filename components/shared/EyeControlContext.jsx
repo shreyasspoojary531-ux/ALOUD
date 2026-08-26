@@ -5,7 +5,6 @@ const EyeControlContext = createContext({
   mode: "blink",
   setMode: () => {},
   eyeOn: true,
-  setEyeOn: () => {},
   toggleEye: () => {},
   isPaused: false,
   setIsPaused: () => {},
@@ -33,16 +32,13 @@ export function EyeControlProvider({ children }) {
   };
 
   const eyeOn = mode !== "manual";
-  const setEyeOn = (on) => {
-    setMode(on ? "blink" : "manual");
-  };
   const toggleEye = () => {
     setMode(mode === "manual" ? "blink" : "manual");
   };
 
   return (
     <EyeControlContext.Provider
-      value={{ mode, setMode, eyeOn, setEyeOn, toggleEye, isPaused, setIsPaused }}
+      value={{ mode, setMode, eyeOn, toggleEye, isPaused, setIsPaused }}
     >
       {children}
     </EyeControlContext.Provider>
