@@ -14,7 +14,7 @@ Aloud is an eye-controlled augmentative and alternative communication (AAC) app.
 - Plain CSS with design tokens (no Tailwind or CSS-in-JS)
 - `@mediapipe/tasks-vision` for eye/blink tracking
 - Web Speech API for text-to-speech
-- Gemini Flash-Lite (server-side only) for suggestions
+- Gemini 2.5 Flash (`lib/gemini.js`, server-side REST API) for next-word suggestions
 
 ## Quick start
 1. Install dependencies:
@@ -29,19 +29,29 @@ npm install
 npm run dev
 ```
 
-Notes: API keys and secrets must be provided via `.env.local` and only used on the server.
+Notes: API keys (`GEMINI_API_KEY`) must be provided via `.env.local` and used only on the server.
 
 ## Project conventions (summary)
 - Do not add npm packages without approval — propose them first.
 - All colors, fonts, and spacing must come from `styles/tokens.css`.
 - One component per file. `useScanner` must remain screen-agnostic.
 - Camera and MediaPipe code must live under `components/camera/`.
-- Server-only code (Gemini wrapper) belongs in `lib/` and `app/api/` routes.
+- Server-only code (`lib/gemini.js`) belongs in `lib/` and `app/api/suggest/route.js`.
+
+## Local Storage Keys
+- `aloud_control_mode`: Active input mode (`blink`, `eyebrow`, `palm`, `manual`).
+- `aloud_voice_name`: Selected SpeechSynthesis voice name.
+- `aloud_repeat_count`: Configured repeat count (`1`, `2`, `3`).
+- `aloud_calibration`: Custom eye-blink threshold configuration object.
+- `aloud_analytics_events`: Persistent array of spoken phrase metrics.
+
+## API Routes
+- `POST /api/suggest`: Server route expecting JSON body `{ message: "text" }`. Calls Gemini 2.5 Flash to return `{ suggestions: ["phrase1", "phrase2", "phrase3"] }`. Features a 4s minimum-interval rate limit guard.
 
 ## Error handling & fallbacks
 - Camera unavailable or permission denied → fall back to keyboard/spacebar selection and show an inline message.
 - No face detected → gentle on-screen indicator, avoid spamming errors.
-- Gemini suggestion failures → keyboard continues to work with zero suggestions shown.
+- Gemini suggestion failures or missing `GEMINI_API_KEY` → keyboard continues to work smoothly with zero suggestions shown.
 - Speech synthesis unavailable → show composed message as text.
 
 ## Accessibility checklist
@@ -55,7 +65,7 @@ See the enforced structure in `.agents/AGENTS.md`; main locations:
 
 - `app/` — top-level pages and app entry
 - `components/` — UI components: `camera/`, `scanner/`, `keyboard/`, `home/`, `shared/`
-- `lib/gemini.js` — server-side Gemini wrapper
+- `lib/gemini.js` — server-side Gemini 2.5 Flash REST client
 - `lib/speech.js` — Web Speech API wrapper
 - `styles/tokens.css` — design tokens (colors, spacing, type)
 
@@ -65,11 +75,7 @@ See the enforced structure in `.agents/AGENTS.md`; main locations:
 - Small, focused commits with plain-language messages.
 
 ## Where to look first
-- Read `.agents/AGENTS.md` for full rules and guidance.
+- Read `.agents/AGENTS.md` and `.agents/MEMORY.md` for full rules and guidance.
+- `.agents/READ.md` for step-by-step codebase reading roadmap.
 - `styles/tokens.css` for the design system.
 - `components/scanner/useScanner.js` for core scan/select logic.
-
----
-If you'd like, I can also:
-- Commit this `README.md` and open a branch, or
-- Add a short CONTRIBUTING.md with commit/message guidelines.

@@ -29,24 +29,34 @@ export default function Spell() {
     }
   }, []);
 
-  // Fetch AI suggestions whenever message changes; silently fail on error.
+  // Fetch AI suggestions when message changes with a 600ms debounce.
+  // Errors or rate limits (429/500) will NOT wipe out existing suggestions.
   useEffect(() => {
     if (!message.trim()) {
       setSuggestions([]);
       return;
     }
+
     let cancelled = false;
-    fetch("/api/suggest", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ message }),
-    })
-      .then((r) => r.json())
-      .then(({ suggestions: s }) => {
-        if (!cancelled) setSuggestions(s ?? []);
+    const timer = setTimeout(() => {
+      fetch("/api/suggest", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ message }),
       })
-      .catch(() => {}); // never block typing on a failed AI call
-    return () => { cancelled = true; };
+        .then((r) => r.json())
+        .then((data) => {
+          if (!cancelled && Array.isArray(data?.suggestions)) {
+            setSuggestions(data.suggestions);
+          }
+        })
+        .catch(() => {}); // never block typing on a failed AI call
+    }, 600);
+
+    return () => {
+      cancelled = true;
+      clearTimeout(timer);
+    };
   }, [message]);
 
   // SpokenMessageOverlay now calls say() internally with repeat count

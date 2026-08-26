@@ -94,7 +94,9 @@ export default function Keyboard({
     if (l === "space") return setMessage((m) => m + " ");
     if (/^[A-Z]$/.test(key.label)) return setMessage((m) => m + key.label.toLowerCase());
     if ([".", ",", "?"].includes(key.label)) return setMessage((m) => m + key.label);
-    if (key.kind === "suggest") return setMessage(key.label);
+    if (key.kind === "suggest") {
+      return setMessage((m) => (m.trim() ? `${m.trimEnd()} ${key.label}` : key.label));
+    }
   };
 
   return (
@@ -114,4 +116,3 @@ export default function Keyboard({
     </>
   );
 }
-
