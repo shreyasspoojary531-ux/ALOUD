@@ -86,7 +86,7 @@ const groups = {
 export default function Home() {
   const router = useRouter();
   const { eyeOn } = useEyeControl();
-  const { repeatCount } = useSettings();
+  const { repeatCount, customPhrases, adaptedDwellDuration } = useSettings();
   const [help, setHelp] = useState(false);
   const [group, setGroup] = useState(null);
   const [spoken, setSpoken] = useState(null);
@@ -115,12 +115,32 @@ export default function Home() {
     setSpoken(item.label);
   };
 
+  const groupTint =
+    group === "I need"
+      ? "gold"
+      : group === "Answers"
+      ? "blue"
+      : group === "People"
+      ? "sage"
+      : "rose";
+
+  const groupCustomPhrases = (customPhrases || []).filter(
+    (p) => p.category?.toLowerCase() === group?.toLowerCase()
+  );
+
   const items = group && groups[group]
     ? [
         ...groups[group].map((label) => ({
           label,
           icon: subIcons[label] || "heart",
-          tint: group === "I need" ? "gold" : group === "Answers" ? "blue" : "rose",
+          tint: groupTint,
+        })),
+        ...groupCustomPhrases.map((p) => ({
+          label: p.text,
+          icon: "heart",
+          tint: groupTint,
+          isCustom: true,
+          id: p.id,
         })),
         { label: "Back", icon: "Back", tint: "blue" },
       ]
@@ -139,6 +159,7 @@ export default function Home() {
           sub={!!group}
           blinkSelect={blink}
           enabled={!spoken}
+          interval={adaptedDwellDuration}
         />
       </section>
       <p className="caption">

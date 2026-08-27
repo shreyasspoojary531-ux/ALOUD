@@ -21,21 +21,30 @@ export const calibratedThresholds = (openAverage, closedAverage) => {
 
 /**
  * Pure state machine handling hysteresis blink detection.
+ * Blendshape score is the primary signal; EAR > 0.26 is used as a secondary rejection filter for motion noise.
  */
 export function advanceBlink(
   state,
   score,
   now,
   thresholds = DEFAULT_BLINK_THRESHOLDS,
-  onBlinkOnset = null
+  onBlinkOnset = null,
+  options = {}
 ) {
+  const { ear = null } = options;
+
+  // Primary signal: blendshape score >= close threshold.
+  // Secondary rejection: reject ONLY if EAR strongly indicates eyes are wide open (> 0.26).
+  const isEarWideOpenRejection = typeof ear === "number" && ear > 0.26;
+  const isClosedSignal = score >= thresholds.close && !isEarWideOpenRejection;
+
   // If eyes are currently open and crossing close threshold while armed
-  if (!state.closed && score >= thresholds.close && state.armed) {
+  if (!state.closed && isClosedSignal && state.armed) {
     onBlinkOnset?.();
     return { ...state, closed: true, closedAt: now, selected: false };
   }
-  // If eyes were closed and now reopen below open threshold
-  if (state.closed && score < thresholds.open) {
+  // If eyes were closed and now reopen below open threshold (or EAR confirms open eyes)
+  if (state.closed && (score < thresholds.open || (typeof ear === "number" && ear > 0.24))) {
     const duration = now - state.closedAt;
     const isSelected = state.armed && duration >= thresholds.min && duration <= thresholds.max;
     return {
@@ -94,7 +103,7 @@ export default function useBlinkSelect(onLongBlink, thresholds, onBlinkOnset) {
   const ingest = useCallback(
     (rawScore, options = {}) => {
       const now = performance.now();
-      const { isMoving = false } = options;
+      const { isMoving = false, ear = null } = options;
 
       if (typeof rawScore !== "number" || isNaN(rawScore)) return;
 
@@ -122,7 +131,7 @@ export default function useBlinkSelect(onLongBlink, thresholds, onBlinkOnset) {
 
       // Arm machine ONLY after eyes have been open for at least 2 consecutive frames
       if (!machine.current.armed && !machine.current.closed) {
-        if (score < effectiveThresholds.open) {
+        if (score < effectiveThresholds.open && (ear === null || ear > 0.20)) {
           openFramesRef.current += 1;
           if (openFramesRef.current >= 2) {
             machine.current.armed = true;
@@ -132,7 +141,7 @@ export default function useBlinkSelect(onLongBlink, thresholds, onBlinkOnset) {
         }
       }
 
-      // 4. If rapid head movement is active, suppress blink detection state machine
+      // 4. If rapid head movement or motion cooldown is active, suppress blink detection state machine
       if (isMoving) {
         if (machine.current.closed) {
           machine.current = { closed: false, closedAt: 0, armed: false, selected: false };
@@ -148,7 +157,8 @@ export default function useBlinkSelect(onLongBlink, thresholds, onBlinkOnset) {
         score,
         now,
         effectiveThresholds,
-        () => onsetCallbackRef.current?.()
+        () => onsetCallbackRef.current?.(),
+        { ear }
       );
       const nextPhase = next.closed ? (next.armed ? "closed" : "resting") : "open";
 

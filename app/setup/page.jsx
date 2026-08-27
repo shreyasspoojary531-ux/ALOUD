@@ -15,32 +15,38 @@ const steps = [
   {
     icon: "⌗",
     title: "Set up eye control",
-    text: "A quick check tunes blinking to your eyes and lighting. Tap Start and follow along — it takes about ten seconds.",
+    text: "A quick check tunes blinking to your eyes and lighting. Tap Start and follow along — it takes about three seconds.",
     intro: true,
   },
   {
     icon: "▣",
     title: "Starting camera…",
     text: "One moment — getting eye control ready. Allow camera access if your browser prompts you.",
-    value: 14,
+    indeterminate: true,
   },
   {
     icon: "◉",
     title: "Keep your eyes open",
     text: "Look at the screen naturally.",
-    value: 38,
+    duration: 1000, // 1.0s
+    startPct: 25,
+    endPct: 50,
   },
   {
     icon: "◉",
     title: "Get ready…",
     text: "Close your eyes when prompted and hold them shut.",
-    value: 60,
+    duration: 800, // 0.8s
+    startPct: 50,
+    endPct: 75,
   },
   {
     icon: "◉̸",
     title: "Close your eyes now",
     text: "Hold them shut until the check completes.",
-    value: 82,
+    duration: 1200, // 1.2s
+    startPct: 75,
+    endPct: 100,
   },
 ];
 
@@ -50,8 +56,12 @@ export default function Setup() {
   const [step, setStep] = useState(0);
   const [cameraError, setCameraError] = useState(false);
   const [showHelp, setShowHelp] = useState(false);
-  const startTimestampRef = useRef(null);
+  const [progressPct, setProgressPct] = useState(0);
 
+  const stepRef = useRef(step);
+  stepRef.current = step;
+
+  const startTimestampRef = useRef(null);
   const openSamples = useRef([]);
   const closedSamples = useRef([]);
 
@@ -60,12 +70,12 @@ export default function Setup() {
   }, []);
 
   const handleBlendshape = useCallback((score) => {
-    if (step === 2) {
+    if (stepRef.current === 2) {
       openSamples.current.push(score);
-    } else if (step === 4) {
+    } else if (stepRef.current === 4) {
       closedSamples.current.push(score);
     }
-  }, [step]);
+  }, []);
 
   const completeCalibration = useCallback(() => {
     const avg = (arr) => (arr.length ? arr.reduce((a, b) => a + b, 0) / arr.length : 0);
@@ -87,25 +97,18 @@ export default function Setup() {
     router.push("/home");
   }, [router]);
 
-  const next = useCallback(() => {
-    if (step === steps.length - 1) {
-      completeCalibration();
-    } else {
-      setStep((x) => x + 1);
-    }
-  }, [step, completeCalibration]);
-
   const handleStart = useCallback(() => {
     startTimestampRef.current = performance.now();
     setCameraError(false);
+    openSamples.current = [];
+    closedSamples.current = [];
     setStep(1); // Move to "Starting camera…" state
   }, []);
 
-  // Real camera permission readiness callback from CameraPill
+  // Camera permission readiness callback from CameraPill
   const handleCameraReady = useCallback((success) => {
     if (success) {
       setCameraError(false);
-      // Genuinely advance to step 2 ("Keep your eyes open") ONLY after getUserMedia succeeds
       setStep((curr) => (curr === 1 ? 2 : curr));
     } else {
       setCameraError(true);
@@ -114,19 +117,45 @@ export default function Setup() {
 
   const { select } = useScanner(
     [{ label: step === 0 ? "Start" : "Continue" }],
-    step === 0 ? handleStart : next,
+    step === 0 ? handleStart : () => {},
   );
   const blink = useRef(select);
   blink.current = select;
   const onBlink = useCallback(() => blink.current(undefined, { isBlink: true }), []);
 
-  // Timed calibration sampling ONLY for step >= 2 (after camera permission is verified)
+  // Continuous elapsed-time progress animation loop for active calibration steps (step >= 2)
   useEffect(() => {
-    if (step >= 2 && step < steps.length) {
-      const id = setTimeout(next, 2600);
-      return () => clearTimeout(id);
-    }
-  }, [step, next]);
+    if (step < 2 || step >= steps.length) return;
+
+    const currentStep = steps[step];
+    const startTime = performance.now();
+    let frameId;
+
+    const updateProgress = () => {
+      const elapsed = performance.now() - startTime;
+      const fraction = Math.min(1, elapsed / currentStep.duration);
+      const currentPct = currentStep.startPct + fraction * (currentStep.endPct - currentStep.startPct);
+
+      setProgressPct(currentPct);
+
+      if (fraction < 1) {
+        frameId = requestAnimationFrame(updateProgress);
+      } else {
+        // Step complete
+        if (step === steps.length - 1) {
+          completeCalibration();
+        } else {
+          setStep((s) => s + 1);
+        }
+      }
+    };
+
+    frameId = requestAnimationFrame(updateProgress);
+
+    return () => {
+      if (frameId) cancelAnimationFrame(frameId);
+    };
+  }, [step, completeCalibration]);
 
   const current = steps[step];
 
@@ -163,7 +192,7 @@ export default function Setup() {
               </Button>
             </div>
           ) : (
-            <ProgressBar value={current.value} />
+            <ProgressBar value={progressPct} indeterminate={current.indeterminate} />
           )}
         </section>
       </div>

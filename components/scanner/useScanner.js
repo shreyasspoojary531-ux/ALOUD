@@ -16,6 +16,7 @@ export default function useScanner(items, onSelect, interval = 1800, enabled = t
   const onsetIndexRef = useRef(null);
   const selectRef = useRef(onSelect);
   const isPausedRef = useRef(false);
+  const timerRef = useRef(null);
 
   useEffect(() => {
     selectRef.current = onSelect;
@@ -35,13 +36,26 @@ export default function useScanner(items, onSelect, interval = 1800, enabled = t
 
   // Auto-advance timer (paused if local or global tracking is paused)
   useEffect(() => {
-    if (!items.length || !enabled || isPaused || globalPaused) return;
+    if (!items.length || !enabled || isPaused || globalPaused) {
+      if (timerRef.current) {
+        clearInterval(timerRef.current);
+        timerRef.current = null;
+      }
+      return;
+    }
 
-    const id = setInterval(() => {
+    timerRef.current = setInterval(() => {
+      // Synchronous guard prevents interval ticks if pause was requested before unmount
+      if (isPausedRef.current || globalPaused) return;
       setActive((i) => (i + 1) % items.length);
     }, interval);
 
-    return () => clearInterval(id);
+    return () => {
+      if (timerRef.current) {
+        clearInterval(timerRef.current);
+        timerRef.current = null;
+      }
+    };
   }, [items.length, interval, enabled, isPaused, globalPaused, itemsKey]);
 
   // Captures the active item index at the exact moment a blink begins (onset)
@@ -62,6 +76,12 @@ export default function useScanner(items, onSelect, interval = 1800, enabled = t
       // When Eye Control is OFF, blink detection must NOT trigger select.
       if (!eyeOn && isBlink) return;
 
+      // Synchronously stop auto-advance timer immediately at selection onset
+      if (timerRef.current) {
+        clearInterval(timerRef.current);
+        timerRef.current = null;
+      }
+
       // Prefer target index captured at blink onset over current auto-advanced index
       let targetIndex;
       if (typeof index === 'number') {
@@ -76,6 +96,9 @@ export default function useScanner(items, onSelect, interval = 1800, enabled = t
       const item = items[targetIndex];
 
       if (item) {
+        // Synchronously lock active state and ref to targetIndex to eliminate 1-frame highlight jump
+        setActive(targetIndex);
+        activeRef.current = targetIndex;
         setSelectedIndex(targetIndex);
         setTimeout(() => setSelectedIndex(null), 400);
 
@@ -109,5 +132,17 @@ export default function useScanner(items, onSelect, interval = 1800, enabled = t
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [select, enabled, globalPaused]);
 
-  return { active, select, isPaused, selectedIndex, captureOnset };
+  // Synchronously moves scanner highlight cursor to target index without selecting
+  const jumpTo = useCallback(
+    (index) => {
+      if (typeof index === 'number' && index >= 0 && index < items.length) {
+        setActive(index);
+        activeRef.current = index;
+        onsetIndexRef.current = null;
+      }
+    },
+    [items.length]
+  );
+
+  return { active, select, isPaused, selectedIndex, captureOnset, jumpTo };
 }

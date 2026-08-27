@@ -76,11 +76,11 @@ export default function SpokenMessageOverlay({
             (Speech audio unavailable in browser — message displayed as text)
           </p>
         )}
-        {repeat > 1 && (
-          <p className="repeat-indicator">
-            Repeating {repeat}×
-          </p>
-        )}
+        {repeat === "loop" ? (
+          <p className="repeat-indicator">Repeating until dismissed</p>
+        ) : repeat > 1 ? (
+          <p className="repeat-indicator">Repeating {repeat}×</p>
+        ) : null}
         <button
           className={`button dark ${active === 0 ? "active" : ""}`}
           onClick={() => select(0)}

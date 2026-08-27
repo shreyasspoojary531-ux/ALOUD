@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import CustomModeSelect from "./CustomModeSelect";
 import SettingsPopover from "./SettingsPopover";
+import CustomPhrasesModal from "./CustomPhrasesModal";
 import { useEyeControl } from "./EyeControlContext";
 
 function useIsMobile(breakpoint = 900) {
@@ -93,16 +94,24 @@ export default function TopBar({ onHelp, spell = false, backTo = null }) {
   const isMobile = useIsMobile(900);
   const { setIsPaused } = useEyeControl();
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [customPhrasesOpen, setCustomPhrasesOpen] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
-  // Sync gesture tracking & scanning pause state with mobile menu open state
+  const handleOpenCustomPhrases = () => {
+    setSettingsOpen(false);
+    setTimeout(() => {
+      setCustomPhrasesOpen(true);
+    }, 180);
+  };
+
+  // Sync gesture tracking & scanning pause state with modal/drawer open states
   useEffect(() => {
-    if (isMobile) {
-      setIsPaused(mobileMenuOpen);
+    if (mobileMenuOpen || settingsOpen || customPhrasesOpen) {
+      setIsPaused(true);
     } else {
       setIsPaused(false);
     }
-  }, [mobileMenuOpen, isMobile, setIsPaused]);
+  }, [mobileMenuOpen, settingsOpen, customPhrasesOpen, setIsPaused]);
 
   // Clean up pause state on unmount
   useEffect(() => {
@@ -114,7 +123,10 @@ export default function TopBar({ onHelp, spell = false, backTo = null }) {
   // Close mobile drawer on ESC key
   useEffect(() => {
     const handleKeyDown = (e) => {
-      if (e.key === "Escape") setMobileMenuOpen(false);
+      if (e.key === "Escape") {
+        setMobileMenuOpen(false);
+        setCustomPhrasesOpen(false);
+      }
     };
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
@@ -147,21 +159,23 @@ export default function TopBar({ onHelp, spell = false, backTo = null }) {
     setMobileMenuOpen((prev) => !prev);
   };
 
-  // Reusable Mobile Drawer component (ONLY rendered in DOM when isMobile AND mobileMenuOpen are true)
-  const mobileDrawerJSX = (isMobile && mobileMenuOpen) ? (
+  // Mobile navigation drawer JSX
+  const mobileDrawerJSX = isMobile && mobileMenuOpen ? (
     <>
       <div
         className="mobile-drawer-backdrop"
         onClick={() => setMobileMenuOpen(false)}
         aria-hidden="true"
       />
-
-      <aside className="mobile-drawer-panel open" aria-label="Navigation menu">
+      <div className="mobile-drawer" role="dialog" aria-label="Navigation Menu">
         <div className="mobile-drawer-header">
-          <span className="drawer-title">Menu</span>
+          <Link href="/" className="brand" onClick={() => setMobileMenuOpen(false)}>
+            <i />
+            Aloud
+          </Link>
           <button
             type="button"
-            className="help-close-btn"
+            className="mobile-drawer-close"
             onClick={() => setMobileMenuOpen(false)}
             aria-label="Close menu"
           >
@@ -169,16 +183,13 @@ export default function TopBar({ onHelp, spell = false, backTo = null }) {
           </button>
         </div>
 
-        <div className="mobile-drawer-content">
-          <div className="drawer-item">
-            <span className="drawer-item-label">INPUT MODE</span>
-            <CustomModeSelect />
-          </div>
+        <nav className="mobile-drawer-nav">
+          <CustomModeSelect />
 
           {onHelp && (
             <button
               type="button"
-              className="pill drawer-pill-btn"
+              className="mobile-drawer-item"
               onClick={handleMobileHelp}
             >
               ◯&nbsp; Help
@@ -187,26 +198,25 @@ export default function TopBar({ onHelp, spell = false, backTo = null }) {
 
           <button
             type="button"
-            className={`pill drawer-pill-btn ${settingsOpen ? "active" : ""}`}
+            className="mobile-drawer-item"
             onClick={handleMobileSettings}
-            aria-label="Settings"
           >
             ⚙&nbsp; Settings
           </button>
 
-          <a
+          <Link
             href="/profile"
-            className="pill drawer-pill-btn profile-drawer-btn"
+            className="mobile-drawer-item"
             onClick={handleMobileProfile}
           >
-            <ProfileIcon /> Profile & Analytics
-          </a>
-        </div>
-      </aside>
+            👤&nbsp; Profile & Analytics
+          </Link>
+        </nav>
+      </div>
     </>
   ) : null;
 
-  // Settings Overlay JSX for mobile/desktop
+  // Settings & Custom Phrases Overlay JSX for mobile/desktop
   const settingsOverlayJSX = (
     <>
       {isMobile && settingsOpen && (
@@ -217,9 +227,16 @@ export default function TopBar({ onHelp, spell = false, backTo = null }) {
           aria-hidden="true"
         />
       )}
-      <SettingsPopover
-        isOpen={settingsOpen}
-        onClose={() => setSettingsOpen(false)}
+      {isMobile && (
+        <SettingsPopover
+          isOpen={settingsOpen}
+          onClose={() => setSettingsOpen(false)}
+          onOpenCustomPhrases={handleOpenCustomPhrases}
+        />
+      )}
+      <CustomPhrasesModal
+        isOpen={customPhrasesOpen}
+        onClose={() => setCustomPhrasesOpen(false)}
       />
     </>
   );
@@ -290,6 +307,7 @@ export default function TopBar({ onHelp, spell = false, backTo = null }) {
             <SettingsPopover
               isOpen={settingsOpen}
               onClose={() => setSettingsOpen(false)}
+              onOpenCustomPhrases={handleOpenCustomPhrases}
             />
           </div>
         </div>
@@ -309,7 +327,7 @@ export default function TopBar({ onHelp, spell = false, backTo = null }) {
       )}
 
       {mobileDrawerJSX}
-      {isMobile && settingsOverlayJSX}
+      {settingsOverlayJSX}
     </header>
   );
 }

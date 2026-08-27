@@ -9,11 +9,12 @@ export default function CategoryGrid({
   sub = false,
   blinkSelect,
   enabled = true,
+  interval = 1800,
 }) {
   const { active, select, selectedIndex, captureOnset } = useScanner(
     items,
     onChoose,
-    1800,
+    interval,
     enabled
   );
 

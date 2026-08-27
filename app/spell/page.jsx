@@ -9,7 +9,7 @@ import { useSettings } from "../../components/shared/SettingsContext";
 
 export default function Spell() {
   const { eyeOn } = useEyeControl();
-  const { repeatCount } = useSettings();
+  const { repeatCount, adaptedDwellDuration } = useSettings();
   const [message, setMessage] = useState("");
   const [spoken, setSpoken] = useState(null);
   const [suggestions, setSuggestions] = useState([]);
@@ -59,6 +59,15 @@ export default function Spell() {
     };
   }, [message]);
 
+  const keyboardRef = useRef(null);
+
+  const handleEyebrowShortcut = useCallback(() => {
+    // Only jump to suggestions if suggestions are currently loaded and available
+    if (suggestions && suggestions.length > 0) {
+      keyboardRef.current?.jumpToSuggestions?.();
+    }
+  }, [suggestions]);
+
   // SpokenMessageOverlay now calls say() internally with repeat count
   const speak = (text, urgent = false) => {
     if (!text) return;
@@ -80,14 +89,21 @@ export default function Spell() {
           setMessage={setMessage}
           speak={speak}
           blinkSelect={blink}
+          keyboardRef={keyboardRef}
           enabled={!spoken}
           suggestions={suggestions}
+          interval={adaptedDwellDuration}
         />
       </section>
       <p className="caption">
         A row is highlighting — <b>long-blink</b> to open it
       </p>
-      <CameraPill enabled={eyeOn} onLongBlink={onBlink} onBlinkOnset={onBlinkOnset} />
+      <CameraPill
+        enabled={eyeOn}
+        onLongBlink={onBlink}
+        onBlinkOnset={onBlinkOnset}
+        onEyebrowShortcut={handleEyebrowShortcut}
+      />
       {spoken && (
         <SpokenMessageOverlay
           message={spoken.text}

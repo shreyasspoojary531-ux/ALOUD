@@ -5,6 +5,7 @@ import useEyebrowSelect, { DEFAULT_EYEBROW_THRESHOLDS } from "./useEyebrowSelect
 import usePalmSelect, { DEFAULT_PALM_THRESHOLDS } from "./usePalmSelect";
 import { createFaceLandmarker, createHandLandmarker } from "../../lib/mediapipeLoader";
 import { useEyeControl } from "../shared/EyeControlContext";
+import { useSettings } from "../shared/SettingsContext";
 
 export default function CameraPill({
   enabled: enabledProp,
@@ -13,13 +14,17 @@ export default function CameraPill({
   calibration,
   onBlinkOnset,
   onCameraReady,
+  onEyebrowShortcut,
 }) {
   const ctx = useEyeControl();
   const activeMode = ctx.mode || "blink";
+  const { eyebrowShortcut } = useSettings();
   const enabled = enabledProp ?? (activeMode !== "manual");
 
   const video = useRef(null);
-  const callbacks = useRef({ onLongBlink, onBlendshape, onBlinkOnset, onCameraReady });
+  const callbacks = useRef({ onLongBlink, onBlendshape, onBlinkOnset, onCameraReady, onEyebrowShortcut });
+  const activeModeRef = useRef(activeMode);
+  activeModeRef.current = activeMode;
 
   // retryKey increments to force the camera useEffect to re-run cleanly
   const [retryKey, setRetryKey] = useState(0);
@@ -30,18 +35,42 @@ export default function CameraPill({
 
   const [cameraError, setCameraError] = useState(null); // null | "notreadable" | "denied" | "generic"
 
-  const [minimized, setMinimized] = useState(() => {
+  const [minimized, setMinimized] = useState(false);
+
+  // Defer localStorage read to useEffect after client hydration to prevent SSR mismatch
+  useEffect(() => {
     try {
-      return typeof window !== "undefined" && localStorage.getItem("aloud_camera_minimized") === "true";
-    } catch (e) {
-      return false;
-    }
-  });
+      if (localStorage.getItem("aloud_camera_minimized") === "true") {
+        setMinimized(true);
+      }
+    } catch (e) {}
+  }, []);
 
   const noDetectionSince = useRef(0);
   const lastVideoTime = useRef(-1);
   const lastTimestampRef = useRef(0);
   const prevHeadPose = useRef(null);
+  const motionCooldownUntilRef = useRef(0);
+
+  function computeEAR(landmarks) {
+    if (!landmarks || landmarks.length < 468) return null;
+    const dist = (p1, p2) => Math.hypot(p1.x - p2.x, p1.y - p2.y);
+
+    // Left Eye Landmarks: 33 (outer), 133 (inner), 159/145 (vertical 1), 158/144 (vertical 2)
+    const leftV1 = dist(landmarks[159], landmarks[145]);
+    const leftV2 = dist(landmarks[158], landmarks[144]);
+    const leftH  = dist(landmarks[33],  landmarks[133]);
+    const leftEAR = leftH > 0 ? (leftV1 + leftV2) / (2 * leftH) : 0;
+
+    // Right Eye Landmarks: 362 (outer), 263 (inner), 386/374 (vertical 1), 385/373 (vertical 2)
+    const rightV1 = dist(landmarks[386], landmarks[374]);
+    const rightV2 = dist(landmarks[385], landmarks[373]);
+    const rightH  = dist(landmarks[362], landmarks[263]);
+    const rightEAR = rightH > 0 ? (rightV1 + rightV2) / (2 * rightH) : 0;
+
+    return (leftEAR + rightEAR) / 2;
+  }
+
   const headMotionRef = useRef(0);
   const confidenceTimeoutRef = useRef(null);
   const currentGestureScoreRef = useRef(0.9);
@@ -95,6 +124,14 @@ export default function CameraPill({
     }, 1500);
   };
 
+  const handleEyebrowSelect = () => {
+    if (activeModeRef.current === "blink" && callbacks.current.onEyebrowShortcut) {
+      callbacks.current.onEyebrowShortcut();
+    } else {
+      handleSelectConfirmation();
+    }
+  };
+
   const blinkSelect = useBlinkSelect(
     handleSelectConfirmation,
     blinkThresholds,
@@ -102,7 +139,7 @@ export default function CameraPill({
   );
 
   const eyebrowSelect = useEyebrowSelect(
-    handleSelectConfirmation,
+    handleEyebrowSelect,
     DEFAULT_EYEBROW_THRESHOLDS,
     () => callbacks.current.onBlinkOnset?.()
   );
@@ -117,8 +154,8 @@ export default function CameraPill({
   gestureHooksRef.current = { blinkSelect, eyebrowSelect, palmSelect };
 
   useEffect(() => {
-    callbacks.current = { onLongBlink, onBlendshape, onBlinkOnset, onCameraReady };
-  }, [onLongBlink, onBlendshape, onBlinkOnset, onCameraReady]);
+    callbacks.current = { onLongBlink, onBlendshape, onBlinkOnset, onCameraReady, onEyebrowShortcut };
+  }, [onLongBlink, onBlendshape, onBlinkOnset, onCameraReady, onEyebrowShortcut]);
 
   useEffect(() => {
     let stream;
@@ -238,7 +275,9 @@ export default function CameraPill({
                   noDetectionSince.current = 0;
                   const browLeft = shapes.find((x) => x.categoryName === "browOuterUpLeft")?.score ?? 0;
                   const browRight = shapes.find((x) => x.categoryName === "browOuterUpRight")?.score ?? 0;
-                  const browScore = (browLeft + browRight) / 2;
+                  const browInner = shapes.find((x) => x.categoryName === "browInnerUp")?.score ?? 0;
+                  // Use the stronger signal between outer-brow average and inner-brow score
+                  const browScore = Math.max((browLeft + browRight) / 2, browInner);
 
                   currentGestureScoreRef.current = Math.min(0.98, Math.max(0.65, browScore + 0.3));
                   callbacks.current.onBlendshape?.(browScore);
@@ -270,6 +309,7 @@ export default function CameraPill({
                   const leftEyeCorner = landmarks[33];
                   const rightEyeCorner = landmarks[263];
 
+                  let isRawMoving = false;
                   if (prevHeadPose.current && nose && leftEyeCorner && rightEyeCorner) {
                     const dNose = Math.hypot(
                       nose.x - prevHeadPose.current.nose.x,
@@ -285,10 +325,17 @@ export default function CameraPill({
                     );
                     const rawMotion = (dNose + dLeft + dRight) / 3;
                     headMotionRef.current = headMotionRef.current * 0.6 + rawMotion * 0.4;
+                    isRawMoving = rawMotion > 0.020 || headMotionRef.current > 0.025;
                   }
                   prevHeadPose.current = { nose, leftEye: leftEyeCorner, rightEye: rightEyeCorner };
 
-                  const isHeadMoving = headMotionRef.current > 0.035;
+                  const nowMs = performance.now();
+                  if (isRawMoving) {
+                    motionCooldownUntilRef.current = nowMs + 400; // 400ms cooldown after head motion
+                  }
+                  const isHeadMoving = isRawMoving || nowMs < motionCooldownUntilRef.current;
+
+                  const ear = computeEAR(landmarks);
 
                   const left = shapes.find((x) => x.categoryName === "eyeBlinkLeft")?.score ?? 0;
                   const right = shapes.find((x) => x.categoryName === "eyeBlinkRight")?.score ?? 0;
@@ -298,7 +345,16 @@ export default function CameraPill({
                   noDetectionSince.current = 0;
                   callbacks.current.onBlendshape?.(blink);
 
-                  bSel.ingest(blink, { isMoving: isHeadMoving });
+                  bSel.ingest(blink, { isMoving: isHeadMoving, ear });
+
+                  // Opt-in eyebrow shortcut: monitor eyebrow raise concurrently when enabled on Spell screen
+                  if (eyebrowShortcut && callbacks.current.onEyebrowShortcut) {
+                    const browLeft = shapes.find((x) => x.categoryName === "browOuterUpLeft")?.score ?? 0;
+                    const browRight = shapes.find((x) => x.categoryName === "browOuterUpRight")?.score ?? 0;
+                    const browInner = shapes.find((x) => x.categoryName === "browInnerUp")?.score ?? 0;
+                    const browScore = Math.max((browLeft + browRight) / 2, browInner);
+                    eSel.ingest(browScore, { isMoving: isHeadMoving });
+                  }
 
                   if (currentStatusType !== "confidence") {
                     if (isHeadMoving) {

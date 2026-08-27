@@ -2,8 +2,8 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 
 export const DEFAULT_EYEBROW_THRESHOLDS = {
-  raise: 0.40,
-  lower: 0.20,
+  raise: 0.12,
+  lower: 0.05,
   min: 350,
   max: 1800,
 };
@@ -101,8 +101,8 @@ export default function useEyebrowSelect(onLongRaise, thresholds, onRaiseOnset) 
       const currentThresholds = thresholdsRef.current;
       const effectiveThresholds = {
         ...currentThresholds,
-        raise: Math.min(0.85, Math.max(0.35, restingBaselineRef.current + 0.30)),
-        lower: Math.min(0.50, Math.max(0.15, restingBaselineRef.current + 0.12)),
+        raise: Math.min(0.50, Math.max(0.12, restingBaselineRef.current + 0.07)),
+        lower: Math.min(0.25, Math.max(0.05, restingBaselineRef.current + 0.03)),
       };
 
       // Arm machine ONLY after eyebrows have been resting for at least 2 consecutive frames

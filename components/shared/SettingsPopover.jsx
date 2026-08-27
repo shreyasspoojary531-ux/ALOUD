@@ -48,10 +48,22 @@ const REPEAT_OPTIONS = [
   { value: 1, label: "1×" },
   { value: 2, label: "2×" },
   { value: 3, label: "3×" },
+  { value: "loop", label: "Until dismissed" },
 ];
 
-export default function SettingsPopover({ isOpen, onClose }) {
-  const { voiceName, setVoiceName, repeatCount, setRepeatCount } = useSettings();
+export default function SettingsPopover({ isOpen, onClose, onOpenCustomPhrases }) {
+  const {
+    voiceName,
+    setVoiceName,
+    repeatCount,
+    setRepeatCount,
+    eyebrowShortcut,
+    setEyebrowShortcut,
+    adaptiveDwellEnabled,
+    setAdaptiveDwellEnabled,
+    adaptedDwellDuration,
+    resetAdaptiveDwell,
+  } = useSettings();
   const voices = useVoices();
   const popoverRef = useRef(null);
   const previewRef = useRef(null);
@@ -179,6 +191,88 @@ export default function SettingsPopover({ isOpen, onClose }) {
         <p className="settings-hint">
           How many times the message repeats before closing.
         </p>
+      </section>
+
+      {/* Setting 3 — Eyebrow shortcut to suggestions */}
+      <section className="settings-section">
+        <p className="settings-label">Eyebrow shortcut to suggestions</p>
+        <div className="repeat-control" role="group" aria-label="Eyebrow shortcut to suggestions">
+          <button
+            type="button"
+            className={`repeat-btn${!eyebrowShortcut ? " repeat-btn--active" : ""}`}
+            onClick={() => setEyebrowShortcut(false)}
+            aria-pressed={!eyebrowShortcut}
+          >
+            Off
+          </button>
+          <button
+            type="button"
+            className={`repeat-btn${eyebrowShortcut ? " repeat-btn--active" : ""}`}
+            onClick={() => setEyebrowShortcut(true)}
+            aria-pressed={eyebrowShortcut}
+          >
+            On
+          </button>
+        </div>
+        <p className="settings-hint">
+          On Spell screen in Eye blink mode, raising your eyebrows jumps the cursor directly to suggestions.
+        </p>
+      </section>
+
+      {/* Setting 4 — Custom Phrases */}
+      <section className="settings-section">
+        <p className="settings-label">Custom phrases</p>
+        <button
+          type="button"
+          className="button secondary custom-phrases-open-btn"
+          onClick={() => {
+            onClose?.();
+            onOpenCustomPhrases?.();
+          }}
+        >
+          ➕&nbsp; Manage custom phrases
+        </button>
+        <p className="settings-hint">
+          Add your own custom phrases to category cards.
+        </p>
+      </section>
+
+      {/* Setting 5 — Adaptive scan speed */}
+      <section className="settings-section">
+        <p className="settings-label">Adaptive scan speed</p>
+        <div className="repeat-control" role="group" aria-label="Adaptive scan speed">
+          <button
+            type="button"
+            className={`repeat-btn${!adaptiveDwellEnabled ? " repeat-btn--active" : ""}`}
+            onClick={() => setAdaptiveDwellEnabled(false)}
+            aria-pressed={!adaptiveDwellEnabled}
+          >
+            Off
+          </button>
+          <button
+            type="button"
+            className={`repeat-btn${adaptiveDwellEnabled ? " repeat-btn--active" : ""}`}
+            onClick={() => setAdaptiveDwellEnabled(true)}
+            aria-pressed={adaptiveDwellEnabled}
+          >
+            On
+          </button>
+        </div>
+        <p className="settings-hint">
+          {adaptiveDwellEnabled
+            ? `Current pacing: ${adaptedDwellDuration}ms per item (adapted between sessions).`
+            : "Automatically adjusts scan pacing between sessions based on usage."}
+        </p>
+        {adaptiveDwellEnabled && (
+          <button
+            type="button"
+            className="reset-dwell-btn"
+            onClick={resetAdaptiveDwell}
+            aria-label="Reset to default speed"
+          >
+            ↺ Reset to default speed (1800ms)
+          </button>
+        )}
       </section>
 
       {/* Setting 3 — Profile & Analytics */}

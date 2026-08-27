@@ -289,6 +289,61 @@ that only happens if I separately ask.
 - If you're stuck after 2-3 fix attempts on the same bug, stop guessing — explain
   what you currently understand is happening, line by line, before trying again.
 
+## Standing rules for task execution
+
+- **Dead-Code Cleanup**: Any dead-code or unused-file cleanup task must use the project's "ponytail" plugin/tool for the cleanup pass, with explicit grep-before-delete verification before removing anything, per the project's established cleanup pattern.
+- **Memory Review Mandatory**: Before starting any new task, read `MEMORY.md` in addition to `AGENTS.md` — `MEMORY.md` holds broader project history and prior decisions that should inform how new work is approached, and `AGENTS.md` alone may not reflect everything relevant.
+
+---
+
+## Current build status
+
+*Last verified via codebase audit & Next.js production build.*
+
+### Input Control Modes
+- **Eye Blink Mode (Primary)**:
+  - Blendshape score ($\ge 0.55$) is the primary trigger signal (`components/camera/useBlinkSelect.js`).
+  - Eye Aspect Ratio ($\text{EAR} > 0.26$) is demoted to a secondary rejection filter for motion noise spikes.
+  - Head motion detection with 400ms cooldown window prevents false triggers during head movement.
+  - Quick blinks (<400ms) are filtered; long blinks (400ms–2000ms) select items with onset target locking.
+- **Eyebrow Raise Mode**:
+  - Calibrated for natural, comfortable eyebrow raises (`components/camera/useEyebrowSelect.js`).
+  - `DEFAULT_EYEBROW_THRESHOLDS`: `raise: 0.12`, `lower: 0.05`.
+  - `CameraPill.jsx`: `browScore = Math.max((browLeft + browRight) / 2, browInner)` captures outer and inner raises (~0.12–0.18).
+  - Hysteresis (`lower: 0.05`) keeps normal talking/smiling (~0.05–0.08) safely below trigger threshold.
+- **Palm Control Mode**:
+  - Hand landmark fist closure detection (`components/camera/usePalmSelect.js`).
+  - Measures normalized fingertip-to-wrist distance. Untouched, fully functional.
+- **Manual Mode**:
+  - Direct mouse click / touch tap selection without camera gesture tracking (`EyeControlContext.jsx`).
+
+### Opt-In Dual Detection (Spell Screen Only)
+- **"Eyebrow shortcut to suggestions" Setting**:
+  - Opt-in toggle in `SettingsPopover.jsx` & `SettingsContext.jsx` (saved in `localStorage.aloud_eyebrow_shortcut`, OFF by default).
+  - Active only in Eye blink mode on `/spell`.
+  - When enabled, eyebrow raises monitor concurrently as a secondary cursor navigation signal: calls `jumpTo(0)` to move the row scanner cursor directly to AI suggestions (`suggestions.length > 0`) without calling `select()`.
+  - Eye blink remains primary selection mechanism. Zero cross-interference between gestures.
+
+### AI Word Suggestions
+- Server route `app/api/suggest/route.js` calling `lib/gemini.js` (`gemini-3.5-flash-lite` REST API).
+- Enforces 1.5s rate limit guard and structured JSON array output schema.
+- Client (`app/spell/page.jsx`) debounces calls by 600ms. Failed/rate-limited calls (429/500) do NOT block typing or erase existing suggestions.
+
+### Settings, Analytics, Help, & Navigation
+- **Settings**: Voice selection dropdown (Web Speech API), repeat count (`1x`, `2x`, `3x`, `"Until dismissed"` / `"loop"`), eyebrow shortcut toggle.
+- **Profile & Analytics (`/profile`)**: Real-time tracked speech metrics (`lib/analytics.js`): phrase count, top categories, timestamped session history, clear history action.
+- **Help Modal (`HelpModal.jsx`)**: Comprehensive guidance modal for app controls and scanning workflows.
+- **Mobile Navigation (<900px)**:
+  - Header displays Logo + Hamburger button.
+  - Unmounted drawer slides in from right, freezing scanner auto-advance (`isPaused = true`).
+  - Sequential drawer closure (sidebar closes first before opening target modals).
+
+### Known Remaining Items & Technical Notes
+- **Dwell Ring (`ScanRing.jsx`)**: Currently renders a static CSS highlight ring (`.scan-ring`). An animated SVG circular progress ring visualizing live elapsed dwell time during scanning intervals is not yet integrated.
+- **Typography & Contrast**: Design tokens (`styles/tokens.css`) use Instrument Serif (`--serif`) and Inter (`--sans`) with minimum 4.5:1 text contrast ratio.
+
+---
+
 ## Project Memory Maintenance
 
 - `.agents/MEMORY.md` contains the full project context, architecture, key features, and decisions for Aloud.

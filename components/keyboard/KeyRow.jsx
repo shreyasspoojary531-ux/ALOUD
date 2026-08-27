@@ -47,6 +47,8 @@ export default function KeyRow({
     }
   };
 
+  const totalCols = row.cols || row.keys.reduce((acc, k) => acc + (k.colSpan || 1), 0);
+
   return (
     <div
       className={`keyboard-row ${active ? "active" : ""} ${opened ? "opened" : ""}`}
@@ -57,7 +59,10 @@ export default function KeyRow({
       }}
     >
       <div className="row-label">{row.label}</div>
-      <div className="row-cells">
+      <div
+        className="row-cells"
+        style={{ gridTemplateColumns: `repeat(${totalCols}, 1fr)` }}
+      >
         {row.keys.map((key, i) => {
           const isKeyActive = opened && i === keyActive;
           const isKeySelected = opened && i === selectedIndex;
