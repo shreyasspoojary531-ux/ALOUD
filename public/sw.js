@@ -1,23 +1,27 @@
-const CACHE_NAME = "aloud-offline-v1";
+const CACHE_NAME = "aloud-offline-v2";
 const OFFLINE_URLS = [
   "/",
   "/home",
   "/spell",
   "/setup",
   "/profile",
+  "/offline.html",
+  "/styles/globals.css",
+  "/styles/tokens.css",
+  "/manifest.json",
 ];
 
-// Install: Cache core application pages
+// Install: Force caching of offline app shell and offline page immediately
 self.addEventListener("install", (event) => {
   event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => {
-      return cache.addAll(OFFLINE_URLS).catch(() => {});
+    caches.open(CACHE_NAME).then(async (cache) => {
+      await cache.addAll(OFFLINE_URLS).catch(() => {});
     })
   );
   self.skipWaiting();
 });
 
-// Activate: Clean up old caches if any
+// Activate: Immediately claim control of all open windows
 self.addEventListener("activate", (event) => {
   event.waitUntil(
     caches.keys().then((keys) => {
@@ -33,14 +37,15 @@ self.addEventListener("activate", (event) => {
   self.clients.claim();
 });
 
-// Fetch: Serve from cache when offline, fallback gracefully
+// Fetch: Intercept all requests to prevent Chrome Dino offline page on reload
 self.addEventListener("fetch", (event) => {
-  const url = new URL(event.request.url);
+  const request = event.request;
+  const url = new URL(request.url);
 
-  // Handle Gemini AI suggestion API requests offline: return empty JSON array
+  // Gemini AI suggestion route: return empty JSON array offline
   if (url.pathname.startsWith("/api/suggest")) {
     event.respondWith(
-      fetch(event.request).catch(() => {
+      fetch(request).catch(() => {
         return new Response(JSON.stringify({ suggestions: [] }), {
           headers: { "Content-Type": "application/json" },
         });
@@ -49,70 +54,50 @@ self.addEventListener("fetch", (event) => {
     return;
   }
 
-  // Network-first with Cache-fallback for HTML/JS/CSS page requests
-  if (event.request.mode === "navigate" || event.request.destination === "document") {
+  // Navigation / HTML requests: Network first -> Cache -> /offline.html
+  if (request.mode === "navigate" || request.destination === "document") {
     event.respondWith(
-      fetch(event.request)
+      fetch(request)
         .then((response) => {
-          // Clone and update cache with latest online version
-          const resClone = response.clone();
-          caches.open(CACHE_NAME).then((cache) => cache.put(event.request, resClone));
+          if (response && response.status === 200) {
+            const resClone = response.clone();
+            caches.open(CACHE_NAME).then((cache) => cache.put(request, resClone));
+          }
           return response;
         })
         .catch(async () => {
-          // Device is offline: serve from cache if available
-          const cachedResponse = await caches.match(event.request);
-          if (cachedResponse) return cachedResponse;
+          // If offline: try matching exact request from cache
+          const cachedMatch = await caches.match(request);
+          if (cachedMatch) return cachedMatch;
 
-          const homeCache = await caches.match("/home");
-          if (homeCache) return homeCache;
+          // Try home page cache
+          const homeMatch = await caches.match("/home");
+          if (homeMatch) return homeMatch;
 
-          const rootCache = await caches.match("/");
-          if (rootCache) return rootCache;
+          // Serve standalone offline HTML page (Zero Chrome Dino page!)
+          const offlinePage = await caches.match("/offline.html");
+          if (offlinePage) return offlinePage;
 
-          // Ultimate offline HTML fallback if nothing cached
-          return new Response(
-            `<!DOCTYPE html>
-            <html lang="en">
-            <head>
-              <meta charset="UTF-8" />
-              <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-              <title>Aloud — Offline</title>
-              <style>
-                body { font-family: sans-serif; background: #f7f1e6; color: #28221b; display: flex; align-items: center; justify-content: center; height: 100vh; margin: 0; text-align: center; }
-                .card { background: #fffaf1; padding: 32px; border-radius: 20px; box-shadow: 0 14px 22px rgba(52, 40, 23, 0.13); max-width: 440px; border-top: 4px solid #cf5700; }
-                h1 { color: #cf5700; font-family: Georgia, serif; margin-top: 0; }
-                button { background: #cf5700; color: #fff; border: none; padding: 12px 24px; border-radius: 999px; font-weight: bold; cursor: pointer; margin-top: 16px; font-size: 1rem; }
-              </style>
-            </head>
-            <body>
-              <div class="card">
-                <h1>You're Offline</h1>
-                <p>Aloud is ready to run offline. Please reload when internet is restored or try again.</p>
-                <button onclick="window.location.reload()">Retry Connection</button>
-              </div>
-            </body>
-            </html>`,
-            { headers: { "Content-Type": "text/html" } }
-          );
+          return new Response("Offline", { status: 503, headers: { "Content-Type": "text/plain" } });
         })
     );
     return;
   }
 
-  // Cache-first for static assets (images, fonts, scripts)
+  // Static assets (CSS, JS, Fonts, Images): Cache first -> Network fallback
   event.respondWith(
-    caches.match(event.request).then((cached) => {
-      return (
-        cached ||
-        fetch(event.request).then((response) => {
-          if (response.status === 200) {
-            const resClone = response.clone();
-            caches.open(CACHE_NAME).then((cache) => cache.put(event.request, resClone));
-          }
-          return response;
-        })
-      );
+    caches.match(request).then((cachedResponse) => {
+      if (cachedResponse) return cachedResponse;
+
+      return fetch(request).then((networkResponse) => {
+        if (networkResponse && networkResponse.status === 200) {
+          const resClone = networkResponse.clone();
+          caches.open(CACHE_NAME).then((cache) => cache.put(request, resClone));
+        }
+        return networkResponse;
+      }).catch(() => {
+        return new Response("", { status: 404 });
+      });
     })
   );
 });

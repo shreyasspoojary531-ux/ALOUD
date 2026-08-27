@@ -159,23 +159,21 @@ export default function TopBar({ onHelp, spell = false, backTo = null }) {
     setMobileMenuOpen((prev) => !prev);
   };
 
-  // Mobile navigation drawer JSX
-  const mobileDrawerJSX = isMobile && mobileMenuOpen ? (
+  // Reusable Mobile Drawer component (ONLY rendered in DOM when isMobile AND mobileMenuOpen are true)
+  const mobileDrawerJSX = (isMobile && mobileMenuOpen) ? (
     <>
       <div
         className="mobile-drawer-backdrop"
         onClick={() => setMobileMenuOpen(false)}
         aria-hidden="true"
       />
-      <div className="mobile-drawer" role="dialog" aria-label="Navigation Menu">
+
+      <aside className="mobile-drawer-panel open" aria-label="Navigation menu">
         <div className="mobile-drawer-header">
-          <Link href="/" className="brand" onClick={() => setMobileMenuOpen(false)}>
-            <i />
-            Aloud
-          </Link>
+          <span className="drawer-title">Menu</span>
           <button
             type="button"
-            className="mobile-drawer-close"
+            className="help-close-btn"
             onClick={() => setMobileMenuOpen(false)}
             aria-label="Close menu"
           >
@@ -183,13 +181,16 @@ export default function TopBar({ onHelp, spell = false, backTo = null }) {
           </button>
         </div>
 
-        <nav className="mobile-drawer-nav">
-          <CustomModeSelect />
+        <div className="mobile-drawer-content">
+          <div className="drawer-item">
+            <span className="drawer-item-label">INPUT MODE</span>
+            <CustomModeSelect />
+          </div>
 
           {onHelp && (
             <button
               type="button"
-              className="mobile-drawer-item"
+              className="pill drawer-pill-btn"
               onClick={handleMobileHelp}
             >
               ◯&nbsp; Help
@@ -198,21 +199,22 @@ export default function TopBar({ onHelp, spell = false, backTo = null }) {
 
           <button
             type="button"
-            className="mobile-drawer-item"
+            className={`pill drawer-pill-btn ${settingsOpen ? "active" : ""}`}
             onClick={handleMobileSettings}
+            aria-label="Settings"
           >
             ⚙&nbsp; Settings
           </button>
 
-          <Link
+          <a
             href="/profile"
-            className="mobile-drawer-item"
+            className="pill drawer-pill-btn profile-drawer-btn"
             onClick={handleMobileProfile}
           >
-            👤&nbsp; Profile & Analytics
-          </Link>
-        </nav>
-      </div>
+            <ProfileIcon /> Profile & Analytics
+          </a>
+        </div>
+      </aside>
     </>
   ) : null;
 
