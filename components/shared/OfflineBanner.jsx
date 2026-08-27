@@ -12,8 +12,13 @@ export default function OfflineBanner() {
   const [dismissed, setDismissed] = useState(false);
 
   useEffect(() => {
-    // Check initial state after hydration
+    // Check initial online/offline state after hydration
     setIsOffline(!navigator.onLine);
+
+    // Register Service Worker to cache Aloud offline and prevent Chrome Dino page on reload
+    if (typeof window !== "undefined" && "serviceWorker" in navigator) {
+      navigator.serviceWorker.register("/sw.js").catch(() => {});
+    }
 
     const goOffline = () => {
       setIsOffline(true);
