@@ -2958,3 +2958,155 @@ a:focus-visible {
   background: var(--orange-pale);
   border-color: var(--orange);
 }
+
+/* -------------------------------------------------------------------------- */
+/* Offline Banner — non-blocking connectivity indicator                       */
+/* -------------------------------------------------------------------------- */
+
+.offline-banner {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 9999;
+  display: flex;
+  justify-content: center;
+  padding: var(--sp2) var(--sp4);
+  animation: offline-slide-in var(--dur-normal) var(--ease-out-smooth) both;
+}
+
+@keyframes offline-slide-in {
+  from {
+    transform: translateY(-100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.offline-banner-inner {
+  display: flex;
+  align-items: center;
+  gap: var(--sp3);
+  max-width: var(--content);
+  width: 100%;
+  padding: var(--sp3) var(--sp4);
+  background: var(--alert);
+  border: 2px solid var(--alert-ink);
+  border-radius: var(--r-sm);
+  box-shadow: var(--shadow);
+}
+
+.offline-icon {
+  flex-shrink: 0;
+  color: var(--alert-ink);
+}
+
+.offline-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1;
+  min-width: 0;
+}
+
+.offline-text strong {
+  font-family: var(--sans);
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--alert-ink);
+}
+
+.offline-text span {
+  font-family: var(--sans);
+  font-size: 0.82rem;
+  color: var(--ink);
+  opacity: 0.85;
+}
+
+.offline-dismiss-btn {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border: none;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--alert-ink);
+  font-size: 1rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background var(--dur-fast) ease;
+}
+
+.offline-dismiss-btn:hover {
+  background: rgba(184, 59, 0, 0.12);
+}
+
+/* -------------------------------------------------------------------------- */
+/* Application & Global Error Boundary Styles                                 */
+/* -------------------------------------------------------------------------- */
+
+.alert-eyebrow {
+  color: var(--alert-ink) !important;
+}
+
+.error-card {
+  border-top: 4px solid var(--alert-ink);
+}
+
+.error-icon-wrap {
+  width: 56px;
+  height: 56px;
+  margin: var(--sp2) auto var(--sp3);
+  border-radius: 50%;
+  background: var(--alert);
+  color: var(--alert-ink);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.75rem;
+  font-weight: 700;
+}
+
+.error-details {
+  margin: var(--sp3) 0 var(--sp4);
+  text-align: left;
+  background: var(--cream);
+  border: 1px solid var(--line);
+  border-radius: var(--r-sm);
+  padding: var(--sp2) var(--sp3);
+}
+
+.error-summary {
+  font-family: var(--sans);
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--muted);
+  cursor: pointer;
+  outline: none;
+}
+
+.error-summary:hover {
+  color: var(--ink);
+}
+
+.error-code-block {
+  margin-top: var(--sp2);
+  padding: var(--sp2);
+  background: var(--paper);
+  border-radius: 6px;
+  font-family: monospace;
+  font-size: 0.8rem;
+  color: var(--alert-ink);
+  white-space: pre-wrap;
+  word-break: break-word;
+  max-height: 140px;
+  overflow-y: auto;
+}
+
+
