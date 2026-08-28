@@ -1041,6 +1041,150 @@ a:focus-visible {
   transition: background var(--dur-fast) ease;
 }
 
+/* Quick Settings Popover "More Settings" Button */
+.settings-more-btn {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--sp3) var(--sp4);
+  background: var(--paper);
+  border: var(--ring-width) solid var(--line);
+  border-radius: var(--r-sm);
+  color: var(--orange-dark);
+  font-weight: 700;
+  font-size: 14px;
+  text-decoration: none;
+  transition: all var(--dur-fast) ease;
+}
+
+.settings-more-btn:hover {
+  background: var(--orange-pale);
+  border-color: var(--orange);
+  color: var(--orange);
+}
+
+/* Dedicated /settings Page Layout */
+.settings-page-container {
+  width: 100%;
+  max-width: 680px;
+  margin: 0 auto;
+  padding: var(--sp5) var(--sp4) 100px;
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp5);
+}
+
+.settings-page-header {
+  text-align: center;
+}
+
+.settings-page-title {
+  font: 2.2rem var(--serif);
+  margin: 0;
+  color: var(--ink);
+}
+
+.settings-page-subtitle {
+  font-size: 14px;
+  color: var(--muted);
+  margin: var(--sp1) 0 0;
+}
+
+.settings-page-grid {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp4);
+}
+
+.settings-card {
+  background: var(--paper);
+  border: var(--ring-width) solid var(--line);
+  border-radius: var(--r);
+  padding: var(--sp4);
+  box-shadow: var(--elevation-card-hover);
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp2);
+  transition: border-color var(--dur-fast) ease, box-shadow var(--dur-fast) ease;
+}
+
+.settings-card.scannable-active-card {
+  outline: var(--ring-width) solid var(--orange);
+  outline-offset: 2px;
+}
+
+/* Telegram Caregiver Layout on /settings page */
+.telegram-link-wrap {
+  margin-top: var(--sp2);
+}
+
+.telegram-link-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp2);
+  font-weight: 600;
+  font-size: 14px;
+  text-decoration: none;
+}
+
+.caregiver-info-box {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--r-sm);
+  padding: var(--sp3);
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp3);
+  margin-top: var(--sp2);
+}
+
+.caregiver-detail-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-bottom: var(--sp2);
+  border-bottom: 1px solid var(--line);
+}
+
+.caregiver-detail-row:last-of-type {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+.caregiver-detail-label {
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--muted);
+}
+
+.caregiver-detail-value {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.caregiver-detail-value.code-font {
+  font-family: monospace;
+  background: rgba(52, 40, 23, 0.06);
+  padding: 2px 6px;
+  border-radius: 4px;
+  color: var(--orange-dark);
+}
+
+.caregiver-action-row {
+  display: flex;
+  gap: var(--sp2);
+  flex-wrap: wrap;
+}
+
+.select-arrow {
+  font-size: 12px;
+  color: var(--orange-dark);
+  font-weight: 700;
+}
+
 /* Telegram Caregiver Alerts styling */
 .telegram-link {
   display: inline-flex;
@@ -1118,6 +1262,7 @@ a:focus-visible {
   color: #1d4ed8;
   border: 1px solid rgba(59, 130, 246, 0.3);
 }
+
 
 
 .voice-item:hover {
