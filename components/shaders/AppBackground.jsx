@@ -31,7 +31,6 @@ export default function AppBackground() {
         zIndex: -1,
         pointerEvents: "none",
         overflow: "hidden",
-        opacity: 0.20,
         background: "transparent",
       }}
     >

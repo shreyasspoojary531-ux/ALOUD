@@ -56,7 +56,7 @@ function createStreakLayer(group, settings, opacity) {
     vertexColors: true,
     transparent: true,
     opacity: opacity * settings.opacityScale,
-    blending: THREE.AdditiveBlending,
+    blending: THREE.NormalBlending,
   });
 
   const streaks = new THREE.LineSegments(geometry, material);
@@ -93,7 +93,7 @@ function createTileLayer(group, opacity) {
     transparent: true,
     opacity,
     side: THREE.DoubleSide,
-    blending: THREE.AdditiveBlending,
+    blending: THREE.NormalBlending,
   });
   const tiles = [];
   let lastOpacity = opacity;

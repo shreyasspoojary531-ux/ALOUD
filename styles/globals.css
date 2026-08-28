@@ -16,18 +16,17 @@ body {
   font-family: var(--sans);
 }
 
-/* Cream radial-gradient layer — sits above the warp field (z:-1) but
-   behind page content (z:auto). Semi-transparent so warp streaks bleed through. */
+/* Cream radial-gradient base layer — sits at z-index: -2 behind the warp field (z: -1) */
 .page-bg-layer {
   position: fixed;
   inset: 0;
-  z-index: 0;
+  z-index: -2;
   pointer-events: none;
   background: radial-gradient(
     circle at 50% 43%,
-    rgba(255, 253, 247, 0.85) 0,
-    rgba(252, 247, 237, 0.85) 45%,
-    rgba(242, 234, 220, 0.85) 100%
+    #fffdf7 0,
+    var(--cream) 45%,
+    #f2eadc 100%
   );
 }
 
