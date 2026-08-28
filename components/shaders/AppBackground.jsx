@@ -1,5 +1,6 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import { usePathname } from "next/navigation";
 import { WarpFieldBackground } from "./warp-field/WarpFieldBackground";
 
@@ -8,9 +9,15 @@ const ALLOWED_PATHS = ["/", "/setup"];
 
 export default function AppBackground() {
   const pathname = usePathname();
+  const [mounted, setMounted] = useState(false);
 
-  // During initial hydration, pathname may be null — allow initial mount for splash
-  const isAllowed = !pathname || ALLOWED_PATHS.includes(pathname);
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  if (!mounted) return null;
+
+  const isAllowed = ALLOWED_PATHS.includes(pathname);
   if (!isAllowed) return null;
 
   return (
@@ -31,7 +38,7 @@ export default function AppBackground() {
       <WarpFieldBackground
         speed={10}
         streakOpacity={0.70}
-        tileOpacity={0.20}
+        tileOpacity={0.30}
         fov={75}
         cameraZ={0}
         centerX={0}
@@ -43,3 +50,4 @@ export default function AppBackground() {
     </div>
   );
 }
+
