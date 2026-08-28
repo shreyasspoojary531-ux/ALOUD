@@ -37,7 +37,7 @@ export default function AppBackground() {
       <WarpFieldBackground
         speed={10}
         streakOpacity={0.20}
-        tileOpacity={0.10}
+        tileOpacity={0.05}
         fov={50}
         cameraZ={0}
         centerX={0}
