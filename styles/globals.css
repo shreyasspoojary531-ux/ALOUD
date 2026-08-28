@@ -940,6 +940,8 @@ a:focus-visible {
   top: calc(100% + 10px);
   right: 0;
   width: min(90vw, 360px);
+  max-height: 80vh;
+  overflow-y: auto;
   background: linear-gradient(160deg, #ffffff 0%, #fffdf8 60%, #fdf5e7 100%);
   border: var(--ring-width) solid var(--line);
   border-radius: var(--r);
@@ -950,6 +952,10 @@ a:focus-visible {
   flex-direction: column;
   gap: var(--sp4);
   animation: modeDropdownSlide var(--dur-fast) var(--ease-spring);
+
+  /* Styled scrollbar for settings panel */
+  scrollbar-width: thin;
+  scrollbar-color: var(--orange-dark) var(--line);
 }
 
 .settings-popover-header {
