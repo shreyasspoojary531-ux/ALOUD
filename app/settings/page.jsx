@@ -1,13 +1,10 @@
 "use client";
-import { useCallback, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import TopBar from "../../components/shared/TopBar";
 import Button from "../../components/shared/Button";
-import CameraPill from "../../components/camera/CameraPill";
 import CustomPhrasesModal from "../../components/shared/CustomPhrasesModal";
-import { useEyeControl } from "../../components/shared/EyeControlContext";
 import { useSettings } from "../../components/shared/SettingsContext";
-import useScanner from "../../components/scanner/useScanner";
 
 function ProfileIcon() {
   return (
@@ -29,7 +26,6 @@ function ProfileIcon() {
 }
 
 export default function SettingsPage() {
-  const { eyeOn } = useEyeControl();
   const {
     eyebrowShortcut,
     setEyebrowShortcut,
@@ -137,40 +133,18 @@ export default function SettingsPage() {
     setFindError(null);
   };
 
-  // Define scan items for page-level scanning navigation
-  const scanItems = [
-    { label: "Telegram Bot Link", action: () => window.open("https://t.me/Alouddd_bot?start=setup", "_blank") },
-    caregiverChatId
-      ? { label: "Send Test Alert", action: handleSendTestAlert }
-      : { label: "Find Caregiver", action: handleFindCaregiver },
-    caregiverChatId
-      ? { label: "Clear Caregiver", action: handleClearCaregiver }
-      : null,
-    { label: eyebrowShortcut ? "Disable Eyebrow Shortcut" : "Enable Eyebrow Shortcut", action: () => setEyebrowShortcut(!eyebrowShortcut) },
-    { label: "Manage Custom Phrases", action: () => setCustomPhrasesOpen(true) },
-    { label: adaptiveDwellEnabled ? "Disable Adaptive Speed" : "Enable Adaptive Speed", action: () => setAdaptiveDwellEnabled(!adaptiveDwellEnabled) },
-    { label: "View Profile & Analytics", action: () => location.assign("/profile") },
-  ].filter(Boolean);
-
-  const handleScanSelect = useCallback((item) => {
-    item?.action?.();
-  }, []);
-
-  const { active, select } = useScanner(scanItems, handleScanSelect, adaptedDwellDuration);
-
   return (
     <main className="app">
-      <TopBar backTo="/home" />
+      <TopBar backTo="/home" title="Settings" />
 
       <section className="settings-page-container center">
         <div className="settings-page-header">
-          <h1 className="settings-page-title">Settings</h1>
           <p className="settings-page-subtitle">Configure caregiver alerts, gestures, and preferences</p>
         </div>
 
         <div className="settings-page-grid">
           {/* Card 1 — Caregiver Alerts (Telegram) */}
-          <div className={`settings-card ${active === 0 || active === 1 || (caregiverChatId && active === 2) ? "scannable-active-card" : ""}`}>
+          <div className="settings-card">
             <span className="settings-label">CAREGIVER ALERTS (TELEGRAM)</span>
             <p className="settings-hint" style={{ marginTop: "4px" }}>
               Send instant mobile notifications to a caregiver via Telegram when you trigger <strong>"call for help"</strong>.
@@ -181,11 +155,7 @@ export default function SettingsPage() {
                 href="https://t.me/Alouddd_bot?start=setup"
                 target="_blank"
                 rel="noopener noreferrer"
-                className={`button secondary telegram-link-btn ${active === 0 ? "active" : ""}`}
-                onClick={(e) => {
-                  if (eyeOn) e.preventDefault();
-                  select(0, { isPointer: true });
-                }}
+                className="button secondary telegram-link-btn"
               >
                 💬 Open @Alouddd_bot on Telegram
               </a>
@@ -208,16 +178,16 @@ export default function SettingsPage() {
 
                 <div className="caregiver-action-row">
                   <Button
-                    className={`secondary ${active === 1 ? "active" : ""}`}
-                    onSelect={() => select(1)}
+                    className="secondary"
+                    onSelect={handleSendTestAlert}
                     disabled={testStatus?.loading}
                   >
                     {testStatus?.loading ? "Sending..." : "🔔 Send test alert"}
                   </Button>
 
                   <Button
-                    className={`dark ${active === 2 ? "active" : ""}`}
-                    onSelect={() => select(2)}
+                    className="dark"
+                    onSelect={handleClearCaregiver}
                   >
                     Clear caregiver
                   </Button>
@@ -241,8 +211,8 @@ export default function SettingsPage() {
               /* Setup / Find Caregiver Layout */
               <div className="caregiver-info-box">
                 <Button
-                  className={`secondary ${active === 1 ? "active" : ""}`}
-                  onSelect={() => select(1)}
+                  className="secondary"
+                  onSelect={handleFindCaregiver}
                   disabled={findLoading}
                 >
                   {findLoading ? "Checking Telegram updates..." : "🔍 Find caregiver"}
@@ -290,7 +260,7 @@ export default function SettingsPage() {
           </div>
 
           {/* Card 2 — Eyebrow Shortcut to Suggestions */}
-          <div className={`settings-card ${active === (caregiverChatId ? 3 : 2) ? "scannable-active-card" : ""}`}>
+          <div className="settings-card">
             <span className="settings-label">EYEBROW SHORTCUT TO SUGGESTIONS</span>
             <div className="repeat-control" role="group" aria-label="Eyebrow shortcut to suggestions" style={{ marginTop: "8px" }}>
               <button
@@ -316,11 +286,11 @@ export default function SettingsPage() {
           </div>
 
           {/* Card 3 — Custom Phrases */}
-          <div className={`settings-card ${active === (caregiverChatId ? 4 : 3) ? "scannable-active-card" : ""}`}>
+          <div className="settings-card">
             <span className="settings-label">CUSTOM PHRASES</span>
             <div style={{ marginTop: "8px" }}>
               <Button
-                className={`secondary ${active === (caregiverChatId ? 4 : 3) ? "active" : ""}`}
+                className="secondary"
                 onSelect={() => setCustomPhrasesOpen(true)}
               >
                 ➕&nbsp; Manage custom phrases
@@ -332,7 +302,7 @@ export default function SettingsPage() {
           </div>
 
           {/* Card 4 — Adaptive Scan Speed */}
-          <div className={`settings-card ${active === (caregiverChatId ? 5 : 4) ? "scannable-active-card" : ""}`}>
+          <div className="settings-card">
             <span className="settings-label">ADAPTIVE SCAN SPEED</span>
             <div className="repeat-control" role="group" aria-label="Adaptive scan speed" style={{ marginTop: "8px" }}>
               <button
@@ -370,7 +340,7 @@ export default function SettingsPage() {
           </div>
 
           {/* Card 5 — Profile & Analytics Link */}
-          <div className={`settings-card ${active === (caregiverChatId ? 6 : 5) ? "scannable-active-card" : ""}`}>
+          <div className="settings-card">
             <span className="settings-label">ACCOUNT & ANALYTICS</span>
             <Link
               href="/profile"
@@ -391,8 +361,6 @@ export default function SettingsPage() {
           </div>
         </div>
       </section>
-
-      <CameraPill enabled={eyeOn} />
 
       <CustomPhrasesModal
         isOpen={customPhrasesOpen}

@@ -89,7 +89,7 @@ function ProfileIcon() {
   );
 }
 
-export default function TopBar({ onHelp, spell = false, backTo = null }) {
+export default function TopBar({ onHelp, spell = false, backTo = null, title = null }) {
   const router = useRouter();
   const isMobile = useIsMobile(900);
   const { setIsPaused } = useEyeControl();
@@ -206,13 +206,14 @@ export default function TopBar({ onHelp, spell = false, backTo = null }) {
             ⚙&nbsp; Settings
           </button>
 
-          <a
-            href="/profile"
-            className="pill drawer-pill-btn profile-drawer-btn"
+          <button
+            type="button"
+            className="pill drawer-pill-btn"
             onClick={handleMobileProfile}
+            aria-label="Profile & Analytics"
           >
             <ProfileIcon /> Profile & Analytics
-          </a>
+          </button>
         </div>
       </aside>
     </>
@@ -243,7 +244,7 @@ export default function TopBar({ onHelp, spell = false, backTo = null }) {
     </>
   );
 
-  // Subpages with back button (Spell or Profile)
+  // Subpages with back button (Spell, Profile, Settings)
   if (backTo || spell) {
     return (
       <header className="spellbar">
@@ -251,7 +252,7 @@ export default function TopBar({ onHelp, spell = false, backTo = null }) {
           <BackArrowIcon />
         </Link>
 
-        <h1>{spell ? "Spell it out" : "Profile & Analytics"}</h1>
+        <h1>{title || (spell ? "Spell it out" : "Profile & Analytics")}</h1>
 
         <div className="spellbar-right">
           {spell && !isMobile && (
