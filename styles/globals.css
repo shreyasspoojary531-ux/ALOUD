@@ -1063,15 +1063,15 @@ a:focus-visible {
   color: var(--orange);
 }
 
-/* Dedicated /settings Page Layout */
+/* Dedicated /settings Page Layout with Bento Grid */
 .settings-page-container {
   width: 100%;
-  max-width: 680px;
+  max-width: 840px;
   margin: 0 auto;
   padding: var(--sp5) var(--sp4) 100px;
   display: flex;
   flex-direction: column;
-  gap: var(--sp5);
+  gap: var(--sp4);
 }
 
 .settings-page-header {
@@ -1087,12 +1087,12 @@ a:focus-visible {
 .settings-page-subtitle {
   font-size: 14px;
   color: var(--muted);
-  margin: var(--sp1) 0 0;
+  margin: 0;
 }
 
-.settings-page-grid {
-  display: flex;
-  flex-direction: column;
+.settings-bento-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
   gap: var(--sp4);
 }
 
@@ -1104,8 +1104,28 @@ a:focus-visible {
   box-shadow: var(--elevation-card-hover);
   display: flex;
   flex-direction: column;
-  gap: var(--sp2);
-  transition: border-color var(--dur-fast) ease, box-shadow var(--dur-fast) ease;
+  justify-content: space-between;
+  gap: var(--sp3);
+  transition: transform var(--dur-fast) ease, box-shadow var(--dur-fast) ease, border-color var(--dur-fast) ease;
+}
+
+.settings-card:hover {
+  transform: translateY(-2px);
+  border-color: var(--orange-pale);
+}
+
+.settings-card.bento-hero {
+  grid-column: span 2;
+}
+
+@media (max-width: 900px) {
+  .settings-bento-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .settings-card.bento-hero {
+    grid-column: span 1;
+  }
 }
 
 .settings-card.scannable-active-card {

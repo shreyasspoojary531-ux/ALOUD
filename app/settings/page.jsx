@@ -142,9 +142,9 @@ export default function SettingsPage() {
           <p className="settings-page-subtitle">Configure caregiver alerts, gestures, and preferences</p>
         </div>
 
-        <div className="settings-page-grid">
-          {/* Card 1 — Caregiver Alerts (Telegram) */}
-          <div className="settings-card">
+        <div className="settings-bento-grid">
+          {/* Card 1 — Caregiver Alerts (Telegram) — Hero Bento Card */}
+          <div className="settings-card bento-hero">
             <span className="settings-label">CAREGIVER ALERTS (TELEGRAM)</span>
             <p className="settings-hint" style={{ marginTop: "4px" }}>
               Send instant mobile notifications to a caregiver via Telegram when you trigger <strong>"call for help"</strong>.
