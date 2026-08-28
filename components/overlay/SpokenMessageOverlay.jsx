@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import useScanner from "../scanner/useScanner";
 import { cancelSpeech, isSpeechSupported, say } from "../../lib/speech";
 import { useSettings } from "../shared/SettingsContext";
@@ -18,6 +18,7 @@ export default function SpokenMessageOverlay({
   const repeat = repeatCountProp ?? ctxRepeat ?? 1;
 
   const dismissed = useRef(false);
+  const [telegramStatus, setTelegramStatus] = useState(null);
 
   const handleDismiss = () => {
     dismissed.current = true;
@@ -59,6 +60,50 @@ export default function SpokenMessageOverlay({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [message]);
 
+  // Dispatch Telegram caregiver alert if a chat_id is configured
+  useEffect(() => {
+    if (typeof window === "undefined" || !message) return;
+
+    const chatId = localStorage.getItem("aloud_caregiver_chat_id");
+    const caregiverName = localStorage.getItem("aloud_caregiver_name") || "caregiver";
+
+    if (!chatId) {
+      setTelegramStatus({ type: "none", text: "No Telegram caregiver configured" });
+      return;
+    }
+
+    setTelegramStatus({ type: "sending", text: `Sending Telegram alert to ${caregiverName}...` });
+
+    fetch("/api/telegram/send-alert", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        chat_id: chatId,
+        message: `🚨 ALERT from Aloud: "${message}"`,
+      }),
+    })
+      .then((r) => r.json())
+      .then((data) => {
+        if (data.ok) {
+          setTelegramStatus({
+            type: "sent",
+            text: `✓ Telegram alert sent to ${caregiverName}`,
+          });
+        } else {
+          setTelegramStatus({
+            type: "failed",
+            text: `⚠️ Telegram alert failed: ${data.error}`,
+          });
+        }
+      })
+      .catch((err) => {
+        setTelegramStatus({
+          type: "failed",
+          text: `⚠️ Telegram alert failed: ${err.message || "Network error"}`,
+        });
+      });
+  }, [message]);
+
   const speechAvailable = isSpeechSupported();
 
   return (
@@ -81,6 +126,25 @@ export default function SpokenMessageOverlay({
         ) : repeat > 1 ? (
           <p className="repeat-indicator">Repeating {repeat}×</p>
         ) : null}
+        {telegramStatus && (
+          <p
+            className="speech-fallback-note"
+            style={{
+              fontWeight: 600,
+              fontSize: "13px",
+              marginTop: "4px",
+              marginBottom: "12px",
+              color:
+                telegramStatus.type === "sent"
+                  ? "#047857"
+                  : telegramStatus.type === "failed"
+                  ? "#b91c1c"
+                  : "inherit",
+            }}
+          >
+            {telegramStatus.text}
+          </p>
+        )}
         <button
           className={`button dark ${active === 0 ? "active" : ""}`}
           onClick={() => select(0)}

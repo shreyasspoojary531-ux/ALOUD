@@ -68,6 +68,102 @@ export default function SettingsPopover({ isOpen, onClose, onOpenCustomPhrases }
   const popoverRef = useRef(null);
   const previewRef = useRef(null);
 
+  // Caregiver Telegram alert state stored in localStorage
+  const [caregiverChatId, setCaregiverChatId] = useState("");
+  const [caregiverName, setCaregiverName] = useState("");
+  const [findLoading, setFindLoading] = useState(false);
+  const [findError, setFindError] = useState(null);
+  const [foundSenders, setFoundSenders] = useState(null);
+  const [testStatus, setTestStatus] = useState(null);
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      setCaregiverChatId(localStorage.getItem("aloud_caregiver_chat_id") || "");
+      setCaregiverName(localStorage.getItem("aloud_caregiver_name") || "");
+    }
+  }, [isOpen]);
+
+  const handleFindCaregiver = async () => {
+    setFindLoading(true);
+    setFindError(null);
+    setFoundSenders(null);
+
+    try {
+      const res = await fetch("/api/telegram/get-chat-id");
+      const data = await res.json();
+      setFindLoading(false);
+      if (data.ok) {
+        setFoundSenders(data.senders || []);
+      } else {
+        setFindError(data.error || "Failed to fetch updates from Telegram.");
+      }
+    } catch (err) {
+      setFindLoading(false);
+      setFindError(err.message || "Network error while looking for caregiver.");
+    }
+  };
+
+  const handleSelectCaregiver = (sender) => {
+    if (typeof window !== "undefined") {
+      localStorage.setItem("aloud_caregiver_chat_id", sender.chat_id);
+      localStorage.setItem("aloud_caregiver_name", sender.name);
+    }
+    setCaregiverChatId(sender.chat_id);
+    setCaregiverName(sender.name);
+    setFoundSenders(null);
+    setFindError(null);
+  };
+
+  const handleSendTestAlert = async () => {
+    if (!caregiverChatId) return;
+    setTestStatus({ loading: true, success: null, message: "Sending test alert to Telegram..." });
+
+    try {
+      const res = await fetch("/api/telegram/send-alert", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          chat_id: caregiverChatId,
+          message: "🔔 Test Alert from Aloud: Caregiver notification setup successful!",
+        }),
+      });
+
+      const data = await res.json();
+
+      if (data.ok) {
+        setTestStatus({
+          loading: false,
+          success: true,
+          message: "✓ Test alert sent successfully to Telegram!",
+        });
+      } else {
+        setTestStatus({
+          loading: false,
+          success: false,
+          message: `✕ Telegram error: ${data.error}`,
+        });
+      }
+    } catch (err) {
+      setTestStatus({
+        loading: false,
+        success: false,
+        message: `✕ Network error: ${err.message}`,
+      });
+    }
+  };
+
+  const handleClearCaregiver = () => {
+    if (typeof window !== "undefined") {
+      localStorage.removeItem("aloud_caregiver_chat_id");
+      localStorage.removeItem("aloud_caregiver_name");
+    }
+    setCaregiverChatId("");
+    setCaregiverName("");
+    setFoundSenders(null);
+    setTestStatus(null);
+    setFindError(null);
+  };
+
   // Close when clicking outside or pressing Escape
   useEffect(() => {
     if (!isOpen) return;
@@ -275,7 +371,130 @@ export default function SettingsPopover({ isOpen, onClose, onOpenCustomPhrases }
         )}
       </section>
 
-      {/* Setting 3 — Profile & Analytics */}
+      {/* Setting 6 — Caregiver Alerts (Telegram) */}
+      <section className="settings-section">
+        <p className="settings-label">Caregiver Alerts (Telegram)</p>
+        <div className="telegram-card">
+          <p className="settings-hint">
+            Send instant mobile alerts to a caregiver via Telegram when you trigger <strong>"call for help"</strong>.
+          </p>
+
+          <div>
+            <a
+              href="https://t.me/Alouddd_bot?start=setup"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="telegram-link"
+            >
+              💬 Open @Alouddd_bot on Telegram
+            </a>
+            <p className="settings-hint" style={{ marginTop: "4px" }}>
+              or search <strong>@Alouddd_bot</strong> on Telegram and send it any message.
+            </p>
+          </div>
+
+          {/* Configured Caregiver View */}
+          {caregiverChatId ? (
+            <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+              <div style={{ fontSize: "13px", fontWeight: "600", color: "var(--ink)" }}>
+                Active Caregiver: <span style={{ color: "var(--orange-dark)" }}>{caregiverName}</span>
+                <span style={{ fontSize: "11px", color: "var(--muted)", display: "block" }}>
+                  Chat ID: {caregiverChatId}
+                </span>
+              </div>
+
+              <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
+                <button
+                  type="button"
+                  className="button secondary"
+                  style={{ minHeight: "36px", padding: "0 12px", fontSize: "13px" }}
+                  onClick={handleSendTestAlert}
+                  disabled={testStatus?.loading}
+                >
+                  {testStatus?.loading ? "Sending..." : "🔔 Send test alert"}
+                </button>
+                <button
+                  type="button"
+                  className="reset-dwell-btn"
+                  style={{ margin: 0 }}
+                  onClick={handleClearCaregiver}
+                >
+                  Clear caregiver
+                </button>
+              </div>
+
+              {testStatus && (
+                <div
+                  className={`telegram-status-pill ${
+                    testStatus.success === true
+                      ? "success"
+                      : testStatus.success === false
+                      ? "error"
+                      : "info"
+                  }`}
+                >
+                  {testStatus.message}
+                </div>
+              )}
+            </div>
+          ) : (
+            /* Setup / Find Caregiver View */
+            <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+              <button
+                type="button"
+                className="button secondary"
+                style={{ minHeight: "40px", padding: "0 14px", fontSize: "13px" }}
+                onClick={handleFindCaregiver}
+                disabled={findLoading}
+              >
+                {findLoading ? "Checking Telegram updates..." : "🔍 Find caregiver"}
+              </button>
+
+              {findError && (
+                <div className="telegram-status-pill error">
+                  {findError}
+                </div>
+              )}
+
+              {foundSenders !== null && (
+                <div className="telegram-senders-list">
+                  {foundSenders.length === 0 ? (
+                    <p className="settings-hint">
+                      No one has messaged the bot yet. Open Telegram, send a message to <strong>@Alouddd_bot</strong>, and tap <strong>Find caregiver</strong> again.
+                    </p>
+                  ) : (
+                    <>
+                      <p className="settings-hint">Select your caregiver below:</p>
+                      {foundSenders.map((sender) => (
+                        <button
+                          key={sender.chat_id}
+                          type="button"
+                          className="telegram-sender-btn"
+                          onClick={() => handleSelectCaregiver(sender)}
+                        >
+                          <div>
+                            <strong>{sender.name}</strong>
+                            {sender.username && (
+                              <span style={{ fontSize: "11px", color: "var(--muted)", marginLeft: "6px" }}>
+                                {sender.username}
+                              </span>
+                            )}
+                          </div>
+                          <span style={{ fontSize: "11px", color: "var(--orange-dark)", fontWeight: "bold" }}>
+                            Select →
+                          </span>
+                        </button>
+                      ))}
+                    </>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      </section>
+
+      {/* Setting 7 — Profile & Analytics */}
       <section className="settings-section">
         <p className="settings-label">Account & Analytics</p>
         <Link
