@@ -3,6 +3,7 @@ import "../styles/overrides.css";
 import { EyeControlProvider } from "../components/shared/EyeControlContext";
 import { SettingsProvider } from "../components/shared/SettingsContext";
 import OfflineBanner from "../components/shared/OfflineBanner";
+import ShaderDebugBar from "../components/shaders/ShaderDebugBar";
 
 export const metadata = {
   title: "Aloud",
@@ -29,6 +30,9 @@ export default function RootLayout({ children }) {
         />
       </head>
       <body>
+        <ShaderDebugBar />
+        {/* Semi-transparent cream gradient — warp field bleeds through from z:-1 */}
+        <div className="page-bg-layer" />
         <EyeControlProvider>
           <SettingsProvider>
             <OfflineBanner />

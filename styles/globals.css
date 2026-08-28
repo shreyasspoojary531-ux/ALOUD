@@ -12,14 +12,54 @@ body {
 
 body {
   color: var(--ink);
-  background: radial-gradient(
-    circle at 50% 43%,
-    #fffdf7 0,
-    var(--cream) 45%,
-    #f2eadc 100%
-  );
+  background: transparent;
   font-family: var(--sans);
 }
+
+/* Cream radial-gradient layer — sits above the warp field (z:-1) but
+   behind page content (z:auto). Semi-transparent so warp streaks bleed through. */
+.page-bg-layer {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background: radial-gradient(
+    circle at 50% 43%,
+    rgba(255, 253, 247, 0.85) 0,
+    rgba(252, 247, 237, 0.85) 45%,
+    rgba(242, 234, 220, 0.85) 100%
+  );
+}
+
+.app-background-shader {
+  position: fixed;
+  inset: 0;
+  width: 100vw;
+  height: 100vh;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+.threeui-background {
+  position: relative;
+  isolation: isolate;
+  width: 100%;
+  height: 100%;
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+  /* transparent — only the WebGL canvas content should be visible */
+  background: transparent;
+}
+
+.threeui-background > canvas {
+  position: absolute;
+  inset: 0;
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
 
 button {
   font: inherit;
@@ -35,6 +75,7 @@ a:focus-visible {
   min-height: 100vh;
   padding: var(--sp-fluid-app-pad) var(--sp-fluid-app-pad);
   position: relative;
+  z-index: 1;
 }
 
 /* ─────────────────────────────────────────────

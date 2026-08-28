@@ -347,5 +347,5 @@ that only happens if I separately ask.
 ## Project Memory Maintenance
 
 - `.agents/MEMORY.md` contains the full project context, architecture, key features, and decisions for Aloud.
-- **After every change, fix, or feature update**, you must update `.agents/MEMORY.md` to keep the context accurate and up to date.
+- **After every change, fix, or feature update**, you must update `.agents/MEMORY.md` to keep the context accurate and up to date and also commit the changes.
 - Always check `.agents/MEMORY.md` alongside `AGENTS.md` to align with current project architecture and decisions before implementing changes.
