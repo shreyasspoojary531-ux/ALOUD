@@ -5,9 +5,8 @@ import Link from "next/link";
 
 export default function NarutoExperience() {
   const [status, setStatus] = useState("Initializing camera...");
-  const [ready, setReady] = useState(false);
-  const [retryKey, setRetryKey] = useState(0);
   const [cameraError, setCameraError] = useState(null);
+  const [retryKey, setRetryKey] = useState(0);
 
   const videoRef = useRef(null);
   const canvasRef = useRef(null);
@@ -16,10 +15,8 @@ export default function NarutoExperience() {
 
   useEffect(() => {
     let mounted = true;
-    let streamInstance = null;
+    let cameraInstance = null;
     let handsInstance = null;
-    let animFrameId = null;
-    let isProcessingFrame = false;
 
     setCameraError(null);
 
@@ -33,7 +30,7 @@ export default function NarutoExperience() {
         script.src = src;
         script.crossOrigin = "anonymous";
         script.onload = () => resolve();
-        script.onerror = () => reject(new Error(`Failed to load script: ${src}`));
+        script.onerror = () => reject(new Error(`Failed to load ${src}`));
         document.head.appendChild(script);
       });
     }
@@ -48,41 +45,18 @@ export default function NarutoExperience() {
         await loadScript("https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js");
 
         if (!mounted) return;
-        if (mounted) setStatus("Requesting camera access...");
 
-        // Request webcam access with fallback constraints
-        let stream = null;
-        try {
-          stream = await navigator.mediaDevices.getUserMedia({
-            video: { width: { ideal: 1280 }, height: { ideal: 720 }, facingMode: "user" },
-            audio: false,
-          });
-        } catch (primaryErr) {
-          console.warn("Primary camera constraints failed, attempting fallback...", primaryErr);
-          // Fallback constraint if primary 1280x720 resolution is locked or unsupported
-          stream = await navigator.mediaDevices.getUserMedia({
-            video: true,
-            audio: false,
-          });
-        }
+        // Allow 350ms delay for previous camera streams (e.g. from Aloud main routes) to finish releasing hardware locks
+        if (mounted) setStatus("Connecting to camera...");
+        await new Promise((res) => setTimeout(res, 350));
+        if (!mounted) return;
 
-        if (!mounted) {
-          stream.getTracks().forEach((t) => t.stop());
-          return;
-        }
-
-        streamInstance = stream;
         const vElement = videoRef.current;
         const cElement = canvasRef.current;
         const nVid = narutoVidRef.current;
         const sVid = sasukeVidRef.current;
 
         if (!vElement || !cElement) return;
-
-        vElement.srcObject = stream;
-        await vElement.play().catch(() => {});
-
-        if (!mounted) return;
 
         const ctx = cElement.getContext("2d");
         let pwr = [0, 0];
@@ -122,7 +96,13 @@ export default function NarutoExperience() {
           if (nVid) nVid.style.display = "none";
           if (sVid) sVid.style.display = "none";
 
-          if (res.multiHandLandmarks && res.multiHandedness && window.drawConnectors && window.drawLandmarks && window.HAND_CONNECTIONS) {
+          if (
+            res.multiHandLandmarks &&
+            res.multiHandedness &&
+            window.drawConnectors &&
+            window.drawLandmarks &&
+            window.HAND_CONNECTIONS
+          ) {
             res.multiHandLandmarks.forEach((pts, i) => {
               const label = res.multiHandedness[i]?.label;
               const isR = label === "Right";
@@ -209,26 +189,36 @@ export default function NarutoExperience() {
         hands.onResults(onResults);
         handsInstance = hands;
 
-        async function processFrame() {
-          if (!mounted) return;
-          if (vElement && vElement.readyState >= 2 && !isProcessingFrame && handsInstance) {
-            isProcessingFrame = true;
-            try {
+        // Use MediaPipe Camera utility matching exact repo architecture
+        const camera = new window.Camera(vElement, {
+          onFrame: async () => {
+            if (mounted && vElement && handsInstance) {
               await handsInstance.send({ image: vElement });
-            } catch (e) {
-              console.error("Frame processing error:", e);
             }
-            isProcessingFrame = false;
-          }
-          if (mounted) {
-            animFrameId = requestAnimationFrame(processFrame);
-          }
-        }
+          },
+          width: 1280,
+          height: 720,
+        });
 
-        processFrame();
-        if (mounted) {
-          setReady(true);
-          setStatus("");
+        cameraInstance = camera;
+
+        try {
+          await camera.start();
+          if (mounted) setStatus("");
+        } catch (camErr) {
+          console.warn("Primary MediaPipe Camera start warning:", camErr);
+          // If NotReadableError occurred, wait 500ms and attempt direct getUserMedia fallback
+          await new Promise((res) => setTimeout(res, 500));
+          if (!mounted) return;
+
+          try {
+            const fallbackStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
+            vElement.srcObject = fallbackStream;
+            await vElement.play();
+            if (mounted) setStatus("");
+          } catch (fallbackErr) {
+            throw fallbackErr;
+          }
         }
       } catch (err) {
         console.error("Naruto AR error:", err);
@@ -243,12 +233,17 @@ export default function NarutoExperience() {
 
     return () => {
       mounted = false;
-      if (animFrameId) cancelAnimationFrame(animFrameId);
-      if (streamInstance) {
-        streamInstance.getTracks().forEach((t) => t.stop());
+      if (cameraInstance?.stop) {
+        try { cameraInstance.stop(); } catch (e) {}
       }
       if (handsInstance?.close) {
         try { handsInstance.close(); } catch (e) {}
+      }
+      if (videoRef.current?.srcObject) {
+        try {
+          videoRef.current.srcObject.getTracks().forEach((t) => t.stop());
+          videoRef.current.srcObject = null;
+        } catch (e) {}
       }
     };
   }, [retryKey]);
@@ -274,10 +269,10 @@ export default function NarutoExperience() {
       {/* Camera Error Message & Retry Action */}
       {cameraError && (
         <div style={styles.errorBox}>
-          <p style={{ margin: 0, fontWeight: 700 }}>⚠️ Camera Device Locked</p>
+          <p style={{ margin: 0, fontWeight: 700 }}>⚠️ Camera Hardware Busy</p>
           <p style={{ margin: "8px 0 14px", fontSize: "13px", opacity: 0.9, lineHeight: 1.4 }}>
             {cameraError.includes("NotReadableError") || cameraError.includes("Could not start video source")
-              ? "Your webcam is currently in use by another tab or application (e.g. another Aloud tab or video app). Please close other camera tabs and tap Retry Camera."
+              ? "Your webcam was locked by another tab or app. We released lingering camera tracks — click 'Retry Camera' to connect."
               : cameraError}
           </p>
           <button
