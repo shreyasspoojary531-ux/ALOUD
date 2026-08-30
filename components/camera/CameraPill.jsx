@@ -37,13 +37,32 @@ export default function CameraPill({
 
   const [minimized, setMinimized] = useState(false);
 
-  // Defer localStorage read to useEffect after client hydration to prevent SSR mismatch
+  // Defer localStorage read & setup BroadcastChannel listener to release camera on request
   useEffect(() => {
     try {
       if (localStorage.getItem("aloud_camera_minimized") === "true") {
         setMinimized(true);
       }
     } catch (e) {}
+
+    let bc = null;
+    try {
+      if (typeof window !== "undefined" && "BroadcastChannel" in window) {
+        bc = new BroadcastChannel("aloud_camera_channel");
+        bc.onmessage = (e) => {
+          if (e.data?.type === "RELEASE_CAMERA") {
+            if (video.current?.srcObject) {
+              video.current.srcObject.getTracks().forEach((t) => t.stop());
+              video.current.srcObject = null;
+            }
+          }
+        };
+      }
+    } catch (e) {}
+
+    return () => {
+      if (bc) bc.close();
+    };
   }, []);
 
   const noDetectionSince = useRef(0);

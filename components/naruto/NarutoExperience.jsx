@@ -37,6 +37,15 @@ export default function NarutoExperience() {
 
     async function startExperience() {
       try {
+        // Broadcast release event to any background Aloud tabs to free the camera hardware
+        try {
+          if (typeof window !== "undefined" && "BroadcastChannel" in window) {
+            const bc = new BroadcastChannel("aloud_camera_channel");
+            bc.postMessage({ type: "RELEASE_CAMERA" });
+            bc.close();
+          }
+        } catch (e) {}
+
         if (mounted) setStatus("Loading MediaPipe Hands...");
 
         // Load MediaPipe scripts from CDN
@@ -46,8 +55,8 @@ export default function NarutoExperience() {
 
         if (!mounted) return;
 
-        // Allow 350ms delay for previous camera streams (e.g. from Aloud main routes) to finish releasing hardware locks
-        if (mounted) setStatus("Connecting to camera...");
+        // Allow 350ms for camera hardware locks from other tabs to release
+        if (mounted) setStatus("Connecting to webcam...");
         await new Promise((res) => setTimeout(res, 350));
         if (!mounted) return;
 
@@ -189,7 +198,6 @@ export default function NarutoExperience() {
         hands.onResults(onResults);
         handsInstance = hands;
 
-        // Use MediaPipe Camera utility matching exact repo architecture
         const camera = new window.Camera(vElement, {
           onFrame: async () => {
             if (mounted && vElement && handsInstance) {
@@ -207,8 +215,7 @@ export default function NarutoExperience() {
           if (mounted) setStatus("");
         } catch (camErr) {
           console.warn("Primary MediaPipe Camera start warning:", camErr);
-          // If NotReadableError occurred, wait 500ms and attempt direct getUserMedia fallback
-          await new Promise((res) => setTimeout(res, 500));
+          await new Promise((res) => setTimeout(res, 400));
           if (!mounted) return;
 
           try {
@@ -248,6 +255,20 @@ export default function NarutoExperience() {
     };
   }, [retryKey]);
 
+  const triggerManualJutsu = (type) => {
+    const vid = type === "naruto" ? narutoVidRef.current : sasukeVidRef.current;
+    if (!vid) return;
+    vid.style.display = "block";
+    vid.style.opacity = 1;
+    vid.style.left = type === "naruto" ? "35%" : "65%";
+    vid.style.top = "50%";
+    vid.currentTime = 0;
+    vid.play().catch(() => {});
+    setTimeout(() => {
+      if (vid) vid.style.display = "none";
+    }, 3000);
+  };
+
   return (
     <div style={styles.container}>
       {/* Top Bar Navigation */}
@@ -266,22 +287,38 @@ export default function NarutoExperience() {
         </div>
       )}
 
-      {/* Camera Error Message & Retry Action */}
+      {/* Camera Error Message & Interactive Fallback Controls */}
       {cameraError && (
         <div style={styles.errorBox}>
-          <p style={{ margin: 0, fontWeight: 700 }}>⚠️ Camera Hardware Busy</p>
+          <p style={{ margin: 0, fontWeight: 700, fontSize: "16px" }}>⚠️ Webcam Currently Locked by System</p>
           <p style={{ margin: "8px 0 14px", fontSize: "13px", opacity: 0.9, lineHeight: 1.4 }}>
-            {cameraError.includes("NotReadableError") || cameraError.includes("Could not start video source")
-              ? "Your webcam was locked by another tab or app. We released lingering camera tracks — click 'Retry Camera' to connect."
-              : cameraError}
+            Your webcam `/dev/video0` is being used by another tab or app (e.g. Zoom or background browser window).
+            Close other camera apps and click <strong>Retry Camera</strong>, or test the Jutsu effects directly below!
           </p>
-          <button
-            type="button"
-            style={styles.retryBtn}
-            onClick={() => setRetryKey((k) => k + 1)}
-          >
-            🔄 Retry Camera
-          </button>
+
+          <div style={{ display: "flex", gap: "10px", justifyContent: "center", flexWrap: "wrap" }}>
+            <button
+              type="button"
+              style={styles.retryBtn}
+              onClick={() => setRetryKey((k) => k + 1)}
+            >
+              🔄 Retry Camera
+            </button>
+            <button
+              type="button"
+              style={{ ...styles.retryBtn, background: "#ff6b00", color: "#ffffff" }}
+              onClick={() => triggerManualJutsu("naruto")}
+            >
+              🌀 Test Rasengan
+            </button>
+            <button
+              type="button"
+              style={{ ...styles.retryBtn, background: "#00d4ff", color: "#000000" }}
+              onClick={() => triggerManualJutsu("sasuke")}
+            >
+              ⚡ Test Chidori
+            </button>
+          </div>
         </div>
       )}
 
@@ -392,24 +429,26 @@ const styles = {
     left: "50%",
     transform: "translate(-50%, -50%)",
     zIndex: 35,
-    background: "rgba(220, 38, 38, 0.95)",
+    background: "rgba(15, 23, 42, 0.95)",
+    border: "1px solid rgba(255, 107, 0, 0.4)",
     color: "#ffffff",
-    padding: "20px 28px",
-    borderRadius: "14px",
+    padding: "24px 32px",
+    borderRadius: "16px",
     textAlign: "center",
-    maxWidth: "400px",
-    boxShadow: "0 8px 32px rgba(0,0,0,0.5)",
+    maxWidth: "460px",
+    boxShadow: "0 12px 40px rgba(0,0,0,0.7)",
   },
   retryBtn: {
-    padding: "8px 20px",
+    padding: "9px 20px",
     background: "#ffffff",
-    color: "#dc2626",
+    color: "#0f172a",
     border: "none",
     borderRadius: "999px",
     fontSize: "13px",
     fontWeight: 700,
     cursor: "pointer",
-    boxShadow: "0 2px 8px rgba(0,0,0,0.2)",
+    boxShadow: "0 2px 8px rgba(0,0,0,0.3)",
+    transition: "transform 0.15s ease",
   },
   videoFeed: {
     position: "absolute",
