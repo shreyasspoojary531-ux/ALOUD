@@ -6,6 +6,7 @@ import Link from "next/link";
 export default function NarutoExperience() {
   const [status, setStatus] = useState("Initializing camera...");
   const [ready, setReady] = useState(false);
+  const [retryKey, setRetryKey] = useState(0);
   const [cameraError, setCameraError] = useState(null);
 
   const videoRef = useRef(null);
@@ -19,6 +20,8 @@ export default function NarutoExperience() {
     let handsInstance = null;
     let animFrameId = null;
     let isProcessingFrame = false;
+
+    setCameraError(null);
 
     async function loadScript(src) {
       return new Promise((resolve, reject) => {
@@ -47,11 +50,21 @@ export default function NarutoExperience() {
         if (!mounted) return;
         if (mounted) setStatus("Requesting camera access...");
 
-        // Request webcam access
-        const stream = await navigator.mediaDevices.getUserMedia({
-          video: { width: { ideal: 1280 }, height: { ideal: 720 }, facingMode: "user" },
-          audio: false,
-        });
+        // Request webcam access with fallback constraints
+        let stream = null;
+        try {
+          stream = await navigator.mediaDevices.getUserMedia({
+            video: { width: { ideal: 1280 }, height: { ideal: 720 }, facingMode: "user" },
+            audio: false,
+          });
+        } catch (primaryErr) {
+          console.warn("Primary camera constraints failed, attempting fallback...", primaryErr);
+          // Fallback constraint if primary 1280x720 resolution is locked or unsupported
+          stream = await navigator.mediaDevices.getUserMedia({
+            video: true,
+            audio: false,
+          });
+        }
 
         if (!mounted) {
           stream.getTracks().forEach((t) => t.stop());
@@ -238,7 +251,7 @@ export default function NarutoExperience() {
         try { handsInstance.close(); } catch (e) {}
       }
     };
-  }, []);
+  }, [retryKey]);
 
   return (
     <div style={styles.container}>
@@ -258,13 +271,22 @@ export default function NarutoExperience() {
         </div>
       )}
 
-      {/* Camera Error Message */}
+      {/* Camera Error Message & Retry Action */}
       {cameraError && (
         <div style={styles.errorBox}>
-          <p style={{ margin: 0, fontWeight: 700 }}>⚠️ Camera Access Needed</p>
-          <p style={{ margin: "6px 0 0", fontSize: "13px", opacity: 0.9 }}>
-            {cameraError}. Please allow camera permissions in your browser.
+          <p style={{ margin: 0, fontWeight: 700 }}>⚠️ Camera Device Locked</p>
+          <p style={{ margin: "8px 0 14px", fontSize: "13px", opacity: 0.9, lineHeight: 1.4 }}>
+            {cameraError.includes("NotReadableError") || cameraError.includes("Could not start video source")
+              ? "Your webcam is currently in use by another tab or application (e.g. another Aloud tab or video app). Please close other camera tabs and tap Retry Camera."
+              : cameraError}
           </p>
+          <button
+            type="button"
+            style={styles.retryBtn}
+            onClick={() => setRetryKey((k) => k + 1)}
+          >
+            🔄 Retry Camera
+          </button>
         </div>
       )}
 
@@ -382,6 +404,17 @@ const styles = {
     textAlign: "center",
     maxWidth: "400px",
     boxShadow: "0 8px 32px rgba(0,0,0,0.5)",
+  },
+  retryBtn: {
+    padding: "8px 20px",
+    background: "#ffffff",
+    color: "#dc2626",
+    border: "none",
+    borderRadius: "999px",
+    fontSize: "13px",
+    fontWeight: 700,
+    cursor: "pointer",
+    boxShadow: "0 2px 8px rgba(0,0,0,0.2)",
   },
   videoFeed: {
     position: "absolute",
