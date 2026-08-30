@@ -5,14 +5,17 @@ import { cancelSpeech, isSpeechSupported, say } from "../../lib/speech";
 import { useSettings } from "../shared/SettingsContext";
 import { trackSpeechEvent } from "../../lib/analytics";
 
+import { findBuiltinPhrase } from "../../lib/phrases";
+
 export default function SpokenMessageOverlay({
   message,
+  isEmergency,
   urgent,
   onDismiss,
   blinkSelect,
   repeatCount: repeatCountProp,
 }) {
-  const { repeatCount: ctxRepeat } = useSettings();
+  const { repeatCount: ctxRepeat, telegramAlertMode: ctxAlertMode } = useSettings();
   // repeatCountProp takes precedence (passed from the page that calls say()),
   // falling back to context if not explicitly given.
   const repeat = repeatCountProp ?? ctxRepeat ?? 1;
@@ -60,15 +63,30 @@ export default function SpokenMessageOverlay({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [message]);
 
-  // Dispatch Telegram caregiver alert if a chat_id is configured
+  // Dispatch Telegram caregiver alert if configured and allowed by alert mode & emergency status
   useEffect(() => {
     if (typeof window === "undefined" || !message) return;
 
     const chatId = localStorage.getItem("aloud_caregiver_chat_id");
     const caregiverName = localStorage.getItem("aloud_caregiver_name") || "caregiver";
+    const alertMode = ctxAlertMode || localStorage.getItem("aloud_telegram_alert_mode") || "emergency";
 
     if (!chatId) {
-      setTelegramStatus({ type: "none", text: "No Telegram caregiver configured" });
+      setTelegramStatus(null);
+      return;
+    }
+
+    // Determine if the message is emergency-level
+    const isEmerg =
+      isEmergency !== undefined
+        ? !!isEmergency
+        : findBuiltinPhrase(message)?.isEmergency ?? false;
+
+    // Check routing decision
+    const shouldSend = alertMode === "all" || (alertMode === "emergency" && isEmerg);
+
+    if (!shouldSend) {
+      setTelegramStatus(null);
       return;
     }
 
@@ -92,17 +110,17 @@ export default function SpokenMessageOverlay({
         } else {
           setTelegramStatus({
             type: "failed",
-            text: `⚠️ Telegram alert failed: ${data.error}`,
+            text: `✕ Telegram alert failed: ${data.error}`,
           });
         }
       })
       .catch((err) => {
         setTelegramStatus({
           type: "failed",
-          text: `⚠️ Telegram alert failed: ${err.message || "Network error"}`,
+          text: `✕ Telegram alert failed: ${err.message || "Network error"}`,
         });
       });
-  }, [message]);
+  }, [message, isEmergency, ctxAlertMode]);
 
   const speechAvailable = isSpeechSupported();
 

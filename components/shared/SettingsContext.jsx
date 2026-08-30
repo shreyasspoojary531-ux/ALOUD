@@ -21,6 +21,8 @@ const SettingsContext = createContext({
   setAdaptiveDwellEnabled: () => {},
   adaptedDwellDuration: DEFAULT_DWELL,
   resetAdaptiveDwell: () => {},
+  telegramAlertMode: "emergency",
+  setTelegramAlertMode: () => {},
 });
 
 export function SettingsProvider({ children }) {
@@ -30,6 +32,7 @@ export function SettingsProvider({ children }) {
   const [customPhrases, setCustomPhrasesState] = useState([]);
   const [adaptiveDwellEnabled, setAdaptiveDwellEnabledState] = useState(false);
   const [adaptedDwellDuration, setAdaptedDwellDuration] = useState(DEFAULT_DWELL);
+  const [telegramAlertMode, setTelegramAlertModeState] = useState("emergency");
 
   // Defer localStorage reads & run between-session adaptation on client hydration
   useEffect(() => {
@@ -54,6 +57,11 @@ export function SettingsProvider({ children }) {
       if (savedPhrases) {
         const parsed = JSON.parse(savedPhrases);
         if (Array.isArray(parsed)) setCustomPhrasesState(parsed);
+      }
+
+      const savedAlertMode = localStorage.getItem("aloud_telegram_alert_mode");
+      if (savedAlertMode === "all" || savedAlertMode === "emergency") {
+        setTelegramAlertModeState(savedAlertMode);
       }
 
       const savedAdaptive = localStorage.getItem("aloud_adaptive_dwell");
@@ -83,6 +91,12 @@ export function SettingsProvider({ children }) {
     try { localStorage.setItem("aloud_eyebrow_shortcut", String(enabled)); } catch (e) {}
   };
 
+  const setTelegramAlertMode = (mode) => {
+    if (mode !== "all" && mode !== "emergency") return;
+    setTelegramAlertModeState(mode);
+    try { localStorage.setItem("aloud_telegram_alert_mode", mode); } catch (e) {}
+  };
+
   const setAdaptiveDwellEnabled = (enabled) => {
     setAdaptiveDwellEnabledState(enabled);
     try { localStorage.setItem("aloud_adaptive_dwell", String(enabled)); } catch (e) {}
@@ -99,12 +113,13 @@ export function SettingsProvider({ children }) {
     setAdaptedDwellDuration(DEFAULT_DWELL);
   };
 
-  const addCustomPhrase = ({ text, category }) => {
+  const addCustomPhrase = ({ text, category, isEmergency = false }) => {
     if (!text || !text.trim() || !category) return null;
     const newPhrase = {
       id: `cp_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
       text: text.trim(),
       category,
+      isEmergency: !!isEmergency,
     };
     setCustomPhrasesState((prev) => {
       const next = [...prev, newPhrase];
@@ -139,6 +154,8 @@ export function SettingsProvider({ children }) {
         setAdaptiveDwellEnabled,
         adaptedDwellDuration,
         resetAdaptiveDwell,
+        telegramAlertMode,
+        setTelegramAlertMode,
       }}
     >
       {children}

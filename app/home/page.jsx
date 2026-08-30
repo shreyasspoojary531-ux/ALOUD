@@ -8,6 +8,7 @@ import SpokenMessageOverlay from "../../components/overlay/SpokenMessageOverlay"
 import HelpModal from "../../components/shared/HelpModal";
 import { useEyeControl } from "../../components/shared/EyeControlContext";
 import { useSettings } from "../../components/shared/SettingsContext";
+import { BUILTIN_PHRASES, findBuiltinPhrase } from "../../lib/phrases";
 
 const root = [
   { label: "I feel", icon: "I feel", tint: "rose" },
@@ -22,66 +23,6 @@ const root = [
     wide: true,
   },
 ];
-
-const subIcons = {
-  "I’m in pain.": "pain",
-  "I can’t breathe.": "breathe",
-  "I feel sick.": "sick",
-  "I’m too hot.": "hot",
-  "I’m too cold.": "cold",
-  "I’m itchy.": "sick",
-
-  "I need some water.": "droplet",
-  "I need help.": "help",
-  "I need the bathroom.": "help",
-  "I need to rest.": "rest",
-  "I need medicine.": "medicine",
-  "I need my family.": "users",
-
-  "I need my carer.": "users",
-  "Please call someone.": "message",
-  "I want company.": "users",
-
-  "Yes.": "yes",
-  "No.": "no",
-  "Maybe.": "question",
-  "I don’t know.": "question",
-  "Thank you.": "heart",
-  "Please.": "hand",
-};
-
-const groups = {
-  "I feel": [
-    "I’m in pain.",
-    "I can’t breathe.",
-    "I feel sick.",
-    "I’m too hot.",
-    "I’m too cold.",
-    "I’m itchy.",
-  ],
-  "I need": [
-    "I need some water.",
-    "I need help.",
-    "I need the bathroom.",
-    "I need to rest.",
-    "I need medicine.",
-    "I need my family.",
-  ],
-  People: [
-    "I need my carer.",
-    "I need my family.",
-    "Please call someone.",
-    "I want company.",
-  ],
-  Answers: [
-    "Yes.",
-    "No.",
-    "Maybe.",
-    "I don’t know.",
-    "Thank you.",
-    "Please.",
-  ],
-};
 
 export default function Home() {
   const router = useRouter();
@@ -110,9 +51,15 @@ export default function Home() {
     if (!item) return;
     if (item.label === "Back") return setGroup(null);
     if (item.label === "Spell it out") return router.push("/spell");
-    if (groups[item.label]) return setGroup(item.label);
 
-    setSpoken(item.label);
+    const isGroupHeader = root.some((r) => r.label === item.label && r.label !== "Spell it out");
+    if (isGroupHeader) return setGroup(item.label);
+
+    const isEmerg = item.isEmergency !== undefined
+      ? item.isEmergency
+      : findBuiltinPhrase(item.label)?.isEmergency ?? false;
+
+    setSpoken({ message: item.label, isEmergency: isEmerg });
   };
 
   const groupTint =
@@ -124,22 +71,28 @@ export default function Home() {
       ? "sage"
       : "rose";
 
+  const groupBuiltinPhrases = BUILTIN_PHRASES.filter(
+    (p) => p.category?.toLowerCase() === group?.toLowerCase()
+  );
+
   const groupCustomPhrases = (customPhrases || []).filter(
     (p) => p.category?.toLowerCase() === group?.toLowerCase()
   );
 
-  const items = group && groups[group]
+  const items = group
     ? [
-        ...groups[group].map((label) => ({
-          label,
-          icon: subIcons[label] || "heart",
+        ...groupBuiltinPhrases.map((p) => ({
+          label: p.text,
+          icon: p.icon || "heart",
           tint: groupTint,
+          isEmergency: p.isEmergency,
         })),
         ...groupCustomPhrases.map((p) => ({
           label: p.text,
           icon: "heart",
           tint: groupTint,
           isCustom: true,
+          isEmergency: !!p.isEmergency,
           id: p.id,
         })),
         { label: "Back", icon: "Back", tint: "blue" },
@@ -169,9 +122,10 @@ export default function Home() {
       <CameraPill enabled={eyeOn} onLongBlink={onBlink} onBlinkOnset={onBlinkOnset} />
       {spoken && (
         <SpokenMessageOverlay
-          message={spoken}
+          message={spoken.message}
+          isEmergency={spoken.isEmergency}
           repeatCount={repeatCount}
-          urgent={/breathe|help/i.test(spoken)}
+          urgent={spoken.isEmergency || /breathe|help/i.test(spoken.message)}
           blinkSelect={blink}
           onDismiss={() => {
             setSpoken(null);

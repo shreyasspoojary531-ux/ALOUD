@@ -33,6 +33,8 @@ export default function SettingsPage() {
     setAdaptiveDwellEnabled,
     adaptedDwellDuration,
     resetAdaptiveDwell,
+    telegramAlertMode,
+    setTelegramAlertMode,
   } = useSettings();
 
   const [customPhrasesOpen, setCustomPhrasesOpen] = useState(false);
@@ -147,7 +149,7 @@ export default function SettingsPage() {
           <div className="settings-card bento-hero">
             <span className="settings-label">CAREGIVER ALERTS (TELEGRAM)</span>
             <p className="settings-hint" style={{ marginTop: "4px" }}>
-              Send instant mobile notifications to a caregiver via Telegram when you trigger <strong>"call for help"</strong>.
+              Send instant mobile notifications to a caregiver via Telegram when you speak or call for help.
             </p>
 
             <div className="telegram-link-wrap">
@@ -164,9 +166,39 @@ export default function SettingsPage() {
               </p>
             </div>
 
+            {/* Alert Routing Mode Control */}
+            <div style={{ marginTop: "16px", paddingTop: "14px", borderTop: "1px dashed var(--line)" }}>
+              <span className="settings-label" style={{ fontSize: "11px", letterSpacing: "0.08em" }}>ALERT ROUTING MODE</span>
+              <div className="repeat-control" role="group" aria-label="Caregiver alert mode" style={{ marginTop: "8px" }}>
+                <button
+                  type="button"
+                  className={`repeat-btn${telegramAlertMode === "emergency" ? " repeat-btn--active" : ""}`}
+                  onClick={() => setTelegramAlertMode("emergency")}
+                  aria-pressed={telegramAlertMode === "emergency"}
+                  style={{ fontSize: "12px", padding: "8px 12px" }}
+                >
+                  Emergency messages only
+                </button>
+                <button
+                  type="button"
+                  className={`repeat-btn${telegramAlertMode === "all" ? " repeat-btn--active" : ""}`}
+                  onClick={() => setTelegramAlertMode("all")}
+                  aria-pressed={telegramAlertMode === "all"}
+                  style={{ fontSize: "12px", padding: "8px 12px" }}
+                >
+                  Send every message
+                </button>
+              </div>
+              <p className="settings-hint" style={{ marginTop: "6px" }}>
+                {telegramAlertMode === "all"
+                  ? "Send every message notifies your caregiver every time you speak or type."
+                  : "Emergency only sends alerts just for critical messages like 'I can't breathe', 'I'm in pain', or 'I need help'."}
+              </p>
+            </div>
+
             {/* Configured Caregiver Layout */}
             {caregiverChatId ? (
-              <div className="caregiver-info-box">
+              <div className="caregiver-info-box" style={{ marginTop: "14px" }}>
                 <div className="caregiver-detail-row">
                   <span className="caregiver-detail-label">Active Caregiver</span>
                   <span className="caregiver-detail-value">{caregiverName}</span>
@@ -209,7 +241,7 @@ export default function SettingsPage() {
               </div>
             ) : (
               /* Setup / Find Caregiver Layout */
-              <div className="caregiver-info-box">
+              <div className="caregiver-info-box" style={{ marginTop: "14px" }}>
                 <Button
                   className="secondary"
                   onSelect={handleFindCaregiver}

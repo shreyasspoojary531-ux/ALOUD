@@ -47,6 +47,7 @@ export default function CustomPhrasesModal({ isOpen, onClose }) {
   const { customPhrases, addCustomPhrase, deleteCustomPhrase } = useSettings();
   const [text, setText] = useState("");
   const [category, setCategory] = useState("I need");
+  const [isEmergency, setIsEmergency] = useState(false);
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const modalRef = useRef(null);
   const dropdownRef = useRef(null);
@@ -92,8 +93,9 @@ export default function CustomPhrasesModal({ isOpen, onClose }) {
   const handleSubmit = (e) => {
     e.preventDefault();
     if (!text.trim()) return;
-    addCustomPhrase({ text, category });
+    addCustomPhrase({ text, category, isEmergency });
     setText("");
+    setIsEmergency(false);
   };
 
   return (
@@ -131,7 +133,7 @@ export default function CustomPhrasesModal({ isOpen, onClose }) {
               autoFocus
             />
 
-            <div className="custom-phrase-form-row">
+            <div className="custom-phrase-form-row" style={{ marginTop: "10px" }}>
               {/* Custom-styled Category Selector Dropdown matching CustomModeSelect pattern */}
               <div className="custom-category-select-wrapper" ref={dropdownRef}>
                 <button
@@ -172,6 +174,17 @@ export default function CustomPhrasesModal({ isOpen, onClose }) {
                 Save phrase
               </button>
             </div>
+
+            {/* Emergency Phrase Checkbox Toggle */}
+            <label className="custom-phrase-emergency-toggle" style={{ display: "flex", alignItems: "center", gap: "8px", marginTop: "10px", cursor: "pointer", fontSize: "13px", color: "var(--ink)", fontWeight: 500 }}>
+              <input
+                type="checkbox"
+                checked={isEmergency}
+                onChange={(e) => setIsEmergency(e.target.checked)}
+                style={{ width: "16px", height: "16px", accentColor: "var(--salmon)" }}
+              />
+              <span>Mark as emergency phrase 🚨</span>
+            </label>
           </form>
         </section>
 
@@ -193,7 +206,14 @@ export default function CustomPhrasesModal({ isOpen, onClose }) {
                   <ul className="custom-phrase-items">
                     {catPhrases.map((p) => (
                       <li key={p.id} className="custom-phrase-item">
-                        <span className="custom-phrase-item-text">{p.text}</span>
+                        <span className="custom-phrase-item-text">
+                          {p.text}
+                          {p.isEmergency && (
+                            <span style={{ marginLeft: "8px", fontSize: "11px", padding: "2px 6px", borderRadius: "999px", background: "rgba(224, 90, 71, 0.15)", color: "var(--salmon)", fontWeight: 600 }}>
+                              🚨 Emergency
+                            </span>
+                          )}
+                        </span>
                         <button
                           type="button"
                           className="custom-phrase-delete-btn"

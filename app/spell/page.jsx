@@ -6,6 +6,7 @@ import Keyboard from "../../components/keyboard/Keyboard";
 import SpokenMessageOverlay from "../../components/overlay/SpokenMessageOverlay";
 import { useEyeControl } from "../../components/shared/EyeControlContext";
 import { useSettings } from "../../components/shared/SettingsContext";
+import { BUILTIN_PHRASES, findBuiltinPhrase } from "../../lib/phrases";
 
 export default function Spell() {
   const { eyeOn } = useEyeControl();
@@ -69,9 +70,10 @@ export default function Spell() {
   }, [suggestions]);
 
   // SpokenMessageOverlay now calls say() internally with repeat count
-  const speak = (text, urgent = false) => {
+  const speak = (text, isEmergencyFlag = false) => {
     if (!text) return;
-    setSpoken({ text, urgent });
+    const isEmerg = isEmergencyFlag || findBuiltinPhrase(text)?.isEmergency || false;
+    setSpoken({ text, isEmergency: isEmerg });
   };
 
   return (
@@ -107,8 +109,9 @@ export default function Spell() {
       {spoken && (
         <SpokenMessageOverlay
           message={spoken.text}
+          isEmergency={spoken.isEmergency}
           repeatCount={repeatCount}
-          urgent={spoken.urgent}
+          urgent={spoken.isEmergency}
           blinkSelect={blink}
           onDismiss={() => setSpoken(null)}
         />
