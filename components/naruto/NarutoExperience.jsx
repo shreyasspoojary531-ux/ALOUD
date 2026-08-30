@@ -4,8 +4,9 @@ import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 
 export default function NarutoExperience() {
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const [status, setStatus] = useState("Initializing camera...");
+  const [ready, setReady] = useState(false);
+  const [cameraError, setCameraError] = useState(null);
 
   const videoRef = useRef(null);
   const canvasRef = useRef(null);
@@ -13,40 +14,62 @@ export default function NarutoExperience() {
   const sasukeVidRef = useRef(null);
 
   useEffect(() => {
-    let cameraInstance = null;
-    let handsInstance = null;
     let mounted = true;
+    let streamInstance = null;
+    let handsInstance = null;
+    let animFrameId = null;
+    let isProcessingFrame = false;
 
-    async function loadScriptsAndStart() {
+    async function loadScript(src) {
+      return new Promise((resolve, reject) => {
+        if (document.querySelector(`script[src="${src}"]`)) {
+          resolve();
+          return;
+        }
+        const script = document.createElement("script");
+        script.src = src;
+        script.crossOrigin = "anonymous";
+        script.onload = () => resolve();
+        script.onerror = () => reject(new Error(`Failed to load script: ${src}`));
+        document.head.appendChild(script);
+      });
+    }
+
+    async function startExperience() {
       try {
-        // Load MediaPipe CDN scripts dynamically if not already present
-        const loadScript = (src) => {
-          return new Promise((resolve, reject) => {
-            if (document.querySelector(`script[src="${src}"]`)) {
-              resolve();
-              return;
-            }
-            const script = document.createElement("script");
-            script.src = src;
-            script.crossOrigin = "anonymous";
-            script.onload = () => resolve();
-            script.onerror = () => reject(new Error(`Failed to load ${src}`));
-            document.head.appendChild(script);
-          });
-        };
+        if (mounted) setStatus("Loading MediaPipe Hands...");
 
+        // Load MediaPipe scripts from CDN
         await loadScript("https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js");
         await loadScript("https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js");
         await loadScript("https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js");
 
         if (!mounted) return;
+        if (mounted) setStatus("Requesting camera access...");
 
+        // Request webcam access
+        const stream = await navigator.mediaDevices.getUserMedia({
+          video: { width: { ideal: 1280 }, height: { ideal: 720 }, facingMode: "user" },
+          audio: false,
+        });
+
+        if (!mounted) {
+          stream.getTracks().forEach((t) => t.stop());
+          return;
+        }
+
+        streamInstance = stream;
         const vElement = videoRef.current;
         const cElement = canvasRef.current;
         const nVid = narutoVidRef.current;
         const sVid = sasukeVidRef.current;
 
-        if (!vElement || !cElement || !nVid || !sVid) return;
+        if (!vElement || !cElement) return;
+
+        vElement.srcObject = stream;
+        await vElement.play().catch(() => {});
+
+        if (!mounted) return;
 
         const ctx = cElement.getContext("2d");
         let pwr = [0, 0];
@@ -70,8 +93,13 @@ export default function NarutoExperience() {
         function onResults(res) {
           if (!mounted || !cElement || !vElement) return;
 
-          cElement.width = vElement.videoWidth || window.innerWidth;
-          cElement.height = vElement.videoHeight || window.innerHeight;
+          const w = vElement.videoWidth || window.innerWidth;
+          const h = vElement.videoHeight || window.innerHeight;
+          if (cElement.width !== w || cElement.height !== h) {
+            cElement.width = w;
+            cElement.height = h;
+          }
+
           ctx.save();
           ctx.clearRect(0, 0, cElement.width, cElement.height);
 
@@ -87,7 +115,7 @@ export default function NarutoExperience() {
               const isR = label === "Right";
               const idx = isR ? 1 : 0;
 
-              // --- CYAN SKELETON RENDER ---
+              // --- CYAN HAND SKELETON RENDER ---
               ctx.save();
               ctx.shadowBlur = 10;
               ctx.shadowColor = "#00fbff";
@@ -168,34 +196,43 @@ export default function NarutoExperience() {
         hands.onResults(onResults);
         handsInstance = hands;
 
-        const camera = new window.Camera(vElement, {
-          onFrame: async () => {
-            if (mounted && vElement) {
-              await hands.send({ image: vElement });
+        async function processFrame() {
+          if (!mounted) return;
+          if (vElement && vElement.readyState >= 2 && !isProcessingFrame && handsInstance) {
+            isProcessingFrame = true;
+            try {
+              await handsInstance.send({ image: vElement });
+            } catch (e) {
+              console.error("Frame processing error:", e);
             }
-          },
-          width: 1280,
-          height: 720,
-        });
+            isProcessingFrame = false;
+          }
+          if (mounted) {
+            animFrameId = requestAnimationFrame(processFrame);
+          }
+        }
 
-        await camera.start();
-        cameraInstance = camera;
-        if (mounted) setLoading(false);
-      } catch (err) {
-        console.error("Naruto AR init error:", err);
+        processFrame();
         if (mounted) {
-          setError(err.message || "Failed to initialize camera / MediaPipe hands.");
-          setLoading(false);
+          setReady(true);
+          setStatus("");
+        }
+      } catch (err) {
+        console.error("Naruto AR error:", err);
+        if (mounted) {
+          setCameraError(err.message || "Could not access camera.");
+          setStatus("");
         }
       }
     }
 
-    loadScriptsAndStart();
+    startExperience();
 
     return () => {
       mounted = false;
-      if (cameraInstance?.stop) {
-        try { cameraInstance.stop(); } catch (e) {}
+      if (animFrameId) cancelAnimationFrame(animFrameId);
+      if (streamInstance) {
+        streamInstance.getTracks().forEach((t) => t.stop());
       }
       if (handsInstance?.close) {
         try { handsInstance.close(); } catch (e) {}
@@ -205,35 +242,41 @@ export default function NarutoExperience() {
 
   return (
     <div style={styles.container}>
+      {/* Top Bar Navigation */}
       <div style={styles.header}>
         <Link href="/home" style={styles.backBtn}>
           ← Back to Aloud
         </Link>
-        <span style={styles.badge}>🥷 Naruto AR Jutsu Mode</span>
+        <span style={styles.badge}>🥷 Naruto Jutsu AR</span>
       </div>
 
-      {loading && (
-        <div style={styles.loader}>
-          <div style={styles.spinner} />
-          <p style={styles.loaderText}>Summoning Jutsu & Camera...</p>
+      {/* Loading Status Indicator */}
+      {status && (
+        <div style={styles.statusPill}>
+          <span style={styles.dot} />
+          {status}
         </div>
       )}
 
-      {error && (
+      {/* Camera Error Message */}
+      {cameraError && (
         <div style={styles.errorBox}>
-          <p>⚠️ {error}</p>
-          <p style={{ fontSize: "12px", opacity: 0.8 }}>Please allow camera access and refresh.</p>
+          <p style={{ margin: 0, fontWeight: 700 }}>⚠️ Camera Access Needed</p>
+          <p style={{ margin: "6px 0 0", fontSize: "13px", opacity: 0.9 }}>
+            {cameraError}. Please allow camera permissions in your browser.
+          </p>
         </div>
       )}
 
-      <video ref={videoRef} id="v_src" autoPlay playsInline style={styles.videoFeed} />
+      {/* Video Feed & Canvas Overlay */}
+      <video ref={videoRef} id="v_src" autoPlay playsInline muted style={styles.videoFeed} />
       <canvas ref={canvasRef} id="out" style={styles.canvasOverlay} />
       <div style={styles.darkness} />
 
+      {/* Rasengan & Chidori Video FX Overlays */}
       <video
         ref={narutoVidRef}
         id="n"
-        className="fx"
         src="/naruto/naruto.mp4"
         muted
         autoPlay
@@ -244,7 +287,6 @@ export default function NarutoExperience() {
       <video
         ref={sasukeVidRef}
         id="s"
-        className="fx"
         src="/naruto/sasuke.mp4"
         muted
         autoPlay
@@ -253,8 +295,9 @@ export default function NarutoExperience() {
         style={{ ...styles.fxVideo, width: "1600px" }}
       />
 
+      {/* Bottom Jutsu Instruction Banner */}
       <div style={styles.instructionBanner}>
-        Open Left Hand = Rasengan 🌀 | Open Right Hand = Chidori ⚡
+        Open Left Hand = Rasengan 🌀 &nbsp;|&nbsp; Open Right Hand = Chidori ⚡
       </div>
     </div>
   );
@@ -264,7 +307,7 @@ const styles = {
   container: {
     position: "fixed",
     inset: 0,
-    backgroundColor: "#000000",
+    backgroundColor: "#050505",
     overflow: "hidden",
     zIndex: 9999,
   },
@@ -273,70 +316,72 @@ const styles = {
     top: 16,
     left: 16,
     right: 16,
-    zIndex: 30,
+    zIndex: 40,
     display: "flex",
     justifyContent: "space-between",
     alignItems: "center",
     pointerEvents: "auto",
   },
   backBtn: {
-    padding: "8px 16px",
-    background: "rgba(20, 20, 20, 0.8)",
-    border: "1px solid rgba(255, 255, 255, 0.2)",
+    padding: "8px 18px",
+    background: "rgba(20, 20, 20, 0.85)",
+    border: "1px solid rgba(255, 255, 255, 0.25)",
     borderRadius: "999px",
     color: "#ffffff",
     fontSize: "14px",
     fontWeight: 600,
     textDecoration: "none",
     backdropFilter: "blur(8px)",
-    transition: "all 0.2s ease",
+    boxShadow: "0 2px 8px rgba(0,0,0,0.4)",
   },
   badge: {
-    padding: "6px 14px",
+    padding: "6px 16px",
     background: "linear-gradient(135deg, #ff6b00 0%, #d9381e 100%)",
     borderRadius: "999px",
     color: "#ffffff",
-    fontSize: "12px",
+    fontSize: "13px",
     fontWeight: 700,
     letterSpacing: "0.05em",
-    boxShadow: "0 4px 12px rgba(255, 107, 0, 0.4)",
+    boxShadow: "0 4px 14px rgba(255, 107, 0, 0.4)",
   },
-  loader: {
+  statusPill: {
     position: "absolute",
-    inset: 0,
-    zIndex: 25,
+    top: 72,
+    left: "50%",
+    transform: "translateX(-50%)",
+    zIndex: 35,
     display: "flex",
-    flexDirection: "column",
     alignItems: "center",
-    justifyContent: "center",
-    background: "#080808",
-    color: "#ffffff",
-  },
-  spinner: {
-    width: "40px",
-    height: "40px",
-    border: "4px solid rgba(255, 107, 0, 0.2)",
-    borderTopColor: "#ff6b00",
-    borderRadius: "50%",
-    animation: "spin 1s infinite linear",
-  },
-  loaderText: {
-    marginTop: "16px",
-    fontSize: "15px",
+    gap: "8px",
+    padding: "8px 18px",
+    background: "rgba(15, 23, 42, 0.85)",
+    border: "1px solid rgba(59, 130, 246, 0.3)",
+    borderRadius: "999px",
+    color: "#93c5fd",
+    fontSize: "13px",
     fontWeight: 500,
-    color: "#d0d0d0",
+    backdropFilter: "blur(6px)",
+  },
+  dot: {
+    width: "8px",
+    height: "8px",
+    borderRadius: "50%",
+    backgroundColor: "#3b82f6",
+    boxShadow: "0 0 8px #3b82f6",
   },
   errorBox: {
     position: "absolute",
     top: "50%",
     left: "50%",
     transform: "translate(-50%, -50%)",
-    zIndex: 26,
-    background: "rgba(239, 68, 68, 0.9)",
+    zIndex: 35,
+    background: "rgba(220, 38, 38, 0.95)",
     color: "#ffffff",
     padding: "20px 28px",
-    borderRadius: "12px",
+    borderRadius: "14px",
     textAlign: "center",
+    maxWidth: "400px",
+    boxShadow: "0 8px 32px rgba(0,0,0,0.5)",
   },
   videoFeed: {
     position: "absolute",
@@ -346,6 +391,7 @@ const styles = {
     height: "100vh",
     objectFit: "cover",
     transform: "scaleX(-1)",
+    zIndex: 1,
   },
   canvasOverlay: {
     position: "absolute",
@@ -387,8 +433,8 @@ const styles = {
     transform: "translateX(-50%)",
     zIndex: 30,
     padding: "10px 24px",
-    background: "rgba(0, 0, 0, 0.75)",
-    border: "1px solid rgba(0, 212, 255, 0.3)",
+    background: "rgba(0, 0, 0, 0.85)",
+    border: "1px solid rgba(0, 212, 255, 0.4)",
     borderRadius: "999px",
     color: "#00d4ff",
     fontSize: "14px",
@@ -396,5 +442,6 @@ const styles = {
     letterSpacing: "0.03em",
     backdropFilter: "blur(8px)",
     pointerEvents: "none",
+    boxShadow: "0 4px 16px rgba(0, 212, 255, 0.2)",
   },
 };
