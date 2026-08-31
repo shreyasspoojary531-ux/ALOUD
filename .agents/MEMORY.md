@@ -37,8 +37,9 @@ app/
 ├── api/
 │   ├── suggest/route.js               → Server route executing Gemini 3.6 Flash for suggestions (POST { message })
 │   └── telegram/
-│       ├── get-chat-id/route.js       → Server route fetching pending Telegram chat_ids via getUpdates (GET)
-│       └── send-alert/route.js        → Server route sending Telegram alert messages via sendMessage (POST { chat_id, message })
+│       ├── get-chat-id/route.js       → Server route fetching pending Telegram chat_ids via getUpdates (GET) & processing command updates
+│       ├── send-alert/route.js        → Server route sending Telegram alert messages via sendMessage (POST { chat_id, message })
+│       └── webhook/route.js           → Server webhook endpoint receiving Telegram updates (POST)
 ├── error.jsx                → Eye-controlled application error boundary page with recovery options
 ├── global-error.jsx         → Critical root layout error fallback screen
 ├── home/
