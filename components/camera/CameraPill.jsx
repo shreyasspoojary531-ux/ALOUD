@@ -15,6 +15,8 @@ export default function CameraPill({
   onBlinkOnset,
   onCameraReady,
   onEyebrowShortcut,
+  onStreamReady,
+  onFaceLandmarks,
 }) {
   const ctx = useEyeControl();
   const activeMode = ctx.mode || "blink";
@@ -22,7 +24,15 @@ export default function CameraPill({
   const enabled = enabledProp ?? (activeMode !== "manual");
 
   const video = useRef(null);
-  const callbacks = useRef({ onLongBlink, onBlendshape, onBlinkOnset, onCameraReady, onEyebrowShortcut });
+  const callbacks = useRef({
+    onLongBlink,
+    onBlendshape,
+    onBlinkOnset,
+    onCameraReady,
+    onEyebrowShortcut,
+    onStreamReady,
+    onFaceLandmarks,
+  });
   const activeModeRef = useRef(activeMode);
   activeModeRef.current = activeMode;
 
@@ -173,8 +183,16 @@ export default function CameraPill({
   gestureHooksRef.current = { blinkSelect, eyebrowSelect, palmSelect };
 
   useEffect(() => {
-    callbacks.current = { onLongBlink, onBlendshape, onBlinkOnset, onCameraReady, onEyebrowShortcut };
-  }, [onLongBlink, onBlendshape, onBlinkOnset, onCameraReady, onEyebrowShortcut]);
+    callbacks.current = {
+      onLongBlink,
+      onBlendshape,
+      onBlinkOnset,
+      onCameraReady,
+      onEyebrowShortcut,
+      onStreamReady,
+      onFaceLandmarks,
+    };
+  }, [onLongBlink, onBlendshape, onBlinkOnset, onCameraReady, onEyebrowShortcut, onStreamReady, onFaceLandmarks]);
 
   useEffect(() => {
     let stream;
@@ -206,6 +224,8 @@ export default function CameraPill({
         });
 
         if (cancelled) return;
+        callbacks.current.onStreamReady?.(stream);
+
         if (video.current) {
           video.current.srcObject = stream;
           await video.current.play();
@@ -324,6 +344,7 @@ export default function CameraPill({
 
                 if (hasFace && shapes) {
                   const landmarks = result.faceLandmarks[0];
+                  callbacks.current.onFaceLandmarks?.(landmarks);
                   const nose = landmarks[1];
                   const leftEyeCorner = landmarks[33];
                   const rightEyeCorner = landmarks[263];
@@ -393,6 +414,7 @@ export default function CameraPill({
                     }
                   }
                 } else {
+                  callbacks.current.onFaceLandmarks?.(null);
                   if (currentStatusType !== "confidence") {
                     setStatus("No eyes tracked");
                     setStatusType("warning");
