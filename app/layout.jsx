@@ -10,9 +10,9 @@ export const metadata = {
   description: "Eye-controlled AAC",
   manifest: "/manifest.json",
   icons: {
-    icon: "/mainicon.png",
-    shortcut: "/mainicon.png",
-    apple: "/mainicon.png",
+    icon: "/icon-512.png",
+    shortcut: "/icon-192.png",
+    apple: "/icon-512.png",
   },
 };
 
@@ -20,9 +20,10 @@ export default function RootLayout({ children }) {
   return (
     <html lang="en">
       <head>
-        <link rel="icon" type="image/png" href="/mainicon.png" />
-        <link rel="shortcut icon" href="/mainicon.png" />
-        <link rel="apple-touch-icon" href="/mainicon.png" />
+        <link rel="icon" type="image/png" sizes="512x512" href="/icon-512.png" />
+        <link rel="icon" type="image/png" sizes="192x192" href="/icon-192.png" />
+        <link rel="shortcut icon" href="/icon-192.png" />
+        <link rel="apple-touch-icon" href="/icon-512.png" />
         <link rel="manifest" href="/manifest.json" />
         <meta name="theme-color" content="#cf5700" />
         {process.env.NODE_ENV === "production" && (
