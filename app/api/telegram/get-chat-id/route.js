@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { processTelegramUpdate, getCachedSenders } from "../../../../lib/telegram";
 
 export async function GET() {
   const token = process.env.TELEGRAM_BOT_TOKEN;
@@ -17,40 +18,13 @@ export async function GET() {
 
     const data = await res.json();
 
-    if (!data || !data.ok) {
-      return NextResponse.json(
-        { ok: false, error: data?.description || "Failed to fetch updates from Telegram." },
-        { status: 500 }
-      );
-    }
-
-    const updates = data.result || [];
-    const sendersMap = new Map();
-
-    // Collect unique senders from recent updates (messages or my_chat_member updates)
-    for (const update of updates) {
-      const msg = update.message || update.edited_message || update.channel_post;
-      const from = msg?.from || update.my_chat_member?.from;
-      const chatId = msg?.chat?.id || update.my_chat_member?.chat?.id;
-
-      if (chatId && from) {
-        const idStr = String(chatId);
-        if (!sendersMap.has(idStr)) {
-          const nameParts = [from.first_name, from.last_name].filter(Boolean);
-          const fullName = nameParts.join(" ");
-          const username = from.username ? `@${from.username}` : "";
-          const displayName = fullName || username || `Chat ${idStr}`;
-
-          sendersMap.set(idStr, {
-            chat_id: idStr,
-            name: displayName,
-            username: from.username || null,
-          });
-        }
+    if (data && data.ok && Array.isArray(data.result)) {
+      for (const update of data.result) {
+        await processTelegramUpdate(update, token);
       }
     }
 
-    const senders = Array.from(sendersMap.values());
+    const senders = getCachedSenders();
 
     return NextResponse.json({ ok: true, senders });
   } catch (err) {
@@ -60,3 +34,4 @@ export async function GET() {
     );
   }
 }
+
