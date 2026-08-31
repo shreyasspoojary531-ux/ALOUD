@@ -9,12 +9,20 @@ export const metadata = {
   title: "Aloud",
   description: "Eye-controlled AAC",
   manifest: "/manifest.json",
+  icons: {
+    icon: "/mainicon.png",
+    shortcut: "/mainicon.png",
+    apple: "/mainicon.png",
+  },
 };
 
 export default function RootLayout({ children }) {
   return (
     <html lang="en">
       <head>
+        <link rel="icon" type="image/png" href="/mainicon.png" />
+        <link rel="shortcut icon" href="/mainicon.png" />
+        <link rel="apple-touch-icon" href="/mainicon.png" />
         <link rel="manifest" href="/manifest.json" />
         <meta name="theme-color" content="#cf5700" />
         {process.env.NODE_ENV === "production" && (

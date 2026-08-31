@@ -9,14 +9,10 @@ export default function manifest() {
     theme_color: "#cf5700",
     icons: [
       {
-        src: "/icon-192.png",
-        sizes: "192x192",
+        src: "/mainicon.png",
+        sizes: "192x192 512x512 any",
         type: "image/png",
-      },
-      {
-        src: "/icon-512.png",
-        sizes: "512x512",
-        type: "image/png",
+        purpose: "any maskable",
       },
     ],
   };
