@@ -5,9 +5,12 @@ import TopBar from "../components/shared/TopBar";
 import Button from "../components/shared/Button";
 import LandingSections from "../components/landing/LandingSections";
 import HelpModal from "../components/shared/HelpModal";
+import SplashCursor from "../components/shaders/SplashCursor";
+import { useEyeControl } from "../components/shared/EyeControlContext";
 
 export default function Splash() {
   const router = useRouter();
+  const { mode } = useEyeControl();
   const [help, setHelp] = useState(false);
 
   const handleBegin = useCallback(() => {
@@ -16,6 +19,7 @@ export default function Splash() {
 
   return (
     <main className="app">
+      {mode === "manual" && <SplashCursor COLOR="#cf5700" />}
       <TopBar onHelp={() => setHelp(true)} />
 
       {/* Hero Splash View */}
@@ -69,3 +73,4 @@ export default function Splash() {
     </main>
   );
 }
+
