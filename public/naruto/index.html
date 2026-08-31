@@ -42,21 +42,42 @@
   <video id="n" class="fx" src="assets/naruto.mp4" autoplay loop playsinline></video>
   <video id="s" class="fx" src="assets/sasuke.mp4" autoplay loop playsinline></video>
 
+  <div id="sound-hint" style="position: absolute; bottom: 30px; left: 50%; transform: translateX(-50%); z-index: 30; background: rgba(0,0,0,0.75); color: #fff; padding: 10px 20px; border-radius: 20px; font-family: sans-serif; font-size: 14px; cursor: pointer; border: 1px solid rgba(255,255,255,0.2); pointer-events: auto;">
+    🔊 Tap screen once to enable Jutsu audio
+  </div>
+
   <script>
     const vElement = document.getElementById('v_src');
     const cElement = document.getElementById('out');
     const ctx = cElement.getContext('2d');
     const n = document.getElementById('n');
     const s = document.getElementById('s');
+    const hint = document.getElementById('sound-hint');
 
-    function enableAudio() {
+    let audioUnlocked = false;
+
+    function unlockAudio() {
+        if (audioUnlocked) return;
+        audioUnlocked = true;
+        if (hint) hint.style.display = 'none';
+
         [n, s].forEach(vid => {
             vid.muted = false;
             vid.volume = 1.0;
+            const p = vid.play();
+            if (p && p.then) {
+                p.then(() => {
+                    vid.pause();
+                    vid.currentTime = 0;
+                }).catch(() => {});
+            }
         });
     }
-    window.addEventListener('click', enableAudio, { once: true });
-    window.addEventListener('pointerdown', enableAudio, { once: true });
+
+    window.addEventListener('click', unlockAudio);
+    window.addEventListener('pointerdown', unlockAudio);
+    window.addEventListener('touchstart', unlockAudio);
+    if (hint) hint.addEventListener('click', unlockAudio);
 
     let pwr = [0, 0]; 
     let wasOpen = [false, false];
