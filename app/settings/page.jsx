@@ -35,6 +35,8 @@ export default function SettingsPage() {
     resetAdaptiveDwell,
     telegramAlertMode,
     setTelegramAlertMode,
+    cursorTrailEnabled,
+    setCursorTrailEnabled,
   } = useSettings();
 
   const [customPhrasesOpen, setCustomPhrasesOpen] = useState(false);
@@ -371,7 +373,33 @@ export default function SettingsPage() {
             )}
           </div>
 
-          {/* Card 5 — Profile & Analytics Link */}
+          {/* Card 5 — Cursor Trail Effect */}
+          <div className="settings-card">
+            <span className="settings-label">CURSOR TRAIL EFFECT</span>
+            <div className="repeat-control" role="group" aria-label="Cursor trail effect" style={{ marginTop: "8px" }}>
+              <button
+                type="button"
+                className={`repeat-btn${!cursorTrailEnabled ? " repeat-btn--active" : ""}`}
+                onClick={() => setCursorTrailEnabled(false)}
+                aria-pressed={!cursorTrailEnabled}
+              >
+                Off
+              </button>
+              <button
+                type="button"
+                className={`repeat-btn${cursorTrailEnabled ? " repeat-btn--active" : ""}`}
+                onClick={() => setCursorTrailEnabled(true)}
+                aria-pressed={cursorTrailEnabled}
+              >
+                On
+              </button>
+            </div>
+            <p className="settings-hint" style={{ marginTop: "6px" }}>
+              Shows a fluid ink-trail animation following your cursor on the Landing and Setup screens (manual mouse mode only).
+            </p>
+          </div>
+
+          {/* Card 6 — Profile & Analytics Link */}
           <div className="settings-card">
             <span className="settings-label">ACCOUNT & ANALYTICS</span>
             <Link

@@ -23,6 +23,8 @@ const SettingsContext = createContext({
   resetAdaptiveDwell: () => {},
   telegramAlertMode: "emergency",
   setTelegramAlertMode: () => {},
+  cursorTrailEnabled: false,
+  setCursorTrailEnabled: () => {},
 });
 
 export function SettingsProvider({ children }) {
@@ -33,6 +35,7 @@ export function SettingsProvider({ children }) {
   const [adaptiveDwellEnabled, setAdaptiveDwellEnabledState] = useState(false);
   const [adaptedDwellDuration, setAdaptedDwellDuration] = useState(DEFAULT_DWELL);
   const [telegramAlertMode, setTelegramAlertModeState] = useState("emergency");
+  const [cursorTrailEnabled, setCursorTrailEnabledState] = useState(false);
 
   // Defer localStorage reads & run between-session adaptation on client hydration
   useEffect(() => {
@@ -62,6 +65,11 @@ export function SettingsProvider({ children }) {
       const savedAlertMode = localStorage.getItem("aloud_telegram_alert_mode");
       if (savedAlertMode === "all" || savedAlertMode === "emergency") {
         setTelegramAlertModeState(savedAlertMode);
+      }
+
+      const savedCursorTrail = localStorage.getItem("aloud_cursor_trail_enabled");
+      if (savedCursorTrail === "true") {
+        setCursorTrailEnabledState(true);
       }
 
       const savedAdaptive = localStorage.getItem("aloud_adaptive_dwell");
@@ -95,6 +103,11 @@ export function SettingsProvider({ children }) {
     if (mode !== "all" && mode !== "emergency") return;
     setTelegramAlertModeState(mode);
     try { localStorage.setItem("aloud_telegram_alert_mode", mode); } catch (e) {}
+  };
+
+  const setCursorTrailEnabled = (enabled) => {
+    setCursorTrailEnabledState(enabled);
+    try { localStorage.setItem("aloud_cursor_trail_enabled", String(enabled)); } catch (e) {}
   };
 
   const setAdaptiveDwellEnabled = (enabled) => {
@@ -156,6 +169,8 @@ export function SettingsProvider({ children }) {
         resetAdaptiveDwell,
         telegramAlertMode,
         setTelegramAlertMode,
+        cursorTrailEnabled,
+        setCursorTrailEnabled,
       }}
     >
       {children}

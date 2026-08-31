@@ -11,6 +11,7 @@ import { calibratedThresholds } from "../../components/camera/useBlinkSelect";
 import { prefetchMediaPipe } from "../../lib/mediapipeLoader";
 import HelpModal from "../../components/shared/HelpModal";
 import SplashCursor from "../../components/shaders/SplashCursor";
+import { useSettings } from "../../components/shared/SettingsContext";
 
 const steps = [
   {
@@ -54,6 +55,7 @@ const steps = [
 export default function Setup() {
   const router = useRouter();
   const { eyeOn, mode } = useEyeControl();
+  const { cursorTrailEnabled } = useSettings();
   const [step, setStep] = useState(0);
   const [cameraError, setCameraError] = useState(false);
   const [showHelp, setShowHelp] = useState(false);
@@ -163,7 +165,7 @@ export default function Setup() {
 
   return (
     <main className="app">
-      {mode === "manual" && <SplashCursor COLOR="#cf5700" />}
+      {mode === "manual" && cursorTrailEnabled && <SplashCursor COLOR="#cf5700" />}
       <TopBar onHelp={() => setShowHelp(true)} />
       <div className="screen-center">
         <section className="calibration">
