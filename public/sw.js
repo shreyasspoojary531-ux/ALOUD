@@ -1,27 +1,28 @@
-const CACHE_NAME = "aloud-offline-v2";
-const OFFLINE_URLS = [
+const CACHE_NAME = "aloud-pwa-v3";
+const APP_SHELL_URLS = [
   "/",
   "/home",
   "/spell",
   "/setup",
   "/profile",
+  "/settings",
   "/offline.html",
   "/styles/globals.css",
   "/styles/tokens.css",
   "/manifest.json",
 ];
 
-// Install: Force caching of offline app shell and offline page immediately
+// Install: Cache core app shell
 self.addEventListener("install", (event) => {
   event.waitUntil(
     caches.open(CACHE_NAME).then(async (cache) => {
-      await cache.addAll(OFFLINE_URLS).catch(() => {});
+      await cache.addAll(APP_SHELL_URLS).catch(() => {});
     })
   );
   self.skipWaiting();
 });
 
-// Activate: Immediately claim control of all open windows
+// Activate: Clean up old caches immediately
 self.addEventListener("activate", (event) => {
   event.waitUntil(
     caches.keys().then((keys) => {
@@ -37,12 +38,12 @@ self.addEventListener("activate", (event) => {
   self.clients.claim();
 });
 
-// Fetch: Intercept all requests to prevent Chrome Dino offline page on reload
+// Fetch handler
 self.addEventListener("fetch", (event) => {
   const request = event.request;
   const url = new URL(request.url);
 
-  // Gemini AI suggestion route: return empty JSON array offline
+  // 1. NEVER cache Gemini AI suggestion requests (/api/suggest)
   if (url.pathname.startsWith("/api/suggest")) {
     event.respondWith(
       fetch(request).catch(() => {
@@ -54,50 +55,89 @@ self.addEventListener("fetch", (event) => {
     return;
   }
 
-  // Navigation / HTML requests: Network first -> Cache -> /offline.html
+  // 2. NEVER cache Telegram caregiver alert API requests (/api/telegram/*)
+  if (url.pathname.startsWith("/api/telegram")) {
+    event.respondWith(
+      fetch(request).catch(() => {
+        return new Response(
+          JSON.stringify({ ok: false, error: "Network unavailable" }),
+          { status: 503, headers: { "Content-Type": "application/json" } }
+        );
+      })
+    );
+    return;
+  }
+
+  // 3. Exclude /naruto Easter-egg route and assets from caching to prevent video stream interference
+  if (url.pathname.startsWith("/naruto")) {
+    event.respondWith(fetch(request));
+    return;
+  }
+
+  // 4. Cache-first strategy for MediaPipe WASM and model files (CDN & local)
+  if (
+    url.hostname.includes("cdn.jsdelivr.net") ||
+    url.hostname.includes("storage.googleapis.com")
+  ) {
+    event.respondWith(
+      caches.match(request).then((cachedResponse) => {
+        if (cachedResponse) return cachedResponse;
+        return fetch(request).then((networkResponse) => {
+          if (networkResponse && networkResponse.status === 200) {
+            const clone = networkResponse.clone();
+            caches.open(CACHE_NAME).then((cache) => cache.put(request, clone));
+          }
+          return networkResponse;
+        });
+      })
+    );
+    return;
+  }
+
+  // 5. Navigation / HTML document requests: Network first -> Cache fallback -> /offline.html
   if (request.mode === "navigate" || request.destination === "document") {
     event.respondWith(
       fetch(request)
         .then((response) => {
           if (response && response.status === 200) {
-            const resClone = response.clone();
-            caches.open(CACHE_NAME).then((cache) => cache.put(request, resClone));
+            const clone = response.clone();
+            caches.open(CACHE_NAME).then((cache) => cache.put(request, clone));
           }
           return response;
         })
         .catch(async () => {
-          // If offline: try matching exact request from cache
           const cachedMatch = await caches.match(request);
           if (cachedMatch) return cachedMatch;
 
-          // Try home page cache
           const homeMatch = await caches.match("/home");
           if (homeMatch) return homeMatch;
 
-          // Serve standalone offline HTML page (Zero Chrome Dino page!)
           const offlinePage = await caches.match("/offline.html");
           if (offlinePage) return offlinePage;
 
-          return new Response("Offline", { status: 503, headers: { "Content-Type": "text/plain" } });
+          return new Response("Offline", {
+            status: 503,
+            headers: { "Content-Type": "text/plain" },
+          });
         })
     );
     return;
   }
 
-  // Static assets (CSS, JS, Fonts, Images): Cache first -> Network fallback
+  // 6. Static Assets (CSS, JS, Fonts, Images): Cache first -> Network fallback
   event.respondWith(
     caches.match(request).then((cachedResponse) => {
       if (cachedResponse) return cachedResponse;
 
-      return fetch(request).then((networkResponse) => {
-        if (networkResponse && networkResponse.status === 200) {
-          const resClone = networkResponse.clone();
-          caches.open(CACHE_NAME).then((cache) => cache.put(request, resClone));
-        }
-        return networkResponse;
-      }).catch(() => {
-        return new Response("", { status: 404 });
-      });
+      return fetch(request)
+        .then((networkResponse) => {
+          if (networkResponse && networkResponse.status === 200) {
+            const clone = networkResponse.clone();
+            caches.open(CACHE_NAME).then((cache) => cache.put(request, clone));
+          }
+          return networkResponse;
+        })
+        .catch(() => new Response("", { status: 404 }));
     })
   );
 });
