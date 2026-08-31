@@ -27,7 +27,7 @@ This document is the single source of truth for the **Aloud** codebase architect
 | **Speech** | Web Speech API | Native browser SpeechSynthesis text-to-speech wrapper (`lib/speech.js`) |
 | **AI Suggestions**| Gemini 3.5 Flash-Lite REST API | Server-side next-word prediction (`app/api/suggest/route.js`, `lib/gemini.js`) |
 | **Icons** | Custom Inline SVG Components | Hand-crafted SVG icons matching token stroke widths (No `lucide-react`) |
-| **PWA / SW** | Web App Manifest & Service Worker | Production-only app shell caching (`app/manifest.js`, `public/sw.js`) |
+| **PWA / SW** | Web App Manifest & Service Worker | Production-only app shell caching (`app/manifest.js`, `public/sw.js`, icon: `public/mainicon.png`) |
 
 ---
 
