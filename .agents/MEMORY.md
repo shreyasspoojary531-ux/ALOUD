@@ -47,7 +47,7 @@ app/
 │   └── page.jsx             → Home screen: Category grid (I feel, I need, People, Answers, Spell CTA)
 ├── not-found.jsx            → Eye-controlled 404 page with navigation CTAs
 ├── naruto/
-│   └── page.jsx             → Secret AR Easter egg wrapper screen rendering isolated static iframe (/naruto/index.html with unmuted audio playback)
+│   └── page.jsx             → Secret AR Easter egg wrapper screen rendering isolated static iframe (/naruto/index.html with unmuted audio activation on user gesture)
 ├── profile/
 │   └── page.jsx             → Profile & Speech Analytics metrics screen
 ├── settings/
