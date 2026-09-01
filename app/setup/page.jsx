@@ -171,6 +171,8 @@ export default function Setup() {
     };
   }, [step, cameraError, trackingStatus]);
 
+  const hasTransitionedRef = useRef(false);
+
   // Track face detection stability during Step 1
   useEffect(() => {
     if (step !== 1 || cameraError || cameraTimeout) return;
@@ -183,33 +185,41 @@ export default function Setup() {
       const elapsed = performance.now() - stableStartRef.current;
 
       if (elapsed < 1500) {
-        setTrackingStatus("confirming");
-        setStatusText("Tracking detected eyes… keep still");
-      } else if (trackingStatus !== "confirmed") {
-        setTrackingStatus("confirmed");
-        setStatusText("Eye tracking ready ✓");
+        if (trackingStatus !== "confirming") {
+          setTrackingStatus("confirming");
+          setStatusText("Tracking detected eyes… keep still");
+        }
+      } else {
+        if (trackingStatus !== "confirmed") {
+          setTrackingStatus("confirmed");
+          setStatusText("Eye tracking ready ✓");
+        }
 
-        // After 750ms in confirmed state, proceed to step 2 ("Keep your eyes open")
-        transitionTimeoutRef.current = setTimeout(() => {
-          if (stepRef.current === 1) {
-            setStep(2);
-          }
-        }, 750);
+        if (!hasTransitionedRef.current) {
+          hasTransitionedRef.current = true;
+          console.log("[Setup] 1.5s stable eye tracking achieved! Scheduling setStep(2) in 750ms...");
+          transitionTimeoutRef.current = setTimeout(() => {
+            if (stepRef.current === 1) {
+              console.log("[Setup] Step 1 complete -> setStep(2)");
+              setStep(2);
+            }
+          }, 750);
+        }
       }
     } else {
       // Face detection lost or searching
       stableStartRef.current = null;
-      if (transitionTimeoutRef.current) clearTimeout(transitionTimeoutRef.current);
+      hasTransitionedRef.current = false;
+      if (transitionTimeoutRef.current) {
+        clearTimeout(transitionTimeoutRef.current);
+        transitionTimeoutRef.current = null;
+      }
 
       if (trackingStatus !== "confirmed" && trackingStatus !== "initializing") {
         setTrackingStatus("searching");
         setStatusText("Position your face in frame");
       }
     }
-
-    return () => {
-      if (transitionTimeoutRef.current) clearTimeout(transitionTimeoutRef.current);
-    };
   }, [step, landmarks, trackingStatus, cameraError, cameraTimeout]);
 
   const { select } = useScanner(

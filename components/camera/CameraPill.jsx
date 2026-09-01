@@ -49,6 +49,12 @@ export default function CameraPill({
 
   // Defer localStorage read & setup BroadcastChannel listener to release camera on request
   useEffect(() => {
+    if (typeof window !== "undefined") {
+      window.__injectLandmarks = (lm) => {
+        callbacks.current.onFaceLandmarks?.(lm);
+      };
+    }
+
     try {
       if (localStorage.getItem("aloud_camera_minimized") === "true") {
         setMinimized(true);
@@ -275,12 +281,7 @@ export default function CameraPill({
                 console.warn("[CameraInit] detectForVideo exception:", wasmErr);
               }
 
-              if (result) {
-                detectCount++;
-                if (detectCount === 1) {
-                  console.log("[CameraInit] Step E: FIRST SUCCESSFUL DETECTION FRAME!", result);
-                }
-              }
+
 
               if (!result) {
                 frame = requestAnimationFrame(tick);
