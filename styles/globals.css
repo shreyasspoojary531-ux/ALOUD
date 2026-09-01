@@ -502,7 +502,31 @@ a:focus-visible {
   z-index: 5;
 }
 
-/* Eye Tracking Corner-Bracket Reticle Styles */
+/* Eye Tracking Corner-Bracket Reticle Styles with High-Contrast White Halo */
+.reticle-corner-halo {
+  fill: none;
+  stroke: #ffffff;
+  stroke-width: 3.4px;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  vector-effect: non-scaling-stroke;
+  opacity: 0.9;
+  transition: opacity 0.25s ease;
+}
+
+.reticle-corner-halo.searching {
+  animation: reticleSearchPulse 2.4s ease-in-out infinite;
+}
+
+.reticle-corner-halo.confirming {
+  animation: reticleConfirmPulse 1.6s ease-in-out infinite;
+}
+
+.reticle-corner-halo.confirmed {
+  animation: none;
+  opacity: 1;
+}
+
 .reticle-corner {
   fill: none;
   stroke: var(--orange);
@@ -544,6 +568,57 @@ a:focus-visible {
   }
   50% {
     opacity: 1;
+  }
+}
+
+/* Horizontal Camera Scan-Line Sweep Animation */
+.setup-scanline-sweep {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.7) 12%,
+    var(--orange) 50%,
+    rgba(255, 255, 255, 0.7) 88%,
+    transparent 100%
+  );
+  box-shadow: 0 0 6px rgba(255, 255, 255, 0.8), 0 0 12px var(--orange);
+  z-index: 4;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.4s var(--ease-out-smooth);
+}
+
+.setup-scanline-sweep.searching {
+  animation: scanlineSweep 2.8s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+}
+
+.setup-scanline-sweep.confirming {
+  animation: scanlineSweep 2.2s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+}
+
+.setup-scanline-sweep.confirmed {
+  opacity: 0;
+  animation: none;
+}
+
+@keyframes scanlineSweep {
+  0% {
+    top: 0%;
+    opacity: 0;
+  }
+  8% {
+    opacity: 0.85;
+  }
+  92% {
+    opacity: 0.85;
+  }
+  100% {
+    top: 96%;
+    opacity: 0;
   }
 }
 

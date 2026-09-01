@@ -348,7 +348,10 @@ export default function Setup() {
                       className="setup-video"
                     />
 
-                    {/* SVG overlay rendering real detected eye corner reticles */}
+                    {/* Horizontal Scan-Line Sweep Overlay */}
+                    <div className={`setup-scanline-sweep ${trackingStatus}`} />
+
+                    {/* SVG overlay rendering real detected eye corner reticles with white contrast halo */}
                     <svg
                       className="setup-landmarks-svg"
                       viewBox="0 0 100 100"
@@ -357,6 +360,12 @@ export default function Setup() {
                       <g transform="scale(-1, 1) translate(-100, 0)">
                         {leftReticle && (
                           <g className={`eye-reticle ${trackingStatus}`}>
+                            {/* White contrast halo underneath */}
+                            <path d={leftReticle.pathTL} className={`reticle-corner-halo ${trackingStatus}`} />
+                            <path d={leftReticle.pathTR} className={`reticle-corner-halo ${trackingStatus}`} />
+                            <path d={leftReticle.pathBL} className={`reticle-corner-halo ${trackingStatus}`} />
+                            <path d={leftReticle.pathBR} className={`reticle-corner-halo ${trackingStatus}`} />
+                            {/* Colored accent stroke on top */}
                             <path d={leftReticle.pathTL} className={`reticle-corner ${trackingStatus}`} />
                             <path d={leftReticle.pathTR} className={`reticle-corner ${trackingStatus}`} />
                             <path d={leftReticle.pathBL} className={`reticle-corner ${trackingStatus}`} />
@@ -365,6 +374,12 @@ export default function Setup() {
                         )}
                         {rightReticle && (
                           <g className={`eye-reticle ${trackingStatus}`}>
+                            {/* White contrast halo underneath */}
+                            <path d={rightReticle.pathTL} className={`reticle-corner-halo ${trackingStatus}`} />
+                            <path d={rightReticle.pathTR} className={`reticle-corner-halo ${trackingStatus}`} />
+                            <path d={rightReticle.pathBL} className={`reticle-corner-halo ${trackingStatus}`} />
+                            <path d={rightReticle.pathBR} className={`reticle-corner-halo ${trackingStatus}`} />
+                            {/* Colored accent stroke on top */}
                             <path d={rightReticle.pathTL} className={`reticle-corner ${trackingStatus}`} />
                             <path d={rightReticle.pathTR} className={`reticle-corner ${trackingStatus}`} />
                             <path d={rightReticle.pathBL} className={`reticle-corner ${trackingStatus}`} />
