@@ -266,43 +266,45 @@ export default function Setup() {
 
   const current = steps[step];
 
-  // Compute Left and Right Eye Centers and contour landmarks for SVG overlay
-  let leftEye = null;
-  let rightEye = null;
-  let leftContour = [];
-  let rightContour = [];
+  // Compute corner-bracket reticle coordinates for Left and Right Eyes
+  const computeEyeReticle = (pointIndices) => {
+    if (!landmarks || landmarks.length < 468) return null;
+    const pts = pointIndices.map((idx) => landmarks[idx]).filter(Boolean);
+    if (!pts.length) return null;
 
-  if (landmarks && landmarks.length >= 468) {
-    const lOuter = landmarks[33];
-    const lInner = landmarks[133];
-    const lTop = landmarks[159];
-    const lBottom = landmarks[145];
+    const xs = pts.map((p) => p.x * 100);
+    const ys = pts.map((p) => p.y * 100);
 
-    const rOuter = landmarks[362];
-    const rInner = landmarks[263];
-    const rTop = landmarks[386];
-    const rBottom = landmarks[374];
+    const minX = Math.min(...xs);
+    const maxX = Math.max(...xs);
+    const minY = Math.min(...ys);
+    const maxY = Math.max(...ys);
 
-    if (lOuter && lInner && lTop && lBottom) {
-      leftEye = {
-        cx: ((lOuter.x + lInner.x) / 2) * 100,
-        cy: ((lTop.y + lBottom.y) / 2) * 100,
-      };
-      leftContour = [33, 133, 159, 145, 158, 144]
-        .map((idx) => landmarks[idx])
-        .filter(Boolean);
-    }
+    const w = maxX - minX;
+    const h = maxY - minY;
 
-    if (rOuter && rInner && rTop && rBottom) {
-      rightEye = {
-        cx: ((rOuter.x + rInner.x) / 2) * 100,
-        cy: ((rTop.y + rBottom.y) / 2) * 100,
-      };
-      rightContour = [362, 263, 386, 374, 385, 373]
-        .map((idx) => landmarks[idx])
-        .filter(Boolean);
-    }
-  }
+    const padX = Math.max(w * 0.35, 1.8);
+    const padY = Math.max(h * 0.5, 1.8);
+
+    const x1 = minX - padX;
+    const x2 = maxX + padX;
+    const y1 = minY - padY;
+    const y2 = maxY + padY;
+
+    const boxW = x2 - x1;
+    const boxH = y2 - y1;
+    const arm = Math.min(boxW * 0.28, boxH * 0.28);
+
+    return {
+      pathTL: `M ${x1 + arm} ${y1} L ${x1} ${y1} L ${x1} ${y1 + arm}`,
+      pathTR: `M ${x2 - arm} ${y1} L ${x2} ${y1} L ${x2} ${y1 + arm}`,
+      pathBL: `M ${x1 + arm} ${y2} L ${x1} ${y2} L ${x1} ${y2 - arm}`,
+      pathBR: `M ${x2 - arm} ${y2} L ${x2} ${y2} L ${x2} ${y2 - arm}`,
+    };
+  };
+
+  const leftReticle = computeEyeReticle([33, 133, 159, 145, 158, 144]);
+  const rightReticle = computeEyeReticle([362, 263, 386, 374, 385, 373]);
 
   return (
     <main className="app">
@@ -346,60 +348,28 @@ export default function Setup() {
                       className="setup-video"
                     />
 
-                    {/* SVG overlay rendering real detected eye landmarks */}
+                    {/* SVG overlay rendering real detected eye corner reticles */}
                     <svg
                       className="setup-landmarks-svg"
                       viewBox="0 0 100 100"
                       preserveAspectRatio="none"
                     >
                       <g transform="scale(-1, 1) translate(-100, 0)">
-                        {leftEye && (
-                          <>
-                            <circle
-                              cx={leftEye.cx}
-                              cy={leftEye.cy}
-                              r="4"
-                              className={`landmark-ring ${trackingStatus}`}
-                            />
-                            <circle
-                              cx={leftEye.cx}
-                              cy={leftEye.cy}
-                              r="1.4"
-                              className={`landmark-dot ${trackingStatus}`}
-                            />
-                            {leftContour.map((pt, i) => (
-                              <circle
-                                key={`lc-${i}`}
-                                cx={pt.x * 100}
-                                cy={pt.y * 100}
-                                className="landmark-contour-dot"
-                              />
-                            ))}
-                          </>
+                        {leftReticle && (
+                          <g className={`eye-reticle ${trackingStatus}`}>
+                            <path d={leftReticle.pathTL} className={`reticle-corner ${trackingStatus}`} />
+                            <path d={leftReticle.pathTR} className={`reticle-corner ${trackingStatus}`} />
+                            <path d={leftReticle.pathBL} className={`reticle-corner ${trackingStatus}`} />
+                            <path d={leftReticle.pathBR} className={`reticle-corner ${trackingStatus}`} />
+                          </g>
                         )}
-                        {rightEye && (
-                          <>
-                            <circle
-                              cx={rightEye.cx}
-                              cy={rightEye.cy}
-                              r="4"
-                              className={`landmark-ring ${trackingStatus}`}
-                            />
-                            <circle
-                              cx={rightEye.cx}
-                              cy={rightEye.cy}
-                              r="1.4"
-                              className={`landmark-dot ${trackingStatus}`}
-                            />
-                            {rightContour.map((pt, i) => (
-                              <circle
-                                key={`rc-${i}`}
-                                cx={pt.x * 100}
-                                cy={pt.y * 100}
-                                className="landmark-contour-dot"
-                              />
-                            ))}
-                          </>
+                        {rightReticle && (
+                          <g className={`eye-reticle ${trackingStatus}`}>
+                            <path d={rightReticle.pathTL} className={`reticle-corner ${trackingStatus}`} />
+                            <path d={rightReticle.pathTR} className={`reticle-corner ${trackingStatus}`} />
+                            <path d={rightReticle.pathBL} className={`reticle-corner ${trackingStatus}`} />
+                            <path d={rightReticle.pathBR} className={`reticle-corner ${trackingStatus}`} />
+                          </g>
                         )}
                       </g>
                     </svg>

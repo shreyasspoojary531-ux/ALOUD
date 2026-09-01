@@ -502,59 +502,48 @@ a:focus-visible {
   z-index: 5;
 }
 
-.landmark-ring {
+/* Eye Tracking Corner-Bracket Reticle Styles */
+.reticle-corner {
+  fill: none;
   stroke: var(--orange);
-  fill: rgba(207, 87, 0, 0.18);
-  stroke-width: 1.5px;
-  transform-origin: center;
-  transition: stroke 0.3s ease, fill 0.3s ease;
+  stroke-width: 1.8px;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  vector-effect: non-scaling-stroke;
+  transition: stroke 0.25s ease, opacity 0.25s ease;
 }
 
-.landmark-ring.confirming {
-  animation: landmarkPulse 1.2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
-}
-
-.landmark-ring.confirmed {
-  stroke: var(--sage-deep);
-  fill: rgba(81, 134, 94, 0.28);
-  stroke-width: 2.2px;
-}
-
-.landmark-ring.warning {
+.reticle-corner.searching {
   stroke: var(--salmon);
-  fill: rgba(224, 90, 71, 0.22);
+  animation: reticleSearchPulse 2.4s ease-in-out infinite;
 }
 
-.landmark-dot {
-  fill: var(--orange);
-  transition: fill 0.3s ease;
+.reticle-corner.confirming {
+  stroke: var(--orange);
+  animation: reticleConfirmPulse 1.6s ease-in-out infinite;
 }
 
-.landmark-dot.confirmed {
-  fill: var(--sage-deep);
+.reticle-corner.confirmed {
+  stroke: var(--sage-deep);
+  stroke-width: 2.2px;
+  animation: none;
 }
 
-.landmark-dot.warning {
-  fill: var(--salmon);
+@keyframes reticleSearchPulse {
+  0%, 100% {
+    opacity: 0.45;
+  }
+  50% {
+    opacity: 0.85;
+  }
 }
 
-.landmark-contour-dot {
-  fill: rgba(255, 255, 255, 0.7);
-  r: 0.8;
-}
-
-@keyframes landmarkPulse {
-  0% {
-    r: 3.2px;
+@keyframes reticleConfirmPulse {
+  0%, 100% {
     opacity: 0.7;
   }
   50% {
-    r: 4.8px;
     opacity: 1;
-  }
-  100% {
-    r: 3.2px;
-    opacity: 0.7;
   }
 }
 

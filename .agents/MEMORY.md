@@ -217,7 +217,7 @@ Every scannable element in Aloud MUST respond to:
   3. "Keep your eyes open" (1.0s, samples resting baseline, progress 25% -> 50%)
   4. "Get ready…" (0.8s, instructs user to prepare, progress 50% -> 75%)
   5. "Close your eyes now" (1.2s, samples closed threshold, progress 75% -> 100%)
-- Live eye landmark overlay: SVG overlay rendering real detected eye centers and eye contour dots, with pulsing glow during confirmation and solid green confirmation state.
+- Live eye landmark overlay: SVG overlay rendering real-time corner-bracket autofocus reticles (four right-angle L-shaped strokes per eye scaling proportionally with detected eye boundaries), with gentle calm pulsing during search/confirmation and static solid green (`var(--sage-deep)`) lock state.
 - Step Transition Timer Fix: Prevented high-frequency (60 FPS) `landmarks` state updates from triggering the `useEffect` cleanup function (`clearTimeout`), allowing the 750ms step transition timer to fire cleanly and advance to Step 2.
 - Camera Readiness State Machine Fix: `handleCameraReady(true)` transitions `trackingStatus` from `"initializing"` to `"searching"` (`statusText`: `"Position your face in frame"`), clearing the camera init timeout so it never misfires while video is playing.
 - Timeout & Error Handling: 12.0s camera init safety timeout triggers error state only if `onCameraReady(true)` is never received, providing "Retry Camera" and "Continue with Click / Space" fallback options.
