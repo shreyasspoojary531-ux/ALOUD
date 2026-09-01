@@ -72,6 +72,9 @@ export default function Setup() {
   const stepRef = useRef(step);
   stepRef.current = step;
 
+  const trackingStatusRef = useRef(trackingStatus);
+  trackingStatusRef.current = trackingStatus;
+
   const startTimestampRef = useRef(null);
   const openSamples = useRef([]);
   const closedSamples = useRef([]);
@@ -89,7 +92,7 @@ export default function Setup() {
     if (stream && setupVideoRef.current) {
       setupVideoRef.current.srcObject = stream;
       setupVideoRef.current.play().catch((err) => {
-        console.warn("[Setup] Video play failed:", err);
+        console.warn("[Setup] setupVideoRef play failed:", err);
       });
     }
   }, [stream]);
@@ -142,6 +145,8 @@ export default function Setup() {
       setCameraError(false);
       setCameraTimeout(false);
       if (initTimeoutRef.current) clearTimeout(initTimeoutRef.current);
+      setTrackingStatus("searching");
+      setStatusText("Position your face in frame");
     } else {
       setCameraError(true);
       setTrackingStatus("warning");
@@ -149,16 +154,16 @@ export default function Setup() {
     }
   }, []);
 
-  // Step 1 Timeout Safety (8.5 seconds)
+  // Step 1 Camera Init Timeout Safety (12 seconds max waiting for camera ready)
   useEffect(() => {
-    if (step === 1 && !cameraError) {
+    if (step === 1 && !cameraError && trackingStatus === "initializing") {
       initTimeoutRef.current = setTimeout(() => {
-        if (stepRef.current === 1 && trackingStatus !== "confirmed") {
+        if (stepRef.current === 1 && trackingStatusRef.current === "initializing") {
           setCameraTimeout(true);
           setTrackingStatus("warning");
           setStatusText("Initialization taking longer than expected");
         }
-      }, 8500);
+      }, 12000);
     }
 
     return () => {
@@ -192,11 +197,11 @@ export default function Setup() {
         }, 750);
       }
     } else {
-      // Face detection lost
+      // Face detection lost or searching
       stableStartRef.current = null;
       if (transitionTimeoutRef.current) clearTimeout(transitionTimeoutRef.current);
 
-      if (trackingStatus !== "initializing") {
+      if (trackingStatus !== "confirmed" && trackingStatus !== "initializing") {
         setTrackingStatus("searching");
         setStatusText("Position your face in frame");
       }

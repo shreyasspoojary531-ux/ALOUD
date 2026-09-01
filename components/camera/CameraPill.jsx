@@ -272,7 +272,14 @@ export default function CameraPill({
               try {
                 result = detector?.detectForVideo ? detector.detectForVideo(video.current, timestamp) : null;
               } catch (wasmErr) {
-                // Ignore transient WASM frame alignment errors
+                console.warn("[CameraInit] detectForVideo exception:", wasmErr);
+              }
+
+              if (result) {
+                detectCount++;
+                if (detectCount === 1) {
+                  console.log("[CameraInit] Step E: FIRST SUCCESSFUL DETECTION FRAME!", result);
+                }
               }
 
               if (!result) {

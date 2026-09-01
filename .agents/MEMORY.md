@@ -213,12 +213,13 @@ Every scannable element in Aloud MUST respond to:
 ### 2. Setup / Calibration (`app/setup/page.jsx`)
 - Redesigned 5-step full-screen calibration workflow with live camera feed and real-time landmark tracking:
   1. Intro ("Set up eye control", Start / Skip for now)
-  2. "Position your face" (Live mirrored video feed, SVG eye landmark dot overlay, 1.5s stable detection confirmation state machine, status badge, 8.5s timeout safety)
+  2. "Position your face" (Live mirrored video feed, SVG eye landmark dot overlay, 1.5s stable detection confirmation state machine, status badge, 12s camera-init safety timeout)
   3. "Keep your eyes open" (1.0s, samples resting baseline, progress 25% -> 50%)
   4. "Get ready…" (0.8s, instructs user to prepare, progress 50% -> 75%)
   5. "Close your eyes now" (1.2s, samples closed threshold, progress 75% -> 100%)
 - Live eye landmark overlay: SVG overlay rendering real detected eye centers and eye contour dots, with pulsing glow during confirmation and solid green confirmation state.
-- Timeout & Error Handling: 8.5s timeout safety triggers explicit error state with "Retry Camera" and "Continue with Click / Space" fallback options.
+- Camera Readiness State Machine Fix: `handleCameraReady(true)` transitions `trackingStatus` from `"initializing"` to `"searching"` (`statusText`: `"Position your face in frame"`), clearing the camera init timeout so it never misfires while video is playing.
+- Timeout & Error Handling: 12.0s camera init safety timeout triggers error state only if `onCameraReady(true)` is never received, providing "Retry Camera" and "Continue with Click / Space" fallback options.
 - Total active sampling duration: 3.0 seconds. Saves thresholds to `localStorage.aloud_calibration` and proceeds to `/home`.
 
 ### 3. Home Screen (`app/home/page.jsx`)
