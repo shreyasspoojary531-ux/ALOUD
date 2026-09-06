@@ -30,6 +30,9 @@ export default function Spell() {
     }
   }, []);
 
+  const [aiSentences, setAiSentences] = useState([]);
+  const [aiError, setAiError] = useState(null);
+
   const getSuggestionsRef = useRef(null);
 
   // Lazily load coreVocabulary when spell mode mounts (not on app init / home load)
@@ -45,6 +48,51 @@ export default function Spell() {
     if (getSuggestionsRef.current) {
       setSuggestions(getSuggestionsRef.current(message));
     }
+  }, [message]);
+
+  // Fetch AI sentence composition candidates when message contains fragmented keywords (>= 2 words)
+  useEffect(() => {
+    const trimmed = message.trim();
+    const words = trimmed ? trimmed.split(/\s+/) : [];
+
+    if (words.length < 2) {
+      setAiSentences([]);
+      setAiError(null);
+      return;
+    }
+
+    let cancelled = false;
+    const timer = setTimeout(() => {
+      fetch("/api/suggest", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ message: trimmed }),
+      })
+        .then((r) => r.json())
+        .then((data) => {
+          if (cancelled) return;
+          if (Array.isArray(data?.sentences) && data.sentences.length > 0) {
+            setAiSentences(data.sentences);
+            setAiError(null);
+          } else if (data?.error) {
+            setAiSentences([]);
+            setAiError("AI unavailable");
+          } else {
+            setAiSentences([]);
+          }
+        })
+        .catch(() => {
+          if (!cancelled) {
+            setAiSentences([]);
+            setAiError("AI unavailable");
+          }
+        });
+    }, 800);
+
+    return () => {
+      cancelled = true;
+      clearTimeout(timer);
+    };
   }, [message]);
 
   const keyboardRef = useRef(null);
@@ -68,7 +116,10 @@ export default function Spell() {
       <section className="spell center">
         <TopBar spell />
         <div className="spell-message">
-          <p className="eyebrow">YOUR MESSAGE</p>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+            <p className="eyebrow">YOUR MESSAGE</p>
+            {aiError && <span style={{ fontSize: "0.75rem", color: "var(--salmon)", fontWeight: 600, letterSpacing: "0.05em" }}>{aiError}</span>}
+          </div>
           <div className={`message-line ${message ? "live" : ""}`}>
             {message || "Pick a suggestion, or spell a word."}
           </div>
@@ -81,6 +132,7 @@ export default function Spell() {
           keyboardRef={keyboardRef}
           enabled={!spoken}
           suggestions={suggestions}
+          aiSentences={aiSentences}
           interval={adaptedDwellDuration}
         />
       </section>

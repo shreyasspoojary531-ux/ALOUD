@@ -1,29 +1,35 @@
 import { NextResponse } from "next/server";
-import { getSuggestions } from "../../../lib/gemini";
+import { composeSentences } from "../../../lib/gemini";
 
-// In-memory minimum-interval guard (1.5 seconds).
-// Note: In-memory state will not persist across serverless cold starts or multiple instances.
+// In-memory minimum-interval rate limit guard (1.5 seconds)
 let lastRequestTime = 0;
 
 export async function POST(request) {
   const now = Date.now();
   if (now - lastRequestTime < 1500) {
     return NextResponse.json(
-      { error: "Too many requests. Please wait before asking for suggestions again." },
+      { error: "AI unavailable", sentences: [] },
       { status: 429 }
     );
   }
 
   try {
     const body = await request.json();
-    const message = body?.message || "";
+    const message = body?.message || body?.keywords || "";
+
+    if (!message || !message.trim()) {
+      return NextResponse.json({ sentences: [] });
+    }
 
     lastRequestTime = Date.now();
 
-    const suggestions = await getSuggestions(message);
-    return NextResponse.json({ suggestions });
+    const sentences = await composeSentences(message);
+    return NextResponse.json({ sentences });
   } catch (error) {
-    console.warn("[Suggest API Failure]:", error.message);
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    console.warn("[Sentence Compose API Failure]:", error.message);
+    return NextResponse.json(
+      { error: "AI unavailable", sentences: [] },
+      { status: 500 }
+    );
   }
 }

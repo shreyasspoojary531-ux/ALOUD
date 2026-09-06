@@ -61,6 +61,7 @@ export default function Keyboard({
   keyboardRef,
   enabled = true,
   suggestions = [],
+  aiSentences = [],
   interval = 1800,
 }) {
   const isMobile = useIsMobile(900);
@@ -132,10 +133,37 @@ export default function Keyboard({
     ];
   }, [hasMessage, suggestions, isMobile]);
 
+  // Build AI sentence composition rows when Gemini returns sentence candidates
+  const aiSentenceRows = useMemo(() => {
+    if (!aiSentences || aiSentences.length === 0) return [];
+    if (!isMobile) {
+      return [
+        {
+          label: "AI SENTENCE",
+          kind: "ai-sentence-row",
+          keys: [
+            ...aiSentences.map((s) => ({
+              label: s,
+              kind: "ai-sentence",
+              colSpan: Math.max(2, Math.floor(8 / aiSentences.length)),
+            })),
+            back,
+          ],
+        },
+      ];
+    }
+    return aiSentences.map((s, idx) => ({
+      label: `AI OPTION ${idx + 1}`,
+      kind: "ai-sentence-row",
+      keys: [{ label: s, kind: "ai-sentence", colSpan: 3 }, back],
+    }));
+  }, [aiSentences, isMobile]);
+
   const rows = useMemo(() => {
     if (!isMobile) {
       return [
         ...suggestRows,
+        ...aiSentenceRows,
         { label: "A–I", keys: letters("ABCDEFGHI").concat(back) },
         { label: "J–R", keys: letters("JKLMNOPQR").concat(back) },
         {
@@ -165,6 +193,7 @@ export default function Keyboard({
     // Mobile reflowed rows (fewer keys per row -> larger touch targets)
     return [
       ...suggestRows,
+      ...aiSentenceRows,
       { label: "A–E", keys: letters("ABCDE").concat(back) },
       { label: "F–J", keys: letters("FGHIJ").concat(back) },
       { label: "K–O", keys: letters("KLMNO").concat(back) },
@@ -199,7 +228,7 @@ export default function Keyboard({
       { label: "ACTIONS 1", keys: mobileActions1 },
       { label: "ACTIONS 2", keys: mobileActions2 },
     ];
-  }, [suggestRows, isMobile]);
+  }, [suggestRows, aiSentenceRows, isMobile]);
 
   // Reset opened row if layout changes out of bounds
   useEffect(() => {
@@ -247,6 +276,10 @@ export default function Keyboard({
     if ([".", ",", "?"].includes(key.label)) return setMessage((m) => m + key.label);
     if (key.kind === "suggest") {
       return setMessage((m) => (m.trim() ? `${m.trimEnd()} ${key.label}` : key.label));
+    }
+    if (key.kind === "ai-sentence") {
+      setOpened(null);
+      return setMessage(key.label);
     }
   };
 
