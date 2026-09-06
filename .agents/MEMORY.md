@@ -25,9 +25,8 @@ This document is the single source of truth for the **Aloud** codebase architect
 | **Styling** | Vanilla CSS (`styles/tokens.css`, `styles/globals.css`) | Design tokens, animations, media queries. **No Tailwind, no CSS-in-JS, no UI kits.** |
 | **Vision AI** | `@mediapipe/tasks-vision` | Real-time face & hand landmark detection via WebAssembly |
 | **Speech** | Web Speech API | Native browser SpeechSynthesis text-to-speech wrapper (`lib/speech.js`) |
-| **AI Suggestions**| Gemini 3.5 Flash-Lite REST API | Server-side next-word prediction (`app/api/suggest/route.js`, `lib/gemini.js`) |
+| **AI Suggestions**| Gemini Flash-Lite API | Server-side next-word prediction (`app/api/suggest/route.js`, `lib/gemini.js`) |
 | **Icons** | Custom Inline SVG Components | Hand-crafted SVG icons matching token stroke widths (No `lucide-react`) |
-| **PWA / SW** | Web App Manifest & Service Worker | Production-only app shell caching (`app/manifest.js`, `public/sw.js`, icons: `icon-192.png`, `icon-512.png`, `maskable-icon-*.png`) |
 
 ---
 
@@ -36,27 +35,16 @@ This document is the single source of truth for the **Aloud** codebase architect
 ```
 app/
 ├── api/
-│   ├── suggest/route.js               → Server route executing Gemini 3.6 Flash for suggestions (POST { message })
-│   └── telegram/
-│       ├── get-chat-id/route.js       → Server route fetching pending Telegram chat_ids via getUpdates (GET) & processing command updates
-│       ├── send-alert/route.js        → Server route sending Telegram alert messages via sendMessage (POST { chat_id, message })
-│       └── webhook/route.js           → Server webhook endpoint receiving Telegram updates (POST)
-├── error.jsx                → Eye-controlled application error boundary page with recovery options
-├── global-error.jsx         → Critical root layout error fallback screen
+│   └── suggest/route.js     → Server route calling Gemini for next-word/phrase suggestions
 ├── home/
 │   └── page.jsx             → Home screen: Category grid (I feel, I need, People, Answers, Spell CTA)
-├── not-found.jsx            → Eye-controlled 404 page with navigation CTAs
-├── naruto/
-│   └── page.jsx             → Secret AR Easter egg wrapper screen rendering isolated static iframe (/naruto/index.html with unmuted audio activation on user gesture)
 ├── profile/
 │   └── page.jsx             → Profile & Speech Analytics metrics screen
-├── settings/
-│   └── page.jsx             → Dedicated Full Settings screen (Bento Grid layout): Caregiver Alerts, Eyebrow shortcut, Custom Phrases, Adaptive speed, Cursor trail, Profile link
 ├── setup/
 │   └── page.jsx             → Step-by-step calibration flow for eye control thresholds
 ├── spell/
 │   └── page.jsx             → Full row-level scanning spelling keyboard
-├── not-found.jsx           → Eye-controlled 404 Not Found error page
+├── layout.jsx               → Root layout wrapping app with EyeControlProvider & SettingsProvider
 ├── page.jsx                 → Splash / Landing page with feature showcases
 └── template.jsx             → Route transition wrapper
 
@@ -83,12 +71,6 @@ components/
 ├── scanner/
 │   ├── ScanRing.jsx         → SVG dwell-time progress ring indicator
 │   └── useScanner.js        → Core screen-agnostic scanning engine hook
-├── shaders/
-│   ├── AppBackground.jsx       → Production-ready client-hydrated WarpField background component (speed 10, streak 0.70, tile 0.30, hue -140, opacity 0.20)
-│   ├── SplashCursor.jsx        → Open-source WebGL fluid simulation cursor effect (rendered ONLY on Landing & Setup pages when mode === "manual" AND cursorTrailEnabled === true)
-│   └── warp-field/
-│       ├── WarpFieldBackground.jsx → Bulletproof rAF 60fps ThreeUI WarpField background component (500 emerald streaks + 50 luminous tiles)
-│       └── warpFieldRenderer.js    → Three.js WebGL renderer with THREE.Clock delta timing, transparent clear color, soft fog, FOV & Centering
 └── shared/
     ├── Button.jsx           → Reusable styled pill buttons
     ├── CustomModeSelect.jsx → Dropdown to select input mode (blink, eyebrow, palm, manual)
@@ -96,23 +78,17 @@ components/
     ├── HelpModal.jsx        → On-screen guidance and instructions modal
     ├── Icon.jsx             → System SVG icon registry
     ├── ProgressBar.jsx      → Step progress indicator for setup/calibration flow
-    ├── CustomPhrasesModal.jsx → Modal overlay for managing user custom phrases (add/delete per category)
-    ├── OfflineBanner.jsx    → Non-blocking connectivity banner shown when browser goes offline
-    ├── SettingsContext.jsx  → Context for voice, repeat, custom phrases, adaptive dwell, cursor trail settings
+    ├── SettingsContext.jsx  → Context for voice selection & repeat count settings
+    ├── SettingsModal.jsx    → Modal dialog version of Settings
     ├── SettingsPopover.jsx  → Dropdown popover (desktop) & centered modal overlay (mobile) for Settings
     └── TopBar.jsx           → Universal header shell (logo, mode selector, settings, help, mobile drawer)
 
 lib/
-├── adaptiveDwell.js         → Separate additive adaptive scan speed engine (between-session dwell adaptation)
 ├── analytics.js             → Local storage tracking for speech history & analytics metrics
-├── gemini.js                → Server-only REST client calling Google Gemini 3.5 Flash-Lite API
+├── coreVocabulary.js        → Offline static seed core vocabulary & frequency ranking model (getSuggestions)
+├── gemini.js                → Server-only wrapper calling Google Gemini API
 ├── mediapipeLoader.js       → Loader for MediaPipe FaceLandmarker and HandLandmarker models
 └── speech.js                → Web Speech API synthesis wrapper with retry & queue control
-
-public/
-├── manifest.json            → PWA application manifest for standalone offline capability
-├── offline.html             → Standalone offline HTML page (Zero Chrome Dino page on reload when offline)
-└── sw.js                    → Service Worker caching app shell and offline fallbacks
 
 styles/
 ├── globals.css              → Layouts, animations, media queries, component classes
@@ -136,31 +112,26 @@ Every scannable element in Aloud MUST respond to:
 
 ### Scanning Engine (`useScanner.js`)
 - **Signature**: `useScanner(items, onSelect, interval = 1800, enabled = true)`
-- **Auto-Advance**: `setInterval` cycles active index every `interval` ms, managed via `timerRef`.
-- **Synchronous Timer Clearing**: Immediately calls `clearInterval(timerRef.current)` and sets `active` / `activeRef` to `targetIndex` upon `select()`, preventing event-loop race conditions and 1-frame highlight flickers/jumps.
+- **Auto-Advance**: `setInterval` cycles active index every `interval` ms.
 - **Blink Onset Capture (`captureOnset`)**: Locks target item index at the exact frame a blink/gesture starts, ensuring accuracy even if the timer advances before the gesture completes.
-- **Pause Synchronization**: Automatically suspends timer advance and ignores selection calls when `isPaused` (from `EyeControlContext`) is `true` or `isPausedRef.current` is set.
+- **Pause Synchronization**: Automatically suspends timer advance and ignores selection calls when `isPaused` (from `EyeControlContext`) is `true`.
 
 ### Gesture Detection Hooks (`components/camera/`)
 1. **`useBlinkSelect.js`**:
-   - Ingests blink blendshapes (`eyeBlinkLeft`, `eyeBlinkRight`) and 3D Eye Aspect Ratio (`ear`).
-   - Uses **Blendshape score ($\ge 0.55$) as primary signal**, with **EAR ($> 0.26$) as a secondary rejection filter** to eliminate motion noise spikes without breaking detection on natural eye closures.
-   - Suppresses detection during rapid head movement AND during a **400ms post-motion cooldown window** to prevent false triggers while landmarks settle.
+   - Ingests blink blendshapes (`eyeBlinkLeft`, `eyeBlinkRight`).
+   - Uses hysteresis thresholds to prevent flickering (`closeThreshold`, `openThreshold`, `holdDuration`).
    - Phases: `resting` -> `closed` -> `held` -> `triggered`.
 2. **`useEyebrowSelect.js`**:
    - Ingests `browOuterUpLeft` and `browOuterUpRight` scores.
-   - Thresholds tuned for natural, comfortable eyebrow raises ($\text{raise} \ge 0.22$, adaptive $\text{restingBaseline} + 0.14$).
    - Triggers selection when eyebrow raise duration exceeds `holdDuration`.
 3. **`usePalmSelect.js`**:
    - Ingests 21 3D hand landmarks.
    - Measures normalized distance between fingertips (Index, Middle, Ring, Pinky) and wrist base landmark `0`.
-   - Triggers selection when fist closes (`phase === "closed"`). Untouched and fully preserved.
+   - Triggers selection when fist closes (`phase === "closed"`).
 
 ### Camera Component (`CameraPill.jsx`)
 - Floating pill in bottom-right corner.
 - Runs `requestAnimationFrame` loop calling `detector.detectForVideo(video, timestamp)`.
-- Calculates 3D Eye Aspect Ratio (EAR) from eye landmark coordinates (33, 133, 159, 145, 158, 144 for left eye; 362, 263, 386, 374, 385, 373 for right eye).
-- Enforces a **400ms motion cooldown timer** (`motionCooldownUntilRef`) after head movement is detected (`rawMotion > 0.020`).
 - **Global Pause Handling**: When `ctx.isPaused` is `true` (e.g., mobile sidebar open), skips detection frame ingestion and displays status `"Paused (Menu open)"`. Keeps webcam stream warm without re-requesting permissions.
 - **Error Handling**: Gracefully catches `NotReadableError` (camera in use) and `PermissionDeniedError`, showing explicit inline recovery hints and a "Retry camera" button.
 
@@ -175,30 +146,17 @@ Every scannable element in Aloud MUST respond to:
 - **`setMode(newMode)`**: Updates mode and saves to `localStorage.aloud_control_mode`.
 - **`setIsPaused(paused)`**: Toggles global tracking pause.
 
-### `SettingsContext` (`components/shared/SettingsContext.jsx`)
+### `SettingsContext` (`components/shared/SettingsContext.jsx`) 
 - **`voiceName`**: `string | null` (Selected Web Speech API voice name)
-- **`repeatCount`**: `number | "loop"` (`1` | `2` | `3` | `"loop"`, Default: `1`). `"loop"` repeats speech continuously until dismissed.
-- **`eyebrowShortcut`**: `boolean` (Default: `false`). Opt-in shortcut: in Eye blink mode on the Spell screen, raising eyebrows jumps scanner cursor directly to AI suggestions (`jumpTo(0)`).
-- **`customPhrases`**: `Array<{ id: string, text: string, category: string, isEmergency?: boolean }>` (Default: `[]`). User-added custom phrases saved into categories (`I feel`, `I need`, `People`, `Answers`), rendered as native category cards with optional emergency flag and saved in `localStorage.aloud_custom_phrases`.
-- **`adaptiveDwellEnabled`**: `boolean` (Default: `false`). Opt-in setting to adapt scanner dwell pacing between sessions based on user success vs correction rates.
-- **`adaptedDwellDuration`**: `number` (Default: `1800ms`). Computed dwell duration passed into `useScanner`. Safe bounds: `1200ms` min floor, `3200ms` max ceiling.
-- **`telegramAlertMode`**: `"emergency"` | `"all"` (Default: `"emergency"`). Caregiver Telegram notification routing mode: `"emergency"` routes alerts strictly for phrases marked `isEmergency: true` and the "call for help" action; `"all"` routes notifications for every spoken/typed phrase.
-- **`cursorTrailEnabled`**: `boolean` (Default: `false`). Opt-in setting to show the WebGL fluid ink-trail cursor effect on Landing and Setup pages (manual mouse mode only). When `false`, the `SplashCursor` component is fully unmounted — no canvas, no mouse listeners, no animation loop.
+- **`repeatCount`**: `number` (`1` | `2` | `3`, Default: `1`)
 
 ### Local Storage Keys
 - `aloud_control_mode`: Current input mode string.
-- `aloud_voice_name`: Selected SpeechSynthesis voice name string.
-- `aloud_repeat_count`: Repeat setting string (`"1"`, `"2"`, `"3"`, or `"loop"`).
-- `aloud_eyebrow_shortcut`: `"true"` | `"false"`.
-- `aloud_telegram_alert_mode`: `"emergency"` | `"all"`.
-- `aloud_custom_phrases`: JSON array of user-added custom phrase objects `{ id, text, category, isEmergency }`.
-- `aloud_adaptive_dwell`: `"true"` | `"false"`.
-- `aloud_adapted_dwell_ms`: Number string representing adapted dwell milliseconds.
-- `aloud_dwell_metrics`: JSON object tracking session successes and corrections `{ successes, corrections }`.
+- `aloud_voice`: Selected SpeechSynthesis voice name string.
+- `aloud_repeat_count`: Integer repeat count (`1`, `2`, or `3`).
 - `aloud_calibration`: JSON object containing custom blink thresholds `{ close, open, holdDuration }`.
-- `aloud_camera_minimized`: `"true"` | `"false"` (Read in `useEffect` post-hydration in `CameraPill.jsx` to prevent SSR mismatch).
-- `aloud_cursor_trail_enabled`: `"true"` | `"false"` (Default: `"false"`). Controls SplashCursor WebGL fluid simulation on Landing and Setup pages.
-- `aloud_analytics_events`: JSON array of spoken phrase events for analytics.
+- `aloud_camera_minimized`: `"true"` | `"false"`.
+- `aloud_history`: JSON array of spoken phrase events for analytics.
 
 ---
 
@@ -211,17 +169,13 @@ Every scannable element in Aloud MUST respond to:
 - Primary CTA: `"Begin with eye control"` -> Navigates to `/setup`.
 
 ### 2. Setup / Calibration (`app/setup/page.jsx`)
-- Redesigned 5-step full-screen calibration workflow with live camera feed and real-time landmark tracking:
-  1. Intro ("Set up eye control", Start / Skip for now)
-  2. "Position your face" (Live mirrored video feed, SVG eye landmark dot overlay, 1.5s stable detection confirmation state machine, status badge, 12s camera-init safety timeout)
-  3. "Keep your eyes open" (1.0s, samples resting baseline, progress 25% -> 50%)
-  4. "Get ready…" (0.8s, instructs user to prepare, progress 50% -> 75%)
-  5. "Close your eyes now" (1.2s, samples closed threshold, progress 75% -> 100%)
-- Live eye landmark overlay: SVG overlay rendering real-time corner-bracket autofocus reticles with a 3.4px white contrast halo underneath colored accent strokes for high visibility across any video lighting, accompanied by a calm top-to-bottom horizontal scan-line sweep overlay during searching/confirming states that fades out cleanly upon lock confirmation.
-- Step Transition Timer Fix: Prevented high-frequency (60 FPS) `landmarks` state updates from triggering the `useEffect` cleanup function (`clearTimeout`), allowing the 750ms step transition timer to fire cleanly and advance to Step 2.
-- Camera Readiness State Machine Fix: `handleCameraReady(true)` transitions `trackingStatus` from `"initializing"` to `"searching"` (`statusText`: `"Position your face in frame"`), clearing the camera init timeout so it never misfires while video is playing.
-- Timeout & Error Handling: 12.0s camera init safety timeout triggers error state only if `onCameraReady(true)` is never received, providing "Retry Camera" and "Continue with Click / Space" fallback options.
-- Total active sampling duration: 3.0 seconds. Saves thresholds to `localStorage.aloud_calibration` and proceeds to `/home`.
+- 5-step full-screen calibration workflow:
+  1. Intro (Start / Skip for now)
+  2. "Starting camera…"
+  3. "Keep your eyes open" (samples resting baseline)
+  4. "Get ready…"
+  5. "Close your eyes now" (samples closed threshold)
+- Saves thresholds to `localStorage.aloud_calibration` and proceeds to `/home`.
 
 ### 3. Home Screen (`app/home/page.jsx`)
 - Eyebrow label: `"WHAT WOULD YOU LIKE TO SAY?"`
@@ -236,11 +190,9 @@ Every scannable element in Aloud MUST respond to:
 ### 4. Spelling Keyboard (`app/spell/page.jsx`)
 - Top bar with Back arrow to Home, centered page title, and mode dropdown.
 - Live message line displaying current composed text.
-- AI Word Suggestions row (calls POST `/api/suggest` with JSON `{ message }`).
+- Word Suggestions row (uses offline client-side frequency model `lib/coreVocabulary.js` via `getSuggestions`).
 - **Two-tier scanning structure**:
-  1. **Row scanning**: Highlights entire rows.
-     - **Desktop (≥900px)**: 10-column layout (SUGGESTION, A–I, J–R, S–Z + Space, EDIT, ACTIONS).
-     - **Mobile (<900px)**: Reflowed into shorter ranges for ≥44px touch targets (SUGGESTION, A–E, F–J, K–O, P–T, U–X, Y–Z + Space, EDIT 1, EDIT 2, ACTIONS 1, ACTIONS 2).
+  1. **Row scanning**: Highlights entire rows (Suggestions, A–I, J–R, S–Z + Space, Edit row, Actions row).
   2. **Key scanning**: Selecting a row locks focus to scan individual keys inside that row.
 - **Alert Action**: `"Call for help"` key styled with alert red tone (`--salmon`).
 

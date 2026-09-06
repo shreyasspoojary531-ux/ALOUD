@@ -30,34 +30,21 @@ export default function Spell() {
     }
   }, []);
 
-  // Fetch AI suggestions when message changes with a 600ms debounce.
-  // Errors or rate limits (429/500) will NOT wipe out existing suggestions.
+  const getSuggestionsRef = useRef(null);
+
+  // Lazily load coreVocabulary when spell mode mounts (not on app init / home load)
   useEffect(() => {
-    if (!message.trim()) {
-      setSuggestions([]);
-      return;
+    import("../../lib/coreVocabulary").then((mod) => {
+      getSuggestionsRef.current = mod.getSuggestions;
+      setSuggestions(mod.getSuggestions(message));
+    });
+  }, []);
+
+  // Update suggestions synchronously when message changes
+  useEffect(() => {
+    if (getSuggestionsRef.current) {
+      setSuggestions(getSuggestionsRef.current(message));
     }
-
-    let cancelled = false;
-    const timer = setTimeout(() => {
-      fetch("/api/suggest", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ message }),
-      })
-        .then((r) => r.json())
-        .then((data) => {
-          if (!cancelled && Array.isArray(data?.suggestions)) {
-            setSuggestions(data.suggestions);
-          }
-        })
-        .catch(() => {}); // never block typing on a failed AI call
-    }, 600);
-
-    return () => {
-      cancelled = true;
-      clearTimeout(timer);
-    };
   }, [message]);
 
   const keyboardRef = useRef(null);
