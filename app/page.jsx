@@ -3,6 +3,7 @@ import { useCallback, useState } from "react";
 import { useRouter } from "next/navigation";
 import TopBar from "../components/shared/TopBar";
 import Button from "../components/shared/Button";
+import TactileButton from "../components/shared/TactileButton";
 import LandingSections from "../components/landing/LandingSections";
 import HelpModal from "../components/shared/HelpModal";
 import SplashCursor from "../components/shaders/SplashCursor";
@@ -37,12 +38,12 @@ export default function Splash() {
               only with their eyes.
             </p>
             <div className="splash-cta-container">
-              <Button
-                className="primary splash-btn"
+              <TactileButton
+                className="terracotta splash-btn"
                 onSelect={handleBegin}
               >
                 Begin with eye control
-              </Button>
+              </TactileButton>
             </div>
           </div>
         </div>
