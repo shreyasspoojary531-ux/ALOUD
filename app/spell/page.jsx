@@ -32,6 +32,7 @@ export default function Spell() {
 
   const [aiSentences, setAiSentences] = useState([]);
   const [aiError, setAiError] = useState(null);
+  const [isGenerating, setIsGenerating] = useState(false);
 
   const getSuggestionsRef = useRef(null);
 
@@ -58,10 +59,14 @@ export default function Spell() {
     if (words.length < 2) {
       setAiSentences([]);
       setAiError(null);
+      setIsGenerating(false);
       return;
     }
 
     let cancelled = false;
+    setIsGenerating(true);
+    setAiError(null);
+
     const timer = setTimeout(() => {
       fetch("/api/suggest", {
         method: "POST",
@@ -71,6 +76,7 @@ export default function Spell() {
         .then((r) => r.json())
         .then((data) => {
           if (cancelled) return;
+          setIsGenerating(false);
           if (Array.isArray(data?.sentences) && data.sentences.length > 0) {
             setAiSentences(data.sentences);
             setAiError(null);
@@ -83,6 +89,7 @@ export default function Spell() {
         })
         .catch(() => {
           if (!cancelled) {
+            setIsGenerating(false);
             setAiSentences([]);
             setAiError("AI unavailable");
           }
@@ -118,7 +125,18 @@ export default function Spell() {
         <div className="spell-message">
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
             <p className="eyebrow">YOUR MESSAGE</p>
-            {aiError && <span style={{ fontSize: "0.75rem", color: "var(--salmon)", fontWeight: 600, letterSpacing: "0.05em" }}>{aiError}</span>}
+            {isGenerating ? (
+              <span className="ai-status-pill generating">
+                <span className="dot-wave">
+                  <span />
+                  <span />
+                  <span />
+                </span>
+                Composing...
+              </span>
+            ) : aiError ? (
+              <span className="ai-status-pill error">{aiError}</span>
+            ) : null}
           </div>
           <div className={`message-line ${message ? "live" : ""}`}>
             {message || "Pick a suggestion, or spell a word."}
@@ -133,6 +151,7 @@ export default function Spell() {
           enabled={!spoken}
           suggestions={suggestions}
           aiSentences={aiSentences}
+          isGenerating={isGenerating}
           interval={adaptedDwellDuration}
         />
       </section>

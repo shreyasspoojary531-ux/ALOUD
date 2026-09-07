@@ -873,6 +873,76 @@ a:focus-visible {
   animation: pulse 1s infinite;
 }
 
+/* AI Composition Generating State & Badges */
+.ai-status-pill {
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  padding: 3px 10px;
+  border-radius: 12px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.ai-status-pill.error {
+  color: var(--salmon);
+  background: rgba(224, 90, 71, 0.08);
+  border: 1px solid rgba(224, 90, 71, 0.2);
+}
+
+.ai-status-pill.generating {
+  color: var(--orange);
+  background: var(--orange-pale);
+  border: 1px solid rgba(207, 87, 0, 0.25);
+}
+
+.dot-wave {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+}
+
+.dot-wave span {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background-color: var(--orange);
+  animation: dotWave 1.2s infinite ease-in-out;
+}
+
+.dot-wave span:nth-child(2) {
+  animation-delay: 0.2s;
+}
+
+.dot-wave span:nth-child(3) {
+  animation-delay: 0.4s;
+}
+
+@keyframes dotWave {
+  0%, 80%, 100% {
+    transform: scale(0.6);
+    opacity: 0.35;
+  }
+  40% {
+    transform: scale(1.15);
+    opacity: 1;
+  }
+}
+
+.key.ai-generating-key {
+  background: var(--orange-pale);
+  border: 1.5px dashed var(--orange);
+  color: var(--orange);
+  font-weight: 500;
+  opacity: 0.9;
+  cursor: wait;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
 /* ─────────────────────────────────────────────
    FLOATING CAMERA PILL & CONFIDENCE METRICS
    ───────────────────────────────────────────── */

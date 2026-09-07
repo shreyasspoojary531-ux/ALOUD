@@ -62,6 +62,7 @@ export default function Keyboard({
   enabled = true,
   suggestions = [],
   aiSentences = [],
+  isGenerating = false,
   interval = 1800,
 }) {
   const isMobile = useIsMobile(900);
@@ -133,8 +134,24 @@ export default function Keyboard({
     ];
   }, [hasMessage, suggestions, isMobile]);
 
-  // Build AI sentence composition rows when Gemini returns sentence candidates
+  // Build AI sentence composition rows when Gemini returns sentence candidates or is currently generating
   const aiSentenceRows = useMemo(() => {
+    if (isGenerating) {
+      return [
+        {
+          label: "AI SENTENCE",
+          kind: "ai-sentence-row",
+          keys: [
+            {
+              label: "Composing sentence...",
+              kind: "ai-generating-key",
+              colSpan: !isMobile ? 8 : 3,
+            },
+            back,
+          ],
+        },
+      ];
+    }
     if (!aiSentences || aiSentences.length === 0) return [];
     if (!isMobile) {
       return [
@@ -157,7 +174,7 @@ export default function Keyboard({
       kind: "ai-sentence-row",
       keys: [{ label: s, kind: "ai-sentence", colSpan: 3 }, back],
     }));
-  }, [aiSentences, isMobile]);
+  }, [aiSentences, isGenerating, isMobile]);
 
   const rows = useMemo(() => {
     if (!isMobile) {
@@ -276,6 +293,9 @@ export default function Keyboard({
     if ([".", ",", "?"].includes(key.label)) return setMessage((m) => m + key.label);
     if (key.kind === "suggest") {
       return setMessage((m) => (m.trim() ? `${m.trimEnd()} ${key.label}` : key.label));
+    }
+    if (key.kind === "ai-generating-key") {
+      return;
     }
     if (key.kind === "ai-sentence") {
       setOpened(null);
