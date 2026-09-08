@@ -308,7 +308,7 @@ export default function Setup() {
 
   return (
     <main className="app">
-      {mode === "manual" && cursorTrailEnabled && <SplashCursor COLOR="#cf5700" />}
+      {cursorTrailEnabled && <SplashCursor COLOR="#cf5700" />}
       <TopBar onHelp={() => setShowHelp(true)} />
       <div className="screen-center">
         <section className="calibration">

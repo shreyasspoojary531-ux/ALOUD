@@ -395,7 +395,7 @@ export default function SettingsPage() {
               </button>
             </div>
             <p className="settings-hint" style={{ marginTop: "6px" }}>
-              Shows a fluid ink-trail animation following your cursor on the Landing and Setup screens (manual mouse mode only).
+              Shows a fluid ink-trail animation following your cursor on the Landing and Setup screens.
             </p>
           </div>
 
