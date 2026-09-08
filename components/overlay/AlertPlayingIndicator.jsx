@@ -1,10 +1,26 @@
 "use client";
 
+import SiriWave from "../ui/SiriWave";
+
 /**
- * Isolated wrapper for the alert-playing visual indicator.
- * Internals are swappable in a follow-up prompt without touching SpokenMessageOverlay.
- * Currently renders the pulsing dots placeholder.
+ * Visual audio-playing indicator component for SpokenMessageOverlay.
+ * Renders the WebGL SiriWave waveform animation when speech is active.
  */
 export default function AlertPlayingIndicator() {
-  return <div className="dots" aria-hidden="true">•••••</div>;
+  return (
+    <div className="alert-playing-indicator" aria-hidden="true">
+      <SiriWave
+        variant="wave"
+        size={220}
+        renderScale={0.8}
+        className="siri-wave-canvas"
+        style={{
+          margin: "0 auto 1.5rem auto",
+          borderRadius: "24px",
+          boxShadow: "0 12px 36px rgba(0, 0, 0, 0.25)",
+          background: "#000000",
+        }}
+      />
+    </div>
+  );
 }
