@@ -29,33 +29,23 @@ function useIsMobile(breakpoint = 900) {
 const letters = (s) => s.split("").map((label) => ({ label }));
 const back = { label: "back", icon: "back", kind: "back" };
 
-const desktopActions = [
-  { label: "home", icon: "heart", kind: "action-key" },
-  { label: "speak", icon: "message", kind: "action-key" },
-  { label: "rest", icon: "rest", kind: "action-key" },
-  { label: "recent", icon: "keyboard", kind: "action-key" },
-  { label: "speed", icon: "sun", kind: "action-key" },
-  { label: "call for help", icon: "help", kind: "alert", colSpan: 4 },
-  back,
-];
-
-const mobileActions1 = [
-  { label: "home", icon: "heart", kind: "action-key" },
-  { label: "speak", icon: "message", kind: "action-key" },
-  { label: "rest", icon: "rest", kind: "action-key" },
-  { label: "recent", icon: "keyboard", kind: "action-key" },
-  back,
-];
-
-const mobileActions2 = [
-  { label: "speed", icon: "sun", kind: "action-key" },
-  { label: "call for help", icon: "help", kind: "alert", colSpan: 2 },
-  back,
-];
+// Single flat CURSOR row — scans exactly like a letter row (row highlight → open → individual keys)
+const cursorRow = {
+  label: "CURSOR",
+  keys: [
+    { label: "home", icon: "home", kind: "action-key" },
+    { label: "left", icon: "arrow-left", kind: "nav-key" },
+    { label: "backspace", icon: "backspace", kind: "nav-key" },
+    { label: "right", icon: "arrow-right", kind: "nav-key" },
+    back,
+  ],
+};
 
 export default function Keyboard({
   message,
   setMessage,
+  cursorPos = 0,
+  setCursorPos,
   speak,
   blinkSelect,
   keyboardRef,
@@ -82,9 +72,10 @@ export default function Keyboard({
         ...sayIt,
         colSpan: hasMessage && suggestions.length > 0 ? 1 : 9,
       };
-      const keys = hasMessage && suggestions.length > 0
-        ? [desktopSayIt, ...suggestions.map((t) => ({ label: t, kind: "suggest" })), back]
-        : [desktopSayIt, back];
+      const keys =
+        hasMessage && suggestions.length > 0
+          ? [desktopSayIt, ...suggestions.map((t) => ({ label: t, kind: "suggest" })), back]
+          : [desktopSayIt, back];
       return [{ label: "SUGGESTION", kind: "suggest-row", keys }];
     }
 
@@ -105,10 +96,7 @@ export default function Keyboard({
           {
             label: "SUGGEST 2",
             kind: "suggest-row",
-            keys: [
-              { label: suggestions[2], kind: "suggest", colSpan: 2 },
-              back,
-            ],
+            keys: [{ label: suggestions[2], kind: "suggest", colSpan: 2 }, back],
           },
         ];
       }
@@ -116,11 +104,7 @@ export default function Keyboard({
         {
           label: "SUGGESTION",
           kind: "suggest-row",
-          keys: [
-            sayIt,
-            ...suggestions.map((t) => ({ label: t, kind: "suggest" })),
-            back,
-          ],
+          keys: [sayIt, ...suggestions.map((t) => ({ label: t, kind: "suggest" })), back],
         },
       ];
     }
@@ -134,7 +118,7 @@ export default function Keyboard({
     ];
   }, [hasMessage, suggestions, isMobile]);
 
-  // Build AI sentence composition rows when Gemini returns sentence candidates or is currently generating
+  // Build AI sentence composition rows
   const aiSentenceRows = useMemo(() => {
     if (isGenerating) {
       return [
@@ -185,29 +169,12 @@ export default function Keyboard({
         { label: "J–R", keys: letters("JKLMNOPQR").concat(back) },
         {
           label: "S–Z",
-          keys: letters("STUVWXYZ").concat([
-            { label: "space", kind: "space" },
-            back,
-          ]),
+          keys: letters("STUVWXYZ").concat([{ label: "space", kind: "space" }, back]),
         },
-        {
-          label: "EDIT",
-          keys: [
-            { label: "letter", icon: "no", kind: "action-key" },
-            { label: "word", icon: "message", kind: "action-key" },
-            { label: "undo", icon: "back", kind: "action-key" },
-            { label: "clear", icon: "x-mark", kind: "action-key" },
-            { label: "." },
-            { label: "," },
-            { label: "?", kind: "question-key", colSpan: 3 },
-            back,
-          ],
-        },
-        { label: "ACTIONS", keys: desktopActions },
+        cursorRow,
       ];
     }
 
-    // Mobile reflowed rows (fewer keys per row -> larger touch targets)
     return [
       ...suggestRows,
       ...aiSentenceRows,
@@ -218,32 +185,9 @@ export default function Keyboard({
       { label: "U–X", keys: letters("UVWX").concat(back) },
       {
         label: "Y–Z",
-        keys: letters("YZ").concat([
-          { label: "space", kind: "space", colSpan: 2 },
-          back,
-        ]),
+        keys: letters("YZ").concat([{ label: "space", kind: "space", colSpan: 2 }, back]),
       },
-      {
-        label: "EDIT 1",
-        keys: [
-          { label: "letter", icon: "no", kind: "action-key" },
-          { label: "word", icon: "message", kind: "action-key" },
-          { label: "undo", icon: "back", kind: "action-key" },
-          { label: "clear", icon: "x-mark", kind: "action-key" },
-          back,
-        ],
-      },
-      {
-        label: "EDIT 2",
-        keys: [
-          { label: "." },
-          { label: "," },
-          { label: "?", kind: "question-key", colSpan: 2 },
-          back,
-        ],
-      },
-      { label: "ACTIONS 1", keys: mobileActions1 },
-      { label: "ACTIONS 2", keys: mobileActions2 },
+      cursorRow,
     ];
   }, [suggestRows, aiSentenceRows, isMobile]);
 
@@ -281,25 +225,67 @@ export default function Keyboard({
   const useKey = (key) => {
     if (!key?.label) return;
     const l = key.label.toLowerCase();
+
     if (l === "back" || key.kind === "back") return setOpened(null);
     if (l.includes("say it") || l === "speak") return speak(message);
     if (l === "home") return location.assign("/home");
-    if (l.includes("help") || l.includes("call for help")) return speak("I need help.", true);
-    if (l === "clear") return setMessage("");
-    if (l === "letter") return setMessage((m) => m.slice(0, -1));
-    if (l === "word") return setMessage((m) => m.trimEnd().replace(/\S+$/, ""));
-    if (l === "space") return setMessage((m) => m + " ");
-    if (/^[A-Z]$/.test(key.label)) return setMessage((m) => m + key.label.toLowerCase());
-    if ([".", ",", "?"].includes(key.label)) return setMessage((m) => m + key.label);
-    if (key.kind === "suggest") {
-      return setMessage((m) => (m.trim() ? `${m.trimEnd()} ${key.label}` : key.label));
-    }
-    if (key.kind === "ai-generating-key") {
+
+    // Cursor navigation — move insertion point, stay in opened row so user can repeat
+    if (l === "left") {
+      setCursorPos?.((p) => Math.max(0, p - 1));
       return;
     }
+    if (l === "right") {
+      setCursorPos?.((p) => Math.min(message.length, p + 1));
+      return;
+    }
+
+    // Delete char immediately before cursor
+    if (l === "backspace") {
+      if (cursorPos > 0 && message.length > 0) {
+        setMessage(message.slice(0, cursorPos - 1) + message.slice(cursorPos));
+        setCursorPos?.((p) => Math.max(0, p - 1));
+      }
+      return;
+    }
+
+    if (l === "space") {
+      setMessage((m) => m.slice(0, cursorPos) + " " + m.slice(cursorPos));
+      setCursorPos?.((p) => p + 1);
+      return;
+    }
+
+    if (/^[A-Z]$/.test(key.label)) {
+      const char = key.label.toLowerCase();
+      setMessage((m) => m.slice(0, cursorPos) + char + m.slice(cursorPos));
+      setCursorPos?.((p) => p + 1);
+      return;
+    }
+
+    if ([".", ",", "?"].includes(key.label)) {
+      setMessage((m) => m.slice(0, cursorPos) + key.label + m.slice(cursorPos));
+      setCursorPos?.((p) => p + 1);
+      return;
+    }
+
+    if (key.kind === "suggest") {
+      const word = key.label;
+      setMessage((m) => {
+        const before = m.slice(0, cursorPos);
+        const after = m.slice(cursorPos);
+        const inserted = before.trim() ? ` ${word}` : word;
+        setCursorPos?.(before.length + inserted.length);
+        return before.trim() ? `${before.trimEnd()} ${word}${after}` : `${word}${after}`;
+      });
+      return;
+    }
+
+    if (key.kind === "ai-generating-key") return;
+
     if (key.kind === "ai-sentence") {
       setOpened(null);
-      return setMessage(key.label);
+      setMessage(key.label);
+      setCursorPos?.(key.label.length);
     }
   };
 

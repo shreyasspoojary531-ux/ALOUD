@@ -12,6 +12,12 @@ export default function Spell() {
   const { eyeOn } = useEyeControl();
   const { repeatCount, adaptedDwellDuration } = useSettings();
   const [message, setMessage] = useState("");
+  const [cursorPos, setCursorPos] = useState(0);
+
+  // Keep cursorPos clamped to message length whenever message shrinks
+  useEffect(() => {
+    setCursorPos((p) => Math.min(p, message.length));
+  }, [message.length]);
   const [spoken, setSpoken] = useState(null);
   const [suggestions, setSuggestions] = useState([]);
 
@@ -139,12 +145,22 @@ export default function Spell() {
             ) : null}
           </div>
           <div className={`message-line ${message ? "live" : ""}`}>
-            {message || "Pick a suggestion, or spell a word."}
+            {message ? (
+              <>
+                {message.slice(0, cursorPos)}
+                <span className="text-cursor" aria-hidden="true" />
+                {message.slice(cursorPos)}
+              </>
+            ) : (
+              "Pick a suggestion, or spell a word."
+            )}
           </div>
         </div>
         <Keyboard
           message={message}
           setMessage={setMessage}
+          cursorPos={cursorPos}
+          setCursorPos={setCursorPos}
           speak={speak}
           blinkSelect={blink}
           keyboardRef={keyboardRef}
