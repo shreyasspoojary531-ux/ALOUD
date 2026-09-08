@@ -7,7 +7,6 @@ import { trackSpeechEvent } from "../../lib/analytics";
 import { findBuiltinPhrase } from "../../lib/phrases";
 import TactileButton from "../shared/TactileButton";
 import AlertPlayingIndicator from "./AlertPlayingIndicator";
-import AlertDevAdjuster from "./AlertDevAdjuster";
 
 // Toast auto-dismiss delay: 3.5 seconds (no prior toast pattern in the app).
 const TOAST_DURATION_MS = 3500;
@@ -33,11 +32,6 @@ export default function SpokenMessageOverlay({
   const repeat = repeatCountProp ?? ctxRepeat ?? 1;
 
   const dismissed = useRef(false);
-
-  // TEMPORARY DEV TOOL STATE: Live position/scale adjustments
-  const [orbY, setOrbY] = useState(0);
-  const [orbScale, setOrbScale] = useState(1.0);
-  const [textY, setTextY] = useState(0);
 
   // telegramStatus drives the toast: null = hidden, otherwise { type, text }.
   const [telegramStatus, setTelegramStatus] = useState(null);
@@ -178,13 +172,11 @@ export default function SpokenMessageOverlay({
       )}
 
       <div className="overlay-content">
-        {/* TEMPORARY DEV TOOL OVERRIDE: Orb Y & scale adjustment container */}
-        <div style={{ transform: `translateY(${orbY}px) scale(${orbScale})` }}>
+        <div className="alert-orb-container">
           <AlertPlayingIndicator />
         </div>
 
-        {/* TEMPORARY DEV TOOL OVERRIDE: Text block Y adjustment container */}
-        <div style={{ transform: `translateY(${textY}px)` }}>
+        <div className="alert-text-container">
           <h1 className="spoken">{message}</h1>
 
           {!speechAvailable && (
@@ -217,16 +209,6 @@ export default function SpokenMessageOverlay({
           </p>
         </div>
       </div>
-
-      {/* TEMPORARY DEV TOOL: Fixed bottom-left panel for live layout adjustments */}
-      <AlertDevAdjuster
-        orbY={orbY}
-        setOrbY={setOrbY}
-        orbScale={orbScale}
-        setOrbScale={setOrbScale}
-        textY={textY}
-        setTextY={setTextY}
-      />
     </section>
   );
 }

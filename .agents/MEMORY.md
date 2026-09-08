@@ -208,7 +208,7 @@ Every scannable element in Aloud MUST respond to:
 - Large, bold centered phrase text with transparent WebGL SiriWave orb audio playing indicator (`AlertPlayingIndicator.jsx` rendering `components/ui/SiriWave.jsx`).
 - **Caregiver Alert Toast**: Fixed top-right toast notification (`.alert-toast`) with auto-dismiss (3.5s) reflecting real Telegram API send results (`sending`, `sent`, `failed`). Never overlaps central content.
 - **Repeat Loop Logic**: Repeats phrase playback strictly up to `repeatCount` (1x, 2x, 3x). Does NOT loop indefinitely.
-- **Temporary Dev Adjuster**: Mouse-only fixed bottom-left control panel (`AlertDevAdjuster.jsx`) controlling live Y-offset of the Siri wave orb (`orbY`), orb scale (`orbScale`), and text block Y-offset (`textY`).
+- **Alert Layout Offsets**: Manually tuned CSS rules in `styles/globals.css`: `.alert-orb-container` (`transform: translateY(-112px) scale(2.9)`) and `.alert-text-container` (`transform: translateY(-109px)`).
 - Dismiss button `"✓ I got help"` styled with primary CTA treatment (`TactileButton.terracotta`), stops speech and returns to Home.
 
 ---

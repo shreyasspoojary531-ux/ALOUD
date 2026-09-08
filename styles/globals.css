@@ -2314,6 +2314,14 @@ a:focus-visible {
   max-width: 1200px;
 }
 
+.alert-orb-container {
+  transform: translateY(-112px) scale(2.9);
+}
+
+.alert-text-container {
+  transform: translateY(-109px);
+}
+
 .dots {
   color: #e7a589;
   letter-spacing: 7px;
