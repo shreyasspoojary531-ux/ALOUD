@@ -4,8 +4,19 @@ import useScanner from "../scanner/useScanner";
 import { cancelSpeech, isSpeechSupported, say } from "../../lib/speech";
 import { useSettings } from "../shared/SettingsContext";
 import { trackSpeechEvent } from "../../lib/analytics";
-
 import { findBuiltinPhrase } from "../../lib/phrases";
+import TactileButton from "../shared/TactileButton";
+import AlertPlayingIndicator from "./AlertPlayingIndicator";
+
+// Toast auto-dismiss delay: 3.5 seconds (no prior toast pattern in the app).
+const TOAST_DURATION_MS = 3500;
+
+// Maps Telegram status type → icon character for the toast.
+const TOAST_ICONS = {
+  sending: "⏳",
+  sent: "✓",
+  failed: "✕",
+};
 
 export default function SpokenMessageOverlay({
   message,
@@ -21,7 +32,28 @@ export default function SpokenMessageOverlay({
   const repeat = repeatCountProp ?? ctxRepeat ?? 1;
 
   const dismissed = useRef(false);
+
+  // telegramStatus drives the toast: null = hidden, otherwise { type, text }.
   const [telegramStatus, setTelegramStatus] = useState(null);
+  // toastVisible controls whether the toast is rendered — decoupled from
+  // telegramStatus so the "sending" intermediate state can appear and then
+  // auto-dismiss after TOAST_DURATION_MS once a final state is reached.
+  const [toastVisible, setToastVisible] = useState(false);
+  const toastTimerRef = useRef(null);
+
+  const showToast = (status) => {
+    setTelegramStatus(status);
+    setToastVisible(true);
+    // Reset any running timer before starting a new one
+    if (toastTimerRef.current) clearTimeout(toastTimerRef.current);
+    // Only auto-dismiss on a final state (sent/failed), not while sending
+    if (status.type !== "sending") {
+      toastTimerRef.current = setTimeout(() => setToastVisible(false), TOAST_DURATION_MS);
+    }
+  };
+
+  // Clean up dismiss timer on unmount
+  useEffect(() => () => { if (toastTimerRef.current) clearTimeout(toastTimerRef.current); }, []);
 
   const handleDismiss = () => {
     dismissed.current = true;
@@ -29,6 +61,8 @@ export default function SpokenMessageOverlay({
     onDismiss?.();
   };
 
+  // useScanner wires blink/eyebrow selection to the single "I got help" item.
+  // Behavior is unchanged — same call signature as before.
   const { active, select } = useScanner([{ label: "I got help" }], handleDismiss);
 
   useEffect(() => {
@@ -51,19 +85,16 @@ export default function SpokenMessageOverlay({
     say(message, {
       repeat,
       onEnd: () => {
-        // Auto-dismiss only if user hasn't already manually dismissed
         if (!dismissed.current) onDismiss?.();
       },
     });
-
-    return () => {
-      cancelSpeech();
-    };
+    return () => { cancelSpeech(); };
     // Re-run only when the message itself changes (new item selected).
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [message]);
 
-  // Dispatch Telegram caregiver alert if configured and allowed by alert mode & emergency status
+  // Dispatch Telegram caregiver alert. Success/failure drives the toast — never
+  // shows a success toast if the send actually failed.
   useEffect(() => {
     if (typeof window === "undefined" || !message) return;
 
@@ -73,24 +104,25 @@ export default function SpokenMessageOverlay({
 
     if (!chatId) {
       setTelegramStatus(null);
+      setToastVisible(false);
       return;
     }
 
-    // Determine if the message is emergency-level
     const isEmerg =
       isEmergency !== undefined
         ? !!isEmergency
         : findBuiltinPhrase(message)?.isEmergency ?? false;
 
-    // Check routing decision
     const shouldSend = alertMode === "all" || (alertMode === "emergency" && isEmerg);
 
     if (!shouldSend) {
       setTelegramStatus(null);
+      setToastVisible(false);
       return;
     }
 
-    setTelegramStatus({ type: "sending", text: `Sending Telegram alert to ${caregiverName}...` });
+    // Show "sending" immediately — auto-dismiss only fires after a final state
+    showToast({ type: "sending", text: `Sending alert to ${caregiverName}…` });
 
     fetch("/api/telegram/send-alert", {
       method: "POST",
@@ -103,22 +135,16 @@ export default function SpokenMessageOverlay({
       .then((r) => r.json())
       .then((data) => {
         if (data.ok) {
-          setTelegramStatus({
-            type: "sent",
-            text: `✓ Telegram alert sent to ${caregiverName}`,
-          });
+          // Real send confirmed — show success toast
+          showToast({ type: "sent", text: `Alert sent to ${caregiverName}` });
         } else {
-          setTelegramStatus({
-            type: "failed",
-            text: `✕ Telegram alert failed: ${data.error}`,
-          });
+          // API returned ok:false — honest failure toast, not a success
+          showToast({ type: "failed", text: `Alert failed: ${data.error || "unknown error"}` });
         }
       })
       .catch((err) => {
-        setTelegramStatus({
-          type: "failed",
-          text: `✕ Telegram alert failed: ${err.message || "Network error"}`,
-        });
+        // Network-level failure — honest failure toast
+        showToast({ type: "failed", text: `Alert failed: ${err.message || "Network error"}` });
       });
   }, [message, isEmergency, ctxAlertMode]);
 
@@ -131,45 +157,51 @@ export default function SpokenMessageOverlay({
       aria-modal="true"
       aria-label="Spoken Message"
     >
+      {/* Toast — fixed top-right, pointer-events: none, never overlaps content */}
+      {toastVisible && telegramStatus && (
+        <div
+          className={`alert-toast ${telegramStatus.type}`}
+          role="status"
+          aria-live="polite"
+        >
+          <span className="alert-toast-icon" aria-hidden="true">
+            {TOAST_ICONS[telegramStatus.type]}
+          </span>
+          {telegramStatus.text}
+        </div>
+      )}
+
       <div className="overlay-content">
-        <div className="dots">•••••</div>
+        {/* AlertPlayingIndicator: isolated into its own component — swap internals
+            in the next prompt without touching anything else on this screen. */}
+        <AlertPlayingIndicator />
+
         <h1 className="spoken">{message}</h1>
+
         {!speechAvailable && (
           <p className="speech-fallback-note">
             (Speech audio unavailable in browser — message displayed as text)
           </p>
         )}
+
         {repeat === "loop" ? (
           <p className="repeat-indicator">Repeating until dismissed</p>
         ) : repeat > 1 ? (
           <p className="repeat-indicator">Repeating {repeat}×</p>
         ) : null}
-        {telegramStatus && (
-          <p
-            className="speech-fallback-note"
-            style={{
-              fontWeight: 600,
-              fontSize: "13px",
-              marginTop: "4px",
-              marginBottom: "12px",
-              color:
-                telegramStatus.type === "sent"
-                  ? "#047857"
-                  : telegramStatus.type === "failed"
-                  ? "#b91c1c"
-                  : "inherit",
-            }}
-          >
-            {telegramStatus.text}
-          </p>
-        )}
-        <button
-          className={`button dark ${active === 0 ? "active" : ""}`}
-          onClick={() => select(0)}
-          aria-label="I got help"
+
+        {/* "I got help" — restyled to match the TactileButton.terracotta used on
+            the splash screen ("Begin with eye control"). Same component, same class.
+            Selection behavior unchanged: active === 0 drives scan highlight,
+            onClick calls select(0) which triggers handleDismiss via useScanner. */}
+        <TactileButton
+          className={`terracotta ${active === 0 ? "active" : ""}`}
+          onSelect={() => select(0)}
+          ariaLabel="I got help"
         >
           ✓&nbsp; I got help
-        </button>
+        </TactileButton>
+
         <p>
           This will keep playing until you long-blink again — or choose{" "}
           <b>I got help.</b>

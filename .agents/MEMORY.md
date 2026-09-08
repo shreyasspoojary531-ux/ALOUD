@@ -205,10 +205,11 @@ Every scannable element in Aloud MUST respond to:
 
 ### 6. Spoken Message Overlay (`SpokenMessageOverlay.jsx`)
 - Full-screen takeover when a message is spoken.
-- Large, bold centered phrase text with pulsing top dot indicators.
+- Large, bold centered phrase text with isolated audio playing indicator (`AlertPlayingIndicator.jsx`).
 - **Urgency Styling**: Routine messages use normal cream background; urgent phrases (containing "help", "breathe", etc.) shift to warm red/salmon background.
+- **Caregiver Alert Toast**: Fixed top-right toast notification (`.alert-toast`) with auto-dismiss (3.5s) reflecting real Telegram API send results (`sending`, `sent`, `failed`). Never overlaps central content.
 - **Repeat Loop Logic**: Repeats phrase playback strictly up to `repeatCount` (1x, 2x, 3x). Does NOT loop indefinitely.
-- Dismiss button `"✓ I got help"` stops speech and returns to Home.
+- Dismiss button `"✓ I got help"` styled with primary CTA treatment (`TactileButton.terracotta`), stops speech and returns to Home.
 
 ---
 

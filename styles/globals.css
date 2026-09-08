@@ -2339,6 +2339,64 @@ a:focus-visible {
 }
 
 /* ─────────────────────────────────────────────
+   TELEGRAM ALERT TOAST
+   Fixed top-right corner, auto-dismissed by JS.
+   Uses existing elevation & radius tokens only.
+   ───────────────────────────────────────────── */
+
+.alert-toast {
+  position: fixed;
+  top: var(--sp5);
+  right: var(--sp5);
+  z-index: 400; /* above the overlay (z: 200) */
+  display: flex;
+  align-items: center;
+  gap: var(--sp2);
+  padding: var(--sp3) var(--sp4);
+  border-radius: var(--r);
+  font-size: 14px;
+  font-weight: 600;
+  font-family: var(--sans);
+  max-width: 320px;
+  pointer-events: none; /* never intercepts scan targets */
+  box-shadow: 0 8px 24px rgba(52, 40, 23, 0.16), 0 2px 8px rgba(0, 0, 0, 0.08);
+  animation: toastSlideIn 0.25s var(--ease-out-smooth) forwards;
+}
+
+.alert-toast.sent {
+  background: #f0fdf4;
+  color: #047857;
+  border: 1.5px solid #bbf7d0;
+}
+
+.alert-toast.failed {
+  background: #fff1f2;
+  color: #be123c;
+  border: 1.5px solid #fecdd3;
+}
+
+.alert-toast.sending {
+  background: var(--orange-pale);
+  color: var(--orange-dark);
+  border: 1.5px solid #efc9b5;
+}
+
+.alert-toast-icon {
+  font-size: 16px;
+  flex-shrink: 0;
+}
+
+@keyframes toastSlideIn {
+  from {
+    opacity: 0;
+    transform: translateX(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+/* ─────────────────────────────────────────────
    HERO CONTAINER & SCROLL CHEVRON INDICATOR
    ───────────────────────────────────────────── */
 
