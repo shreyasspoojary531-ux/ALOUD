@@ -4,21 +4,31 @@ import SiriWave from "../ui/SiriWave";
 
 /**
  * Visual audio-playing indicator component for SpokenMessageOverlay.
- * Renders the WebGL SiriWave waveform animation when speech is active.
+ * Renders the transparent WebGL SiriWave waveform animation when speech is active.
  */
 export default function AlertPlayingIndicator() {
   return (
-    <div className="alert-playing-indicator" aria-hidden="true">
+    <div
+      className="alert-playing-indicator"
+      aria-hidden="true"
+      style={{
+        display: "flex",
+        justifyContent: "center",
+        alignItems: "center",
+        width: "100%",
+        margin: "0 auto 1rem auto",
+        pointerEvents: "none",
+      }}
+    >
       <SiriWave
         variant="wave"
-        size={220}
-        renderScale={0.8}
+        size={360}
+        renderScale={1.0}
         className="siri-wave-canvas"
         style={{
-          margin: "0 auto 1.5rem auto",
-          borderRadius: "24px",
-          boxShadow: "0 12px 36px rgba(0, 0, 0, 0.25)",
-          background: "#000000",
+          maxWidth: "100%",
+          height: "auto",
+          background: "transparent",
         }}
       />
     </div>

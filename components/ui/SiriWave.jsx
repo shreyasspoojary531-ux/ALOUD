@@ -108,7 +108,8 @@ void mainImage(out vec4 fragColor, in vec2 fragCoord){
     float gauss = exp(-pow(xN*FALLOFF, 2.0));
     col *= mix(1.0, em*gauss, res);
     col *= res;
-    fragColor = vec4(col, 1.0);
+    float alpha = clamp(max(max(col.r, col.g), col.b), 0.0, 1.0);
+    fragColor = vec4(col, alpha);
 }
 void main(){ mainImage(gl_FragColor, gl_FragCoord.xy); }`;
 
@@ -249,7 +250,8 @@ void mainImage(out vec4 fragColor, in vec2 fragCoord){
     col = min(col, 1.0);
     float n = fract(sin(dot(fragCoord, vec2(12.9898,78.233)))*43758.5453);
     col += (n - 0.5)/255.0;
-    fragColor = vec4(col, 1.0);
+    float alpha = clamp(max(max(col.r, col.g), col.b), 0.0, 1.0);
+    fragColor = vec4(col, alpha);
 }
 void main(){ mainImage(gl_FragColor, gl_FragCoord.xy); }`;
 
@@ -271,7 +273,7 @@ export function SiriWave({
   React.useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
-    const gl = canvas.getContext("webgl");
+    const gl = canvas.getContext("webgl", { alpha: true });
     if (!gl) return;
 
     const compile = (type, src) => {
@@ -344,7 +346,7 @@ export function SiriWave({
   return (
     <canvas
       ref={canvasRef}
-      className={cn("block rounded-[20px] bg-black", className)}
+      className={cn("block rounded-[20px] bg-transparent", className)}
       style={{ width: size, height: size, ...style }}
       {...props}
     />
