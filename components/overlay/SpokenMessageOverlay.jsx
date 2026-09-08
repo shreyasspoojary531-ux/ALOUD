@@ -7,6 +7,7 @@ import { trackSpeechEvent } from "../../lib/analytics";
 import { findBuiltinPhrase } from "../../lib/phrases";
 import TactileButton from "../shared/TactileButton";
 import AlertPlayingIndicator from "./AlertPlayingIndicator";
+import AlertDevAdjuster from "./AlertDevAdjuster";
 
 // Toast auto-dismiss delay: 3.5 seconds (no prior toast pattern in the app).
 const TOAST_DURATION_MS = 3500;
@@ -32,6 +33,11 @@ export default function SpokenMessageOverlay({
   const repeat = repeatCountProp ?? ctxRepeat ?? 1;
 
   const dismissed = useRef(false);
+
+  // TEMPORARY DEV TOOL STATE: Live position/scale adjustments
+  const [orbY, setOrbY] = useState(0);
+  const [orbScale, setOrbScale] = useState(1.0);
+  const [textY, setTextY] = useState(0);
 
   // telegramStatus drives the toast: null = hidden, otherwise { type, text }.
   const [telegramStatus, setTelegramStatus] = useState(null);
@@ -172,41 +178,55 @@ export default function SpokenMessageOverlay({
       )}
 
       <div className="overlay-content">
-        {/* AlertPlayingIndicator: isolated into its own component — swap internals
-            in the next prompt without touching anything else on this screen. */}
-        <AlertPlayingIndicator />
+        {/* TEMPORARY DEV TOOL OVERRIDE: Orb Y & scale adjustment container */}
+        <div style={{ transform: `translateY(${orbY}px) scale(${orbScale})` }}>
+          <AlertPlayingIndicator />
+        </div>
 
-        <h1 className="spoken">{message}</h1>
+        {/* TEMPORARY DEV TOOL OVERRIDE: Text block Y adjustment container */}
+        <div style={{ transform: `translateY(${textY}px)` }}>
+          <h1 className="spoken">{message}</h1>
 
-        {!speechAvailable && (
-          <p className="speech-fallback-note">
-            (Speech audio unavailable in browser — message displayed as text)
+          {!speechAvailable && (
+            <p className="speech-fallback-note">
+              (Speech audio unavailable in browser — message displayed as text)
+            </p>
+          )}
+
+          {repeat === "loop" ? (
+            <p className="repeat-indicator">Repeating until dismissed</p>
+          ) : repeat > 1 ? (
+            <p className="repeat-indicator">Repeating {repeat}×</p>
+          ) : null}
+
+          {/* "I got help" — restyled to match the TactileButton.terracotta used on
+              the splash screen ("Begin with eye control"). Same component, same class.
+              Selection behavior unchanged: active === 0 drives scan highlight,
+              onClick calls select(0) which triggers handleDismiss via useScanner. */}
+          <TactileButton
+            className={`terracotta ${active === 0 ? "active" : ""}`}
+            onSelect={() => select(0)}
+            ariaLabel="I got help"
+          >
+            ✓&nbsp; I got help
+          </TactileButton>
+
+          <p>
+            This will keep playing until you long-blink again — or choose{" "}
+            <b>I got help.</b>
           </p>
-        )}
-
-        {repeat === "loop" ? (
-          <p className="repeat-indicator">Repeating until dismissed</p>
-        ) : repeat > 1 ? (
-          <p className="repeat-indicator">Repeating {repeat}×</p>
-        ) : null}
-
-        {/* "I got help" — restyled to match the TactileButton.terracotta used on
-            the splash screen ("Begin with eye control"). Same component, same class.
-            Selection behavior unchanged: active === 0 drives scan highlight,
-            onClick calls select(0) which triggers handleDismiss via useScanner. */}
-        <TactileButton
-          className={`terracotta ${active === 0 ? "active" : ""}`}
-          onSelect={() => select(0)}
-          ariaLabel="I got help"
-        >
-          ✓&nbsp; I got help
-        </TactileButton>
-
-        <p>
-          This will keep playing until you long-blink again — or choose{" "}
-          <b>I got help.</b>
-        </p>
+        </div>
       </div>
+
+      {/* TEMPORARY DEV TOOL: Fixed bottom-left panel for live layout adjustments */}
+      <AlertDevAdjuster
+        orbY={orbY}
+        setOrbY={setOrbY}
+        orbScale={orbScale}
+        setOrbScale={setOrbScale}
+        textY={textY}
+        setTextY={setTextY}
+      />
     </section>
   );
 }
