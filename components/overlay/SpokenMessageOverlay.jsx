@@ -26,7 +26,7 @@ export default function SpokenMessageOverlay({
   blinkSelect,
   repeatCount: repeatCountProp,
 }) {
-  const { repeatCount: ctxRepeat, telegramAlertMode: ctxAlertMode } = useSettings();
+  const { repeatCount: ctxRepeat, telegramAlertMode: ctxAlertMode, addCustomPhrase } = useSettings();
   // repeatCountProp takes precedence (passed from the page that calls say()),
   // falling back to context if not explicitly given.
   const repeat = repeatCountProp ?? ctxRepeat ?? 1;
@@ -61,9 +61,30 @@ export default function SpokenMessageOverlay({
     onDismiss?.();
   };
 
-  // useScanner wires blink/eyebrow selection to the single "I got help" item.
-  // Behavior is unchanged — same call signature as before.
-  const { active, select } = useScanner([{ label: "I got help" }], handleDismiss);
+  const handleAddPhrase = () => {
+    if (!message) return;
+    const res = addCustomPhrase?.(message);
+    if (res?.success) {
+      showToast({ type: "sent", text: "✓ Saved to Custom Phrases" });
+    } else if (res?.duplicate) {
+      showToast({ type: "sent", text: "Already saved to Custom Phrases" });
+    }
+  };
+
+  const overlayScannerItems = [
+    { label: "I got help" },
+    { label: "Add Phrase" },
+  ];
+
+  const handleAction = (item, index) => {
+    if (index === 0 || item?.label === "I got help") {
+      handleDismiss();
+    } else if (index === 1 || item?.label === "Add Phrase") {
+      handleAddPhrase();
+    }
+  };
+
+  const { active, select } = useScanner(overlayScannerItems, handleAction);
 
   useEffect(() => {
     if (blinkSelect) {
@@ -195,13 +216,23 @@ export default function SpokenMessageOverlay({
               the splash screen ("Begin with eye control"). Same component, same class.
               Selection behavior unchanged: active === 0 drives scan highlight,
               onClick calls select(0) which triggers handleDismiss via useScanner. */}
-          <TactileButton
-            className={`terracotta ${active === 0 ? "active" : ""}`}
-            onSelect={() => select(0)}
-            ariaLabel="I got help"
-          >
-            ✓&nbsp; I got help
-          </TactileButton>
+          <div style={{ display: "flex", gap: "12px", justifyContent: "center", alignItems: "center", flexWrap: "wrap", margin: "16px 0" }}>
+            <TactileButton
+              className={`terracotta ${active === 0 ? "active" : ""}`}
+              onSelect={() => select(0)}
+              ariaLabel="I got help"
+            >
+              ✓&nbsp; I got help
+            </TactileButton>
+
+            <TactileButton
+              className={`secondary ${active === 1 ? "active" : ""}`}
+              onSelect={() => select(1)}
+              ariaLabel="Add Phrase"
+            >
+              +&nbsp; Add Phrase
+            </TactileButton>
+          </div>
 
           <p>
             This will keep playing until you long-blink again — or choose{" "}

@@ -126,20 +126,41 @@ export function SettingsProvider({ children }) {
     setAdaptedDwellDuration(DEFAULT_DWELL);
   };
 
-  const addCustomPhrase = ({ text, category, isEmergency = false }) => {
-    if (!text || !text.trim() || !category) return null;
+  const addCustomPhrase = (input) => {
+    const rawText = typeof input === "string" ? input : input?.text;
+    const category = typeof input === "object" ? input?.category : undefined;
+    const isEmergency = typeof input === "object" ? !!input?.isEmergency : false;
+
+    if (!rawText || !rawText.trim()) return { success: false, error: "Empty phrase" };
+    const trimmed = rawText.trim();
+
+    // Check for exact duplicate phrase (case-insensitive)
+    const isDuplicate = customPhrases.some((p) => {
+      const existingText = typeof p === "string" ? p : p?.text;
+      return existingText && existingText.trim().toLowerCase() === trimmed.toLowerCase();
+    });
+
+    if (isDuplicate) {
+      return { success: false, duplicate: true };
+    }
+
     const newPhrase = {
       id: `cp_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
-      text: text.trim(),
-      category,
-      isEmergency: !!isEmergency,
+      text: trimmed,
+      category: category || "Custom",
+      isEmergency,
+      createdAt: new Date().toISOString(),
     };
+
     setCustomPhrasesState((prev) => {
       const next = [...prev, newPhrase];
-      try { localStorage.setItem("aloud_custom_phrases", JSON.stringify(next)); } catch (e) {}
+      try {
+        localStorage.setItem("aloud_custom_phrases", JSON.stringify(next));
+      } catch (e) {}
       return next;
     });
-    return newPhrase;
+
+    return { success: true, item: newPhrase };
   };
 
   const deleteCustomPhrase = (id) => {
