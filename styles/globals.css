@@ -1812,6 +1812,84 @@ a:focus-visible {
   background: var(--orange-dark);
 }
 
+/* ─────────────────────────────────────────────
+   TACTILE NEUMORPHIC SWITCH
+   Used for Settings Page On/Off Toggles
+   ───────────────────────────────────────────── */
+.switch-container {
+  position: relative;
+  width: 120px;
+  height: 52px;
+  background: #d6d6d6;
+  border-radius: 50px;
+  box-shadow:
+    inset -6px -6px 12px #ffffff,
+    inset 6px 6px 12px #b0b0b0;
+  margin-top: 10px;
+}
+
+.toggle-checkbox {
+  display: none;
+}
+
+.switch {
+  position: absolute;
+  top: 50%;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  transform: translateY(-50%);
+  border-radius: 50px;
+  overflow: hidden;
+  cursor: pointer;
+}
+
+.toggle {
+  position: absolute;
+  width: 60px;
+  height: 42px;
+  background: linear-gradient(145deg, #d9d9d9, #bfbfbf);
+  border-radius: 50px;
+  top: 5px;
+  left: 5px;
+  box-shadow:
+    -3px -3px 6px #ffffff,
+    3px 3px 6px #b0b0b0;
+  transition: all 0.3s ease-in-out;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  padding-left: 8px;
+}
+
+.led {
+  width: 10px;
+  height: 10px;
+  background: grey;
+  border-radius: 50%;
+  box-shadow: 0 0 10px 2px rgba(0, 0, 0, 0.2);
+  transition: all 0.3s ease-in-out;
+}
+
+.toggle-checkbox:checked + .switch .toggle {
+  left: 55px;
+  background: linear-gradient(145deg, #cfcfcf, #a9a9a9);
+  box-shadow:
+    -3px -3px 6px #ffffff,
+    3px 3px 6px #8a8a8a;
+}
+
+.toggle-checkbox:checked + .switch .led {
+  background: #00e676;
+  box-shadow: 0 0 15px 4px #00e676;
+}
+
+.switch:hover .toggle {
+  box-shadow:
+    -4px -4px 12px #ffffff,
+    4px 4px 12px #9b9b9b;
+}
+
 /* Settings Profile Link */
 .settings-profile-link {
   display: flex;

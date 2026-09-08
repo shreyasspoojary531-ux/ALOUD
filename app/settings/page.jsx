@@ -4,6 +4,7 @@ import Link from "next/link";
 import TopBar from "../../components/shared/TopBar";
 import Button from "../../components/shared/Button";
 import CustomPhrasesModal from "../../components/shared/CustomPhrasesModal";
+import TactileSwitch from "../../components/shared/TactileSwitch";
 import { useSettings } from "../../components/shared/SettingsContext";
 
 function ProfileIcon() {
@@ -296,25 +297,13 @@ export default function SettingsPage() {
           {/* Card 2 — Eyebrow Shortcut to Suggestions */}
           <div className="settings-card">
             <span className="settings-label">EYEBROW SHORTCUT TO SUGGESTIONS</span>
-            <div className="repeat-control" role="group" aria-label="Eyebrow shortcut to suggestions" style={{ marginTop: "8px" }}>
-              <button
-                type="button"
-                className={`repeat-btn${!eyebrowShortcut ? " repeat-btn--active" : ""}`}
-                onClick={() => setEyebrowShortcut(false)}
-                aria-pressed={!eyebrowShortcut}
-              >
-                Off
-              </button>
-              <button
-                type="button"
-                className={`repeat-btn${eyebrowShortcut ? " repeat-btn--active" : ""}`}
-                onClick={() => setEyebrowShortcut(true)}
-                aria-pressed={eyebrowShortcut}
-              >
-                On
-              </button>
-            </div>
-            <p className="settings-hint" style={{ marginTop: "6px" }}>
+            <TactileSwitch
+              id="eyebrow-shortcut-toggle"
+              checked={eyebrowShortcut}
+              onChange={(e) => setEyebrowShortcut(e.target.checked)}
+              ariaLabel="Eyebrow shortcut to suggestions"
+            />
+            <p className="settings-hint" style={{ marginTop: "8px" }}>
               On Spell screen in Eye blink mode, raising your eyebrows jumps the cursor directly to suggestions.
             </p>
           </div>
@@ -338,25 +327,13 @@ export default function SettingsPage() {
           {/* Card 4 — Adaptive Scan Speed */}
           <div className="settings-card">
             <span className="settings-label">ADAPTIVE SCAN SPEED</span>
-            <div className="repeat-control" role="group" aria-label="Adaptive scan speed" style={{ marginTop: "8px" }}>
-              <button
-                type="button"
-                className={`repeat-btn${!adaptiveDwellEnabled ? " repeat-btn--active" : ""}`}
-                onClick={() => setAdaptiveDwellEnabled(false)}
-                aria-pressed={!adaptiveDwellEnabled}
-              >
-                Off
-              </button>
-              <button
-                type="button"
-                className={`repeat-btn${adaptiveDwellEnabled ? " repeat-btn--active" : ""}`}
-                onClick={() => setAdaptiveDwellEnabled(true)}
-                aria-pressed={adaptiveDwellEnabled}
-              >
-                On
-              </button>
-            </div>
-            <p className="settings-hint" style={{ marginTop: "6px" }}>
+            <TactileSwitch
+              id="adaptive-dwell-toggle"
+              checked={adaptiveDwellEnabled}
+              onChange={(e) => setAdaptiveDwellEnabled(e.target.checked)}
+              ariaLabel="Adaptive scan speed"
+            />
+            <p className="settings-hint" style={{ marginTop: "8px" }}>
               {adaptiveDwellEnabled
                 ? `Current pacing: ${adaptedDwellDuration}ms per item (adapted between sessions).`
                 : "Automatically adjusts scan pacing between sessions based on usage."}
@@ -376,25 +353,13 @@ export default function SettingsPage() {
           {/* Card 5 — Cursor Trail Effect */}
           <div className="settings-card">
             <span className="settings-label">CURSOR TRAIL EFFECT</span>
-            <div className="repeat-control" role="group" aria-label="Cursor trail effect" style={{ marginTop: "8px" }}>
-              <button
-                type="button"
-                className={`repeat-btn${!cursorTrailEnabled ? " repeat-btn--active" : ""}`}
-                onClick={() => setCursorTrailEnabled(false)}
-                aria-pressed={!cursorTrailEnabled}
-              >
-                Off
-              </button>
-              <button
-                type="button"
-                className={`repeat-btn${cursorTrailEnabled ? " repeat-btn--active" : ""}`}
-                onClick={() => setCursorTrailEnabled(true)}
-                aria-pressed={cursorTrailEnabled}
-              >
-                On
-              </button>
-            </div>
-            <p className="settings-hint" style={{ marginTop: "6px" }}>
+            <TactileSwitch
+              id="cursor-trail-toggle"
+              checked={cursorTrailEnabled}
+              onChange={(e) => setCursorTrailEnabled(e.target.checked)}
+              ariaLabel="Cursor trail effect"
+            />
+            <p className="settings-hint" style={{ marginTop: "8px" }}>
               Shows a fluid ink-trail animation following your cursor on the Landing and Setup screens.
             </p>
           </div>

@@ -81,6 +81,8 @@ components/
     ├── SettingsContext.jsx  → Context for voice selection & repeat count settings
     ├── SettingsModal.jsx    → Modal dialog version of Settings
     ├── SettingsPopover.jsx  → Dropdown popover (desktop) & centered modal overlay (mobile) for Settings
+    ├── TactileButton.jsx    → Reusable 3D tactile pill CTA button
+    ├── TactileSwitch.jsx    → Reusable neumorphic toggle switch with animated LED indicator
     └── TopBar.jsx           → Universal header shell (logo, mode selector, settings, help, mobile drawer)
 
 lib/
