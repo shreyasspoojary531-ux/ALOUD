@@ -142,11 +142,12 @@ Every scannable element in Aloud MUST respond to:
 ## 5. Global State & Local Storage Contract
 
 ### `EyeControlContext` (`components/shared/EyeControlContext.jsx`)
-- **`mode`**: `"blink"` | `"eyebrow"` | `"palm"` | `"manual"` (Default: `"blink"`)
+- **`mode`**: `"blink"` | `"palm"` | `"manual"` (Default: `"blink"`)
 - **`eyeOn`**: `boolean` (`mode !== "manual"`)
 - **`isPaused`**: `boolean` (Set to `true` when mobile drawer is open to pause scanning & gesture detection)
 - **`setMode(newMode)`**: Updates mode and saves to `localStorage.aloud_control_mode`.
 - **`setIsPaused(paused)`**: Toggles global tracking pause.
+- **Eyebrow Shortcut**: Eyebrow raise is a spell-screen-only shortcut gesture running concurrently in Blink mode, jumping the cursor immediately to row index 0 (the merged suggestion row).
 
 ### `SettingsContext` (`components/shared/SettingsContext.jsx`) 
 - **`voiceName`**: `string | null` (Selected Web Speech API voice name)

@@ -18,8 +18,11 @@ export function EyeControlProvider({ children }) {
   useEffect(() => {
     try {
       const saved = localStorage.getItem("aloud_control_mode");
-      if (saved && ["blink", "eyebrow", "palm", "manual"].includes(saved)) {
+      if (saved && ["blink", "palm", "manual"].includes(saved)) {
         setModeState(saved);
+      } else if (saved === "eyebrow") {
+        setModeState("blink");
+        localStorage.setItem("aloud_control_mode", "blink");
       }
     } catch (e) {}
   }, []);

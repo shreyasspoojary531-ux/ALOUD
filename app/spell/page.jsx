@@ -111,11 +111,9 @@ export default function Spell() {
   const keyboardRef = useRef(null);
 
   const handleEyebrowShortcut = useCallback(() => {
-    // Only jump to suggestions if suggestions are currently loaded and available
-    if (suggestions && suggestions.length > 0) {
-      keyboardRef.current?.jumpToSuggestions?.();
-    }
-  }, [suggestions]);
+    // Jump scan highlight immediately to the shared suggestion row (index 0)
+    keyboardRef.current?.jumpToSuggestions?.();
+  }, []);
 
   // SpokenMessageOverlay now calls say() internally with repeat count
   const speak = (text, isEmergencyFlag = false) => {

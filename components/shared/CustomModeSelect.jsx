@@ -21,28 +21,6 @@ function EyeIcon() {
   );
 }
 
-function EyebrowIcon() {
-  return (
-    <svg
-      width="18"
-      height="18"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2.2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      aria-hidden="true"
-    >
-      <path d="M18 9c0-3.3-2.7-6-6-6S6 5.7 6 9" />
-      <path d="M7 6c1.5-1.5 3.5-2 5-2s3.5.5 5 2" />
-      <circle cx="9" cy="13" r="1.2" fill="currentColor" />
-      <circle cx="15" cy="13" r="1.2" fill="currentColor" />
-      <path d="M10 17c1 1 3 1 4 0" />
-    </svg>
-  );
-}
-
 function PalmIcon() {
   return (
     <svg
@@ -103,7 +81,6 @@ function ChevronIcon() {
 
 const MODES = [
   { id: "blink", label: "Eye blink", icon: EyeIcon },
-  { id: "eyebrow", label: "Eyebrow raise", icon: EyebrowIcon },
   { id: "palm", label: "Palm control", icon: PalmIcon },
   { id: "manual", label: "Manual (mouse only)", icon: ManualIcon },
 ];

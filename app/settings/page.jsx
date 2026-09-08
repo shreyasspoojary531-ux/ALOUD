@@ -28,8 +28,6 @@ function ProfileIcon() {
 
 export default function SettingsPage() {
   const {
-    eyebrowShortcut,
-    setEyebrowShortcut,
     adaptiveDwellEnabled,
     setAdaptiveDwellEnabled,
     adaptedDwellDuration,
@@ -294,19 +292,6 @@ export default function SettingsPage() {
             )}
           </div>
 
-          {/* Card 2 — Eyebrow Shortcut to Suggestions */}
-          <div className="settings-card">
-            <span className="settings-label">EYEBROW SHORTCUT TO SUGGESTIONS</span>
-            <TactileSwitch
-              id="eyebrow-shortcut-toggle"
-              checked={eyebrowShortcut}
-              onChange={(e) => setEyebrowShortcut(e.target.checked)}
-              ariaLabel="Eyebrow shortcut to suggestions"
-            />
-            <p className="settings-hint" style={{ marginTop: "8px" }}>
-              On Spell screen in Eye blink mode, raising your eyebrows jumps the cursor directly to suggestions.
-            </p>
-          </div>
 
           {/* Card 3 — Custom Phrases */}
           <div className="settings-card">

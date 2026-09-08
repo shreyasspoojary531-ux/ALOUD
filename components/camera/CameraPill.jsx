@@ -20,7 +20,6 @@ export default function CameraPill({
 }) {
   const ctx = useEyeControl();
   const activeMode = ctx.mode || "blink";
-  const { eyebrowShortcut } = useSettings();
   const enabled = enabledProp ?? (activeMode !== "manual");
 
   const video = useRef(null);
@@ -153,17 +152,14 @@ export default function CameraPill({
     confidenceTimeoutRef.current = setTimeout(() => {
       setStatusType("normal");
       statusTypeRef.current = "normal";
-      if (activeMode === "eyebrow") setStatus("Tracking your eyebrows");
-      else if (activeMode === "palm") setStatus("Tracking your palm");
+      if (activeMode === "palm") setStatus("Tracking your palm");
       else setStatus("Tracking your eyes");
     }, 1500);
   };
 
   const handleEyebrowSelect = () => {
-    if (activeModeRef.current === "blink" && callbacks.current.onEyebrowShortcut) {
+    if (callbacks.current.onEyebrowShortcut) {
       callbacks.current.onEyebrowShortcut();
-    } else {
-      handleSelectConfirmation();
     }
   };
 
@@ -314,38 +310,7 @@ export default function CameraPill({
                     statusTypeRef.current = "warning";
                   }
                 }
-              } else if (activeMode === "eyebrow") {
-                const hasFace = result?.faceLandmarks && result.faceLandmarks.length > 0;
-                const shapes = result?.faceBlendshapes?.[0]?.categories;
 
-                if (hasFace && shapes) {
-                  noDetectionSince.current = 0;
-                  const browLeft = shapes.find((x) => x.categoryName === "browOuterUpLeft")?.score ?? 0;
-                  const browRight = shapes.find((x) => x.categoryName === "browOuterUpRight")?.score ?? 0;
-                  const browInner = shapes.find((x) => x.categoryName === "browInnerUp")?.score ?? 0;
-                  // Use the stronger signal between outer-brow average and inner-brow score
-                  const browScore = Math.max((browLeft + browRight) / 2, browInner);
-
-                  currentGestureScoreRef.current = Math.min(0.98, Math.max(0.65, browScore + 0.3));
-                  callbacks.current.onBlendshape?.(browScore);
-                  eSel.ingest(browScore);
-
-                  if (currentStatusType !== "confidence") {
-                    setStatusType("normal");
-                    statusTypeRef.current = "normal";
-                    setStatus(
-                      eSel.phaseRef.current === "raised"
-                        ? "Eyebrows raised to select…"
-                        : "Tracking your eyebrows"
-                    );
-                  }
-                } else {
-                  if (currentStatusType !== "confidence") {
-                    setStatus("No face detected");
-                    setStatusType("warning");
-                    statusTypeRef.current = "warning";
-                  }
-                }
               } else {
                 const hasFace = result?.faceLandmarks && result.faceLandmarks.length > 0;
                 const shapes = result?.faceBlendshapes?.[0]?.categories;
@@ -395,8 +360,8 @@ export default function CameraPill({
 
                   bSel.ingest(blink, { isMoving: isHeadMoving, ear });
 
-                  // Opt-in eyebrow shortcut: monitor eyebrow raise concurrently when enabled on Spell screen
-                  if (eyebrowShortcut && callbacks.current.onEyebrowShortcut) {
+                  // Monitor eyebrow raise concurrently on Spell screen when onEyebrowShortcut callback is provided
+                  if (callbacks.current.onEyebrowShortcut) {
                     const browLeft = shapes.find((x) => x.categoryName === "browOuterUpLeft")?.score ?? 0;
                     const browRight = shapes.find((x) => x.categoryName === "browOuterUpRight")?.score ?? 0;
                     const browInner = shapes.find((x) => x.categoryName === "browInnerUp")?.score ?? 0;
