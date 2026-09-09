@@ -117,7 +117,6 @@ Every scannable element in Aloud MUST respond to:
 - **Auto-Advance**: `setInterval` cycles active index every `interval` ms.
 - **Blink Onset Capture (`captureOnset`)**: Locks target item index at the exact frame a blink/gesture starts, ensuring accuracy even if the timer advances before the gesture completes.
 - **Pause Synchronization**: Automatically suspends timer advance and ignores selection calls when `isPaused` (from `EyeControlContext`) is `true`.
-
 ### Gesture Detection Hooks (`components/camera/`)
 1. **`useBlinkSelect.js`**:
    - Ingests blink blendshapes (`eyeBlinkLeft`, `eyeBlinkRight`).
@@ -186,9 +185,9 @@ Every scannable element in Aloud MUST respond to:
   - **I feel** (Soft rose tint) -> Sub-grid: Happy, Tired, In pain, Cold, Hot, Sick
   - **I need** (Soft gold tint) -> Sub-grid: Water, Food, Restroom, Help, Glasses, Turn position
   - **People** (Soft slate blue tint) -> Sub-grid: Doctor, Nurse, Family, Friend, Caregiver
-  - **Answers** (Soft sage green tint) -> Sub-grid: Yes, No, Maybe, Thank you, Please
+  - **Answers** (Soft slate blue tint) -> Sub-grid: Yes, No, Maybe, I don't know, Thank you, Please, **Custom Phrases** (navigates to flat list of patient-saved custom phrases with speech output & honest empty state).
 - Full-width CTA Card: **"Spell it out"** -> Navigates to `/spell`.
-- Selecting any phrase triggers speech playback and opens `SpokenMessageOverlay`.
+- Selecting any phrase triggers speech playback and opens `SpokenMessageOverlay`. Patients can save spoken text directly from the overlay via **"+ Add Phrase"**, which persists to `localStorage.aloud_custom_phrases` with case-insensitive duplicate checking.
 
 ### 4. Spelling Keyboard (`app/spell/page.jsx`)
 - Top bar with Back arrow to Home, centered page title, and mode dropdown.

@@ -185,6 +185,7 @@ export default function Spell() {
           repeatCount={repeatCount}
           urgent={spoken.isEmergency}
           blinkSelect={blink}
+          source="spell"
           onDismiss={() => setSpoken(null)}
         />
       )}

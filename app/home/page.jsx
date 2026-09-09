@@ -159,6 +159,7 @@ export default function Home() {
           repeatCount={repeatCount}
           urgent={spoken.isEmergency || /breathe|help/i.test(spoken.message)}
           blinkSelect={blink}
+          source="home"
           onDismiss={() => {
             setSpoken(null);
             setGroup(null);

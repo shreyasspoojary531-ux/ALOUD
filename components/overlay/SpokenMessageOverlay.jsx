@@ -25,6 +25,7 @@ export default function SpokenMessageOverlay({
   onDismiss,
   blinkSelect,
   repeatCount: repeatCountProp,
+  source = "home",
 }) {
   const { repeatCount: ctxRepeat, telegramAlertMode: ctxAlertMode, addCustomPhrase } = useSettings();
   // repeatCountProp takes precedence (passed from the page that calls say()),
@@ -71,10 +72,11 @@ export default function SpokenMessageOverlay({
     }
   };
 
-  const overlayScannerItems = [
-    { label: "I got help" },
-    { label: "Add Phrase" },
-  ];
+  const isSpellSource = source === "spell";
+
+  const overlayScannerItems = isSpellSource
+    ? [{ label: "I got help" }, { label: "Add Phrase" }]
+    : [{ label: "I got help" }];
 
   const handleAction = (item, index) => {
     if (index === 0 || item?.label === "I got help") {
@@ -225,13 +227,15 @@ export default function SpokenMessageOverlay({
               ✓&nbsp; I got help
             </TactileButton>
 
-            <TactileButton
-              className={`secondary ${active === 1 ? "active" : ""}`}
-              onSelect={() => select(1)}
-              ariaLabel="Add Phrase"
-            >
-              +&nbsp; Add Phrase
-            </TactileButton>
+            {isSpellSource && (
+              <TactileButton
+                className={`secondary ${active === 1 ? "active" : ""}`}
+                onSelect={() => select(1)}
+                ariaLabel="Add Phrase"
+              >
+                +&nbsp; Add Phrase
+              </TactileButton>
+            )}
           </div>
 
           <p>

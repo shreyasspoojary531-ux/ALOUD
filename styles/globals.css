@@ -1115,35 +1115,35 @@ a:focus-visible {
   );
 }
 
-/* Scan-Highlight for 3D Tactile Buttons */
+/* Scan-Highlight for 3D Tactile Buttons (Crisp 4px focus ring) */
 .tactile-button.active {
   outline: none;
   transform: translateY(-2px);
   box-shadow:
+    0 0 0 2px var(--paper),
     0 0 0 4px var(--orange),
-    0 0 0 9px rgba(207, 87, 0, 0.35),
-    0 8px 24px rgba(207, 87, 0, 0.4);
+    0 4px 12px rgba(207, 87, 0, 0.25);
   animation: tactileActivePulse 1.8s infinite cubic-bezier(0.4, 0, 0.6, 1);
 }
 
 .tactile-button.active .button-outer {
   box-shadow:
-    0 0 0 2px var(--orange),
-    0 0.15em 0.3em rgba(207, 87, 0, 0.3);
+    0 0 0 1px var(--orange),
+    0 0.1em 0.2em rgba(207, 87, 0, 0.2);
 }
 
 @keyframes tactileActivePulse {
   0%, 100% {
     box-shadow:
+      0 0 0 2px var(--paper),
       0 0 0 4px var(--orange),
-      0 0 0 9px rgba(207, 87, 0, 0.35),
-      0 8px 24px rgba(207, 87, 0, 0.4);
+      0 4px 12px rgba(207, 87, 0, 0.25);
   }
   50% {
     box-shadow:
+      0 0 0 2px var(--paper),
       0 0 0 5px var(--orange),
-      0 0 0 12px rgba(207, 87, 0, 0.55),
-      0 12px 32px rgba(207, 87, 0, 0.6);
+      0 6px 16px rgba(207, 87, 0, 0.35);
   }
 }
 
