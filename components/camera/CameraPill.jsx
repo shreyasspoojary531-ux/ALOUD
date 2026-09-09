@@ -6,6 +6,7 @@ import usePalmSelect, { DEFAULT_PALM_THRESHOLDS } from "./usePalmSelect";
 import { createFaceLandmarker, createHandLandmarker } from "../../lib/mediapipeLoader";
 import { useEyeControl } from "../shared/EyeControlContext";
 import { useSettings } from "../shared/SettingsContext";
+import { sampleVideoLuminance, getLightingCompensatedThresholds } from "../../lib/adaptiveLightingCompensation";
 
 export default function CameraPill({
   enabled: enabledProp,
@@ -136,7 +137,11 @@ export default function CameraPill({
     }
   }, [calibration]);
 
+  const currentLuminanceRef = useRef(128);
+  const frameCountRef = useRef(0);
+
   const blinkThresholds = calibState || calibration || DEFAULT_BLINK_THRESHOLDS;
+  const effectiveBlinkThresholds = getLightingCompensatedThresholds(blinkThresholds, currentLuminanceRef.current);
 
   const handleSelectConfirmation = () => {
     callbacks.current.onLongBlink?.();
@@ -165,7 +170,7 @@ export default function CameraPill({
 
   const blinkSelect = useBlinkSelect(
     handleSelectConfirmation,
-    blinkThresholds,
+    effectiveBlinkThresholds,
     () => callbacks.current.onBlinkOnset?.()
   );
 
@@ -263,6 +268,11 @@ export default function CameraPill({
               video.current.currentTime !== lastVideoTime.current
             ) {
               lastVideoTime.current = video.current.currentTime;
+
+              frameCountRef.current += 1;
+              if (frameCountRef.current % 30 === 0 && video.current) {
+                currentLuminanceRef.current = sampleVideoLuminance(video.current);
+              }
 
               let timestamp = Math.round(performance.now());
               if (timestamp <= lastTimestampRef.current) {
