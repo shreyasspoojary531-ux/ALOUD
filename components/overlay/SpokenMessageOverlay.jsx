@@ -8,8 +8,23 @@ import { findBuiltinPhrase } from "../../lib/phrases";
 import TactileButton from "../shared/TactileButton";
 import AlertPlayingIndicator from "./AlertPlayingIndicator";
 
-// Toast auto-dismiss delay: 3.5 seconds (no prior toast pattern in the app).
-const TOAST_DURATION_MS = 3500;
+// Toast auto-dismiss delay: 7.0 seconds (doubled for enhanced readability).
+const TOAST_DURATION_MS = 7000;
+
+function TelegramIcon({ className = "" }) {
+  return (
+    <svg
+      width="22"
+      height="22"
+      viewBox="0 0 24 24"
+      fill="currentColor"
+      className={`telegram-brand-icon ${className}`}
+      aria-hidden="true"
+    >
+      <path d="M11.944 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0a12 12 0 0 0-.056 0zm4.962 7.224c.1-.002.321.023.465.14a.506.506 0 0 1 .171.325c.016.093.036.306.02.472-.18 1.898-.962 6.502-1.36 8.627-.168.9-.499 1.201-.82 1.23-.696.065-1.225-.46-1.9-.902-1.056-.693-1.653-1.124-2.678-1.8-1.185-.78-.417-1.21.258-1.91.177-.184 3.247-2.977 3.307-3.23.007-.032.014-.15-.056-.212s-.174-.041-.249-.024c-.106.024-1.793 1.14-5.061 3.345-.48.33-.913.49-1.302.48-.428-.008-1.252-.241-1.865-.44-.752-.245-1.349-.374-1.297-.789.027-.216.325-.437.893-.663 3.498-1.524 5.831-2.529 6.998-3.014 3.332-1.386 4.025-1.627 4.476-1.635z" />
+    </svg>
+  );
+}
 
 // Maps Telegram status type → icon character for the toast.
 const TOAST_ICONS = {
@@ -36,25 +51,36 @@ export default function SpokenMessageOverlay({
 
   // telegramStatus drives the toast: null = hidden, otherwise { type, text }.
   const [telegramStatus, setTelegramStatus] = useState(null);
-  // toastVisible controls whether the toast is rendered — decoupled from
-  // telegramStatus so the "sending" intermediate state can appear and then
-  // auto-dismiss after TOAST_DURATION_MS once a final state is reached.
   const [toastVisible, setToastVisible] = useState(false);
+  const [toastExiting, setToastExiting] = useState(false);
   const toastTimerRef = useRef(null);
+  const toastExitTimerRef = useRef(null);
 
   const showToast = (status) => {
     setTelegramStatus(status);
     setToastVisible(true);
-    // Reset any running timer before starting a new one
+    setToastExiting(false);
+    // Reset any running timers before starting a new one
     if (toastTimerRef.current) clearTimeout(toastTimerRef.current);
+    if (toastExitTimerRef.current) clearTimeout(toastExitTimerRef.current);
+
     // Only auto-dismiss on a final state (sent/failed), not while sending
     if (status.type !== "sending") {
-      toastTimerRef.current = setTimeout(() => setToastVisible(false), TOAST_DURATION_MS);
+      toastTimerRef.current = setTimeout(() => {
+        setToastExiting(true);
+        toastExitTimerRef.current = setTimeout(() => {
+          setToastVisible(false);
+          setToastExiting(false);
+        }, 300);
+      }, TOAST_DURATION_MS);
     }
   };
 
-  // Clean up dismiss timer on unmount
-  useEffect(() => () => { if (toastTimerRef.current) clearTimeout(toastTimerRef.current); }, []);
+  // Clean up timers on unmount
+  useEffect(() => () => {
+    if (toastTimerRef.current) clearTimeout(toastTimerRef.current);
+    if (toastExitTimerRef.current) clearTimeout(toastExitTimerRef.current);
+  }, []);
 
   const handleDismiss = () => {
     dismissed.current = true;
@@ -183,14 +209,15 @@ export default function SpokenMessageOverlay({
       {/* Toast — fixed top-right, pointer-events: none, never overlaps content */}
       {toastVisible && telegramStatus && (
         <div
-          className={`alert-toast ${telegramStatus.type}`}
+          className={`alert-toast ${telegramStatus.type} ${toastExiting ? "exiting" : ""}`}
           role="status"
           aria-live="polite"
         >
+          <TelegramIcon />
           <span className="alert-toast-icon" aria-hidden="true">
             {TOAST_ICONS[telegramStatus.type]}
           </span>
-          {telegramStatus.text}
+          <span className="toast-text-body">{telegramStatus.text}</span>
         </div>
       )}
 
